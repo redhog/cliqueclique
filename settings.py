@@ -64,7 +64,7 @@ SECRET_KEY = 'pc#xoc0*z4t^q2231n&*u(w4m$6rs1752hnwczwv3juy8$%-g&'
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',
     'django.template.loaders.app_directories.Loader',
-#     'django.template.loaders.eggs.Loader',
+    'django.template.loaders.eggs.Loader',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -90,8 +90,13 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     # Uncomment the next line to enable the admin:
-    # 'django.contrib.admin',
+    'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
     'cliqueclique_node',
+    'cliqueclique_document',
+    'cliqueclique_subscription',
 )
+
+CLIQUECLIQUE_ADDRESS_LENGTH = 512
+CLIQUECLIQUE_HASH_LENGTH = 512
