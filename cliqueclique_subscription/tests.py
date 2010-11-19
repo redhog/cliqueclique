@@ -35,3 +35,23 @@ class SimpleTest(django.test.TestCase):
         self.assertTrue(len(parent_sub.children.all()) == 1)
         self.assertTrue(len(root_sub.children.all()) == 1)
         self.assertEqual(root_sub.children.all()[0].document.content, "child content")
+
+    def test_upstream(self):
+        n = "test_upstream"
+
+        # p > l, so peer > local, so the peer will end up being center node 
+        local = save(cliqueclique_node.models.LocalNode(node_id=n+"local", public_key="X", address="localhost", private_key="X"))
+        peer = save(cliqueclique_node.models.Peer(node = self.local_node, node_id=n+"peer", public_key="X", address="localhost"))
+
+        doc = save(cliqueclique_document.models.Document(document_id=n+"doc", content="content"))
+        local_sub = save(cliqueclique_subscription.models.DocumentSubscription(
+                node = local,
+                document = doc))
+
+        peer_sub = save(cliqueclique_subscription.models.PeerDocumentSubscription(
+                local_subscription = local_sub,
+                peer = peer))
+
+        self.assertTrue(peer_sub.is_dirty)
+        
+        

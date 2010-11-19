@@ -13,13 +13,12 @@ class BaseDocumentSubscription(django.db.models.Model):
 
     __metaclass__ = utils.modelhelpers.SignalAutoConnectMeta
 
-    node = django.db.models.ForeignKey(cliqueclique_node.models.LocalNode, related_name="subscriptions")
-
     center_node_is_subscribed = django.db.models.BooleanField(default=False)
     center_node_id = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_HASH_LENGTH, null=True, blank=True)
     center_distance = django.db.models.IntegerField(default = 0)
 
 class DocumentSubscription(BaseDocumentSubscription):
+    node = django.db.models.ForeignKey(cliqueclique_node.models.LocalNode, related_name="subscriptions")
     document = django.db.models.ForeignKey(cliqueclique_document.models.Document, related_name="subscriptions")
 
     # Note, this might be empty if no document with self.document.{up,down}_document_id
@@ -75,7 +74,7 @@ class DocumentSubscription(BaseDocumentSubscription):
             peer_subscription.set_dirty()
 
 
-class PeerDocumentSubscription(DocumentSubscription):
+class PeerDocumentSubscription(BaseDocumentSubscription):
     # This is what a peer knows about us, as well as what we know about them
 
     local_subscription = django.db.models.ForeignKey(DocumentSubscription, related_name="peer_subscriptions")
@@ -100,6 +99,8 @@ class PeerDocumentSubscription(DocumentSubscription):
 
     @classmethod
     def _compare(a, b, is_this_much_closer = 0):
+        # Test if a is downstream from b. Should really have the same
+        # semantics as cmp, but it doesn't :P
         return (   a.center_node_id < b.center_node_id
                 or a.center_node_is_subscribed < b.center_node_is_subscribed
                 or (    a.center_node_id == b.center_node_id
