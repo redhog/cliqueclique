@@ -7,6 +7,11 @@ import cliqueclique_document.models
 from django.db.models import Q
 from utils.curryprefix import curryprefix
 
+# TODO:
+#
+# * Handle unsubscribed
+# * Handle delete
+
 class BaseDocumentSubscription(django.db.models.Model):
     class Meta:
         abstract = True

@@ -2,6 +2,8 @@ import django.test
 import cliqueclique_node.models
 import cliqueclique_document.models
 import cliqueclique_subscription.models
+import email.mime.text
+import email
 
 def save(obj):
     obj.save()
@@ -9,40 +11,50 @@ def save(obj):
 
 class SimpleTest(django.test.TestCase):
     def setUp(self):
-        self.local_node = save(cliqueclique_node.models.LocalNode(node_id="local", public_key="X", address="localhost", private_key="X"))
-        self.peers = [save(cliqueclique_node.models.Peer(node = self.local_node, node_id="peer%s" % n, public_key="X", address="localhost")) for n in xrange(0, 2)]
+        pass
 
-#        self.documents = [save(cliqueclique_document.models.Document(document_id="document%s" % n, content="content%s" % n)) for n in xrange(0, 2)]
+    def makedoc(self, content, **kw):
+        doc = email.mime.text.MIMEText(content)
+        for name, value in kw.iteritems():
+            doc.add_header(name, value)
+
+        return doc.as_string()
 
     def test_child_links(self):
         n = "test_child_links"
-        root_doc = save(cliqueclique_document.models.Document(document_id=n+"root", content="root content"))
-        child_doc = save(cliqueclique_document.models.Document(document_id=n+"child", content="child content", parent_document_id=n+"root"))
-        parent_doc = save(cliqueclique_document.models.Document(document_id=n+"parent", content="parent content", child_document_id=n+"root"))
+
+        local = save(cliqueclique_node.models.LocalNode(node_id=n+"local", public_key="X", address="localhost", private_key="X"))
+
+        root_doc = save(cliqueclique_document.models.Document(content=self.makedoc("root content")))
+
+        child_doc = save(cliqueclique_document.models.Document(content=self.makedoc("child content", parent_document_id=root_doc.document_id)))
+        parent_doc = save(cliqueclique_document.models.Document(content=self.makedoc("parent content", child_document_id=root_doc.document_id)))
 
         root_sub = save(cliqueclique_subscription.models.DocumentSubscription(
-                node = self.local_node,
+                node = local,
                 document = root_doc))
 
         child_sub = save(cliqueclique_subscription.models.DocumentSubscription(
-                node = self.local_node,
+                node = local,
                 document = child_doc))
 
         parent_sub = save(cliqueclique_subscription.models.DocumentSubscription(
-                node = self.local_node,
+                node = local,
                 document = parent_doc))
 
         self.assertTrue(len(parent_sub.children.all()) == 1)
         self.assertTrue(len(root_sub.children.all()) == 1)
-        self.assertEqual(root_sub.children.all()[0].document.content, "child content")
+        mime = root_sub.children.all()[0].document.as_mime
+        self.assertEqual(root_sub.children.all()[0].document.as_mime.get_payload(), "child content")
+
 
     def test_upstream(self):
         n = "test_upstream"
 
         local = save(cliqueclique_node.models.LocalNode(node_id=n+"local", public_key="X", address="localhost", private_key="X"))
-        peer = save(cliqueclique_node.models.Peer(node = self.local_node, node_id=n+"peer", public_key="X", address="localhost"))
+        peer = save(cliqueclique_node.models.Peer(node = local, node_id=n+"peer", public_key="X", address="localhost"))
 
-        doc = save(cliqueclique_document.models.Document(document_id=n+"doc", content="content"))
+        doc = save(cliqueclique_document.models.Document(content=self.makedoc("content")))
         local_sub = save(cliqueclique_subscription.models.DocumentSubscription(
                 node = local,
                 document = doc))
