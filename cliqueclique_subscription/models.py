@@ -103,7 +103,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
     def peer_subscribers(self): return [0, 1][self.peer_is_subscribed]
 
     @classmethod
-    def _compare(a, b, is_this_much_closer = 0):
+    def _compare(cls, a, b, is_this_much_closer = 0):
         # Test if a is downstream from b. Should really have the same
         # semantics as cmp, but it doesn't :P
         return (   a.center_node_id < b.center_node_id
@@ -127,7 +127,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
 
     def set_dirty(self):
         for attr in self.PROTOCOL_ATTRS:
-            if self.attr != self.local_subscription.attr:
+            if getattr(self, attr) != getattr(self.local_subscription, attr):
                 self.is_dirty = True
                 self.save()
                 return
@@ -161,11 +161,11 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
         peer = curryprefix(self, "peer_")
 
         return {'local': dict((attr, getattr(local, attr))
-                              for attr in self.PROTOCOL_ATTRS)
+                              for attr in self.PROTOCOL_ATTRS),
                 'peer': dict((attr, getattr(peer, attr))
                              for attr in self.PROTOCOL_ATTRS)}
 
-    def receive(d):
+    def receive(self, d):
         local = self # yes, not self.local_subscription - this is
                      # about what the other node knows, not about
                      # what's true
@@ -173,8 +173,8 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
 
         for attr in self.PROTOCOL_ATTRS:
             # Yes, they're swapped over, we're on the "other node", remember?
-            setattr(local, attr, d['peer']['attr'])
-            setattr(peer, attr, d['local']['attr'])
+            setattr(local, attr, d['peer'][attr])
+            setattr(peer, attr, d['local'][attr])
 
         self.is_dirty = False
         self.set_dirty()

@@ -39,7 +39,6 @@ class SimpleTest(django.test.TestCase):
     def test_upstream(self):
         n = "test_upstream"
 
-        # p > l, so peer > local, so the peer will end up being center node 
         local = save(cliqueclique_node.models.LocalNode(node_id=n+"local", public_key="X", address="localhost", private_key="X"))
         peer = save(cliqueclique_node.models.Peer(node = self.local_node, node_id=n+"peer", public_key="X", address="localhost"))
 
@@ -60,9 +59,14 @@ class SimpleTest(django.test.TestCase):
                 'local': {
                     'is_subscribed': False,
                     'center_node_is_subscribed': False,
-                    'center_node_id': 'a',
+                    'center_node_id': 'z',
                     'center_distance':  1
                     },
                 'peer': local_encoded['local']})
 
         self.assertFalse(peer_sub.is_dirty)
+        self.assertTrue(peer_sub.is_upstream())
+        
+        print
+        print peer_sub.send()
+        print
