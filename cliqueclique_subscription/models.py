@@ -17,6 +17,11 @@ class BaseDocumentSubscription(django.db.models.Model):
     center_node_id = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_HASH_LENGTH, null=True, blank=True)
     center_distance = django.db.models.IntegerField(default = 0)
 
+    PROTOCOL_ATTRS = ('is_subscribed',
+                      'center_node_is_subscribed',
+                      'center_node_id',
+                      'center_distance')
+
 class DocumentSubscription(BaseDocumentSubscription):
     node = django.db.models.ForeignKey(cliqueclique_node.models.LocalNode, related_name="subscriptions")
     document = django.db.models.ForeignKey(cliqueclique_document.models.Document, related_name="subscriptions")
@@ -121,10 +126,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
                     PeerDocumentSubscription(local_subscription=child, peer=self.peer, is_dirty=True).save()
 
     def set_dirty(self):
-        for attr in ('is_subscribed',
-                     'center_node_is_subscribed',
-                     'center_node_id',
-                     'center_distance'):
+        for attr in self.PROTOCOL_ATTRS:
             if self.attr != self.local_subscription.attr:
                 self.is_dirty = True
                 self.save()
@@ -153,3 +155,27 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
                     peer.old_is_subscribed = peer.is_subscribed
                     local.save()
                     self.save()
+
+    def send(self):
+        local = self.local_subscription
+        peer = curryprefix(self, "peer_")
+
+        return {'local': dict((attr, getattr(local, attr))
+                              for attr in self.PROTOCOL_ATTRS)
+                'peer': dict((attr, getattr(peer, attr))
+                             for attr in self.PROTOCOL_ATTRS)}
+
+    def receive(d):
+        local = self # yes, not self.local_subscription - this is
+                     # about what the other node knows, not about
+                     # what's true
+        peer = curryprefix(self, "peer_")
+
+        for attr in self.PROTOCOL_ATTRS:
+            # Yes, they're swapped over, we're on the "other node", remember?
+            setattr(local, attr, d['peer']['attr'])
+            setattr(peer, attr, d['local']['attr'])
+
+        self.is_dirty = False
+        self.set_dirty()
+        self.save()

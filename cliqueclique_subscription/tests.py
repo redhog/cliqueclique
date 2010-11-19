@@ -54,4 +54,15 @@ class SimpleTest(django.test.TestCase):
 
         self.assertTrue(peer_sub.is_dirty)
         
-        
+        local_encoded = peer_sub.send()
+
+        peer_sub.receive({
+                'local': {
+                    'is_subscribed': False,
+                    'center_node_is_subscribed': False,
+                    'center_node_id': 'a',
+                    'center_distance':  1
+                    },
+                'peer': local_encoded['local']})
+
+        self.assertFalse(peer_sub.is_dirty)
