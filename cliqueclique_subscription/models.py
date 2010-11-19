@@ -65,7 +65,7 @@ class DocumentSubscription(BaseDocumentSubscription):
     @classmethod
     def pre_save(cls, sender, instance, **kwargs):
         self = instance
-        if self.center_node_id is None:
+        if self.center_node_id is None or self.center_node_is_subscribed < self.is_subscribed:
             self.center_node_is_subscribed = self.is_subscribed
             self.center_node_id = self.node.node_id
             self.center_distance = 0
@@ -106,10 +106,11 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
     def _compare(cls, a, b, is_this_much_closer = 0):
         # Test if a is downstream from b. Should really have the same
         # semantics as cmp, but it doesn't :P
-        return (   a.center_node_id < b.center_node_id
-                or a.center_node_is_subscribed < b.center_node_is_subscribed
-                or (    a.center_node_id == b.center_node_id
-                    and a.center_distance > b.center_distance + is_this_much_closer))
+        return (   a.center_node_is_subscribed < b.center_node_is_subscribed
+                or (   a.center_node_is_subscribed == b.center_node_is_subscribed
+                    and (   a.center_node_id < b.center_node_id
+                         or (    a.center_node_id == b.center_node_id
+                             and a.center_distance > b.center_distance + is_this_much_closer))))
 
     def is_upstream(self, is_this_much_closer = 0):
         # Note: Compares to our real current local subscription, not what the other node knows about us

@@ -67,6 +67,18 @@ class SimpleTest(django.test.TestCase):
         self.assertFalse(peer_sub.is_dirty)
         self.assertTrue(peer_sub.is_upstream())
         
-        print
-        print peer_sub.send()
-        print
+        local_sub.local_is_subscribed = True
+        local_sub.save()
+
+        self.assertFalse(peer_sub.is_upstream())        
+
+        local_encoded = peer_sub.send()
+        local_encoded['peer'] = dict(local_encoded['local'])
+        local_encoded['peer']['center_distance'] += 1
+        local_encoded['peer']['is_subscribed'] = False
+        
+        peer_sub.receive({
+                'local': local_encoded['peer'],
+                'peer': local_encoded['local']})
+        
+        self.assertTrue(peer_sub.is_downstream())
