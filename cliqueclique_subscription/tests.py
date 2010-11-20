@@ -9,6 +9,8 @@ def save(obj):
     obj.save()
     return obj
 
+PROTOCOL_ATTRS = cliqueclique_subscription.models.BaseDocumentSubscription.PROTOCOL_ATTRS
+
 class SimpleTest(django.test.TestCase):
     def setUp(self):
         pass
@@ -19,6 +21,13 @@ class SimpleTest(django.test.TestCase):
             doc.add_header(name, value)
 
         return doc.as_string()
+
+    def reverse_update(self, update):
+        res = {}
+        for attr in PROTOCOL_ATTRS:
+            res['sender_' + attr] = update['receiver_' + attr]
+            res['receiver_' + attr] = update['sender_' + attr]
+        return res
 
     def test_child_links(self):
         n = "test_child_links"
@@ -65,16 +74,13 @@ class SimpleTest(django.test.TestCase):
 
         self.assertTrue(peer_sub.is_dirty)
         
-        local_encoded = peer_sub.send()
-
-        peer_sub.receive({
-                'local': {
-                    'is_subscribed': False,
-                    'center_node_is_subscribed': False,
-                    'center_node_id': 'z',
-                    'center_distance':  1
-                    },
-                'peer': local_encoded['local']})
+        update = self.reverse_update(peer_sub.find_update())
+        update['sender_is_subscribed'] = False
+        update['sender_center_node_is_subscribed'] = False
+        update['sender_center_node_id'] = 'z'
+        update['sender_center_distance'] =  1
+        
+        peer_sub.update(update)
 
         self.assertFalse(peer_sub.is_dirty)
         self.assertTrue(peer_sub.is_upstream())
@@ -84,13 +90,11 @@ class SimpleTest(django.test.TestCase):
 
         self.assertFalse(peer_sub.is_upstream())        
 
-        local_encoded = peer_sub.send()
-        local_encoded['peer'] = dict(local_encoded['local'])
-        local_encoded['peer']['center_distance'] += 1
-        local_encoded['peer']['is_subscribed'] = False
-        
-        peer_sub.receive({
-                'local': local_encoded['peer'],
-                'peer': local_encoded['local']})
+        update = peer_sub.find_update()
+        for attr in PROTOCOL_ATTRS:
+            update['receiver_' + attr] = update['sender_' + attr]
+        update['sender_center_distance'] += 1
+        update['sender_is_subscribed'] = False
+        peer_sub.update(update)
         
         self.assertTrue(peer_sub.is_downstream())

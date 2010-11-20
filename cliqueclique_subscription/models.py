@@ -7,6 +7,13 @@ import cliqueclique_document.models
 from django.db.models import Q
 from utils.curryprefix import curryprefix
 
+import email
+import email.mime.message
+import email.mime.application
+import email.mime.text
+import email.mime.multipart
+
+
 # TODO:
 #
 # * Handle unsubscribed
@@ -162,26 +169,70 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
                     local.save()
                     self.save()
 
-    def send(self):
+    def find_update(self):
         local = self.local_subscription
         peer = curryprefix(self, "peer_")
+        
+        update = {}
+        for attr in self.PROTOCOL_ATTRS:
+            update['sender_' + attr] = getattr(local, attr)
+            update['receiver_' + attr] = getattr(peer, attr)
 
-        return {'local': dict((attr, getattr(local, attr))
-                              for attr in self.PROTOCOL_ATTRS),
-                'peer': dict((attr, getattr(peer, attr))
-                             for attr in self.PROTOCOL_ATTRS)}
+        return update
 
-    def receive(self, d):
+    def update(self, d):
         local = self # yes, not self.local_subscription - this is
                      # about what the other node knows, not about
                      # what's true
         peer = curryprefix(self, "peer_")
 
         for attr in self.PROTOCOL_ATTRS:
-            # Yes, they're swapped over, we're on the "other node", remember?
-            setattr(local, attr, d['peer'][attr])
-            setattr(peer, attr, d['local'][attr])
+            setattr(local, attr, d['receiver_' + attr])
+            setattr(peer, attr, d['sender_' + attr])
 
         self.is_dirty = False
         self.set_dirty()
         self.save()
+
+    def send(self):
+        update = self.find_update()
+
+        update['message_type'] = 'subscription_update'
+        update['document_id'] = self.local_subscription.document.document_id
+        update['sender_node_id'] = self.local_subscription.node.node_id
+        update['receiver_node_id'] = self.peer.node_id
+
+        msg = email.mime.text.MIMEText("")
+        
+        keys = update.keys()
+        keys.sort()
+        for key in keys:
+            doc.add_header(key, update[key])
+
+        return doc.as_string()
+
+    @classmethod
+    def receive(cls, msg):
+        mime = email.message_from_string(msg)
+
+        subs = cls.objects.filter(local_subscription__document__document_id = mime['document_id'],
+                                  peer__node_id = mime['sender_node_id'],
+                                  local_subscription__node__node_id = mime['receiver_node_id']).all()
+        if subs:
+            sub = subs[0]
+        else:
+            local_subscription = DocumentSubscription.objects.get(document__document_id = mime['document_id'],
+                                                                  node__node_id = mime['receiver_node_id'])
+            peers = cliqueclique_node.models.Peer.objects.filter(node_id = mime['sender_node_id'],
+                                                                 node__node_id = mime['receiver_node_id']).all()
+            if peers:
+                peer = peers[0]
+            else:
+                node = cliqueclique_node.models.LocalNode.objects.get(node_id = mime['receiver_node_id'])
+                peer = cliqueclique_node.models.Peer(node_id = mime['sender_node_id'], node = node)
+                peer.save()
+
+            sub = cls(local_subscription = local_subscription,
+                      peer = peer)
+
+        sub.update(mime)
