@@ -1,4 +1,5 @@
 import django.db.models
+import idmapper.models
 import django.contrib.auth.models
 import utils.modelhelpers
 import settings
@@ -19,7 +20,7 @@ import email.mime.multipart
 # * Handle unsubscribed
 # * Handle delete
 
-class BaseDocumentSubscription(django.db.models.Model):
+class BaseDocumentSubscription(idmapper.models.SharedMemoryModel):
     class Meta:
         abstract = True
 
@@ -141,6 +142,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
     def set_dirty(self):
         for attr in self.PROTOCOL_ATTRS:
             if getattr(self, attr) != getattr(self.local_subscription, attr):
+                #print "DIRTY BECAUSE %s: peer=%s != local=%s" % (attr, getattr(self, attr), getattr(self.local_subscription, attr))
                 self.is_dirty = True
                 self.save()
                 return
@@ -180,15 +182,21 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
 
         return update
 
-    def update(self, d):
+    def update(self, update):
         local = self # yes, not self.local_subscription - this is
                      # about what the other node knows, not about
                      # what's true
         peer = curryprefix(self, "peer_")
 
-        for attr in self.PROTOCOL_ATTRS:
-            setattr(local, attr, d['receiver_' + attr])
-            setattr(peer, attr, d['sender_' + attr])
+        local.is_subscribed = update['receiver_is_subscribed'].lower() == "true"
+        local.center_node_is_subscribed = update['receiver_center_node_is_subscribed'].lower() == "true"
+        local.center_node_id = update['receiver_center_node_id']
+        local.center_distance = int(update['receiver_center_distance'])
+
+        peer.is_subscribed = update['sender_is_subscribed'].lower() == "true"
+        peer.center_node_is_subscribed = update['sender_center_node_is_subscribed'].lower() == "true"
+        peer.center_node_id = update['sender_center_node_id']
+        peer.center_distance = int(update['sender_center_distance'])
 
         self.is_dirty = False
         self.set_dirty()
@@ -207,32 +215,36 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
         keys = update.keys()
         keys.sort()
         for key in keys:
-            doc.add_header(key, update[key])
+            msg.add_header(key, str(update[key]))
 
-        return doc.as_string()
+        return msg
 
     @classmethod
     def receive(cls, msg):
-        mime = email.message_from_string(msg)
+        if isinstance(msg, unicode):
+            msg = str(msg)
+        if isinstance(msg, str):
+            msg = email.message_from_string(msg)
 
-        subs = cls.objects.filter(local_subscription__document__document_id = mime['document_id'],
-                                  peer__node_id = mime['sender_node_id'],
-                                  local_subscription__node__node_id = mime['receiver_node_id']).all()
+        subs = cls.objects.filter(local_subscription__document__document_id = msg['document_id'],
+                                  peer__node_id = msg['sender_node_id'],
+                                  local_subscription__node__node_id = msg['receiver_node_id']).all()
         if subs:
             sub = subs[0]
         else:
-            local_subscription = DocumentSubscription.objects.get(document__document_id = mime['document_id'],
-                                                                  node__node_id = mime['receiver_node_id'])
-            peers = cliqueclique_node.models.Peer.objects.filter(node_id = mime['sender_node_id'],
-                                                                 node__node_id = mime['receiver_node_id']).all()
+            local_subscription = DocumentSubscription.objects.get(document__document_id = msg['document_id'],
+                                                                  node__node_id = msg['receiver_node_id'])
+            peers = cliqueclique_node.models.Peer.objects.filter(node_id = msg['sender_node_id'],
+                                                                 node__node_id = msg['receiver_node_id']).all()
             if peers:
                 peer = peers[0]
             else:
-                node = cliqueclique_node.models.LocalNode.objects.get(node_id = mime['receiver_node_id'])
-                peer = cliqueclique_node.models.Peer(node_id = mime['sender_node_id'], node = node)
+                node = cliqueclique_node.models.LocalNode.objects.get(node_id = msg['receiver_node_id'])
+                peer = cliqueclique_node.models.Peer(node_id = msg['sender_node_id'], node = node)
                 peer.save()
 
             sub = cls(local_subscription = local_subscription,
                       peer = peer)
 
-        sub.update(mime)
+        sub.update(msg)
+        return sub

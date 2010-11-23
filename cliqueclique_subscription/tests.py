@@ -23,11 +23,13 @@ class SimpleTest(django.test.TestCase):
         return doc.as_string()
 
     def reverse_update(self, update):
-        res = {}
-        for attr in PROTOCOL_ATTRS:
-            res['sender_' + attr] = update['receiver_' + attr]
-            res['receiver_' + attr] = update['sender_' + attr]
-        return res
+        tmp = {}
+        for attr in PROTOCOL_ATTRS + ('node_id',):
+            tmp['sender_' + attr] = update['receiver_' + attr]
+            tmp['receiver_' + attr] = update['sender_' + attr]
+        for key, value in tmp.iteritems():
+            update.replace_header(key, value)
+        return update
 
     def test_child_links(self):
         n = "test_child_links"
@@ -73,28 +75,29 @@ class SimpleTest(django.test.TestCase):
                 peer = peer))
 
         self.assertTrue(peer_sub.is_dirty)
-        
-        update = self.reverse_update(peer_sub.find_update())
-        update['sender_is_subscribed'] = False
-        update['sender_center_node_is_subscribed'] = False
-        update['sender_center_node_id'] = 'z'
-        update['sender_center_distance'] =  1
-        
-        peer_sub.update(update)
 
-        self.assertFalse(peer_sub.is_dirty)
+        update = self.reverse_update(peer_sub.send())
+        update.replace_header('sender_is_subscribed', "False")
+        update.replace_header('sender_center_node_is_subscribed', "False")
+        update.replace_header('sender_center_node_id', 'z')
+        update.replace_header('sender_center_distance',  '1')
+        peer_sub.receive(update)
         self.assertTrue(peer_sub.is_upstream())
+
+        peer_sub.receive(self.reverse_update(peer_sub.send()))
+        self.assertFalse(peer_sub.is_dirty)
         
         local_sub.local_is_subscribed = True
         local_sub.save()
 
         self.assertFalse(peer_sub.is_upstream())        
 
-        update = peer_sub.find_update()
+        update = self.reverse_update(peer_sub.send())
         for attr in PROTOCOL_ATTRS:
-            update['receiver_' + attr] = update['sender_' + attr]
-        update['sender_center_distance'] += 1
-        update['sender_is_subscribed'] = False
-        peer_sub.update(update)
+            update.replace_header('sender_' + attr, update['receiver_' + attr])
+        
+        update.replace_header('sender_center_distance', str(int(update['sender_center_distance']) + 1))
+        update.replace_header('sender_is_subscribed', "False")
+        peer_sub = peer_sub.receive(update)
         
         self.assertTrue(peer_sub.is_downstream())

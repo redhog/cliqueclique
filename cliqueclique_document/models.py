@@ -1,4 +1,5 @@
 import django.db.models
+import idmapper.models
 import django.contrib.auth.models
 from django.db.models import Q
 import utils.modelhelpers
@@ -11,7 +12,7 @@ import email.mime.multipart
 import hashlib
 import utils.modelhelpers
 
-class Document(django.db.models.Model):
+class Document(idmapper.models.SharedMemoryModel):
     __metaclass__ = utils.modelhelpers.SignalAutoConnectMeta
 
     document_id = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_HASH_LENGTH)
