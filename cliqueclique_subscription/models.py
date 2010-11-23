@@ -38,6 +38,8 @@ class BaseDocumentSubscription(idmapper.models.SharedMemoryModel):
 class DocumentSubscription(BaseDocumentSubscription):
     node = django.db.models.ForeignKey(cliqueclique_node.models.LocalNode, related_name="subscriptions")
     document = django.db.models.ForeignKey(cliqueclique_document.models.Document, related_name="subscriptions")
+    read = django.db.models.BooleanField(default=False)
+    bookmarked = django.db.models.BooleanField(default=False)
 
     # Note, this might be empty if no document with self.document.{up,down}_document_id
     # exists at this node yet

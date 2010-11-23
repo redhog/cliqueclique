@@ -11,6 +11,7 @@ class Node(idmapper.models.SharedMemoryModel):
     address = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_ADDRESS_LENGTH)
 
 class LocalNode(Node):
+    owner = django.db.OntoToOneField(django.contrib.auth.models.User, related_name="node")
     private_key = django.db.models.TextField()
 
 class Peer(Node):

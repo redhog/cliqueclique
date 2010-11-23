@@ -5,8 +5,7 @@ from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = patterns('',
-    # Example:
-    # (r'^cliqueclique/', include('cliqueclique.foo.urls')),
+    (r'^document/', include('cliqueclique_displaydocument.urls')),
 
     # Uncomment the admin/doc line below to enable admin documentation:
     # (r'^admin/doc/', include('django.contrib.admindocs.urls')),

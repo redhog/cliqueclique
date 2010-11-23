@@ -20,6 +20,12 @@ DATABASES = {
     }
 }
 
+# Find all locally installed apps
+import os.path
+LOCAL_APPS = filter(
+    lambda x: os.path.isfile(os.path.join(PROJECT_ROOT, 'apps', x,'__init__.py')), 
+    os.listdir(os.path.join(PROJECT_ROOT, 'apps')))
+
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
@@ -83,7 +89,14 @@ TEMPLATE_DIRS = (
     # Don't forget to use absolute paths, not relative paths.
 )
 
+STATIC_URL = "/site_media/static/"
+STATICFILES_DIRS.extend(
+    map(
+        lambda x: os.path.join(PROJECT_ROOT,'apps',x,'media'), 
+        LOCAL_APPS))
+
 INSTALLED_APPS = (
+    "staticfiles",
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -93,10 +106,14 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
-    'cliqueclique_node',
-    'cliqueclique_document',
-    'cliqueclique_subscription',
+#    'cliqueclique_node',
+#    'cliqueclique_document',
+#    'cliqueclique_subscription',
+#    'cliqueclique_displaydocument',
 )
+INSTALLED_APPS.extend(
+    LOCAL_APPS
+    )
 
 CLIQUECLIQUE_ADDRESS_LENGTH = 512
 CLIQUECLIQUE_HASH_LENGTH = 512
