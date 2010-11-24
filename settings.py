@@ -21,7 +21,9 @@ DATABASES = {
 }
 
 # Find all locally installed apps
-import os.path
+import os.path, sys
+PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+sys.path.append(os.path.join(PROJECT_ROOT, "apps"))
 LOCAL_APPS = filter(
     lambda x: os.path.isfile(os.path.join(PROJECT_ROOT, 'apps', x,'__init__.py')), 
     os.listdir(os.path.join(PROJECT_ROOT, 'apps')))
@@ -89,14 +91,7 @@ TEMPLATE_DIRS = (
     # Don't forget to use absolute paths, not relative paths.
 )
 
-STATIC_URL = "/site_media/static/"
-STATICFILES_DIRS.extend(
-    map(
-        lambda x: os.path.join(PROJECT_ROOT,'apps',x,'media'), 
-        LOCAL_APPS))
-
-INSTALLED_APPS = (
-    "staticfiles",
+INSTALLED_APPS = [
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -110,7 +105,7 @@ INSTALLED_APPS = (
 #    'cliqueclique_document',
 #    'cliqueclique_subscription',
 #    'cliqueclique_displaydocument',
-)
+]
 INSTALLED_APPS.extend(
     LOCAL_APPS
     )

@@ -102,6 +102,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
 
     is_dirty = django.db.models.BooleanField(default = True)
 
+    has_copy = django.db.models.BooleanField(default = False)
     is_subscribed = django.db.models.BooleanField(default = False)
  
     peer_old_is_subscribed = django.db.models.BooleanField(default = False) # Don't modify this by hand, it's just for internal use by the pre_save method
@@ -200,6 +201,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
         peer.center_node_id = update['sender_center_node_id']
         peer.center_distance = int(update['sender_center_distance'])
 
+        self.has_copy = True
         self.is_dirty = False
         self.set_dirty()
         self.save()

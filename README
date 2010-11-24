@@ -1,1 +1,41 @@
 git clone git://github.com/dcramer/django-idmapper.git
+
+
+
+Every document (forum message) forms two overlaying networks of nodes
+that has a copy of that document. The networks are connected graphs,
+and one of them is a strict subnetwork of the other one. The smaller
+one is the "subscribing" set. Nodes in the subscribing set gets copies
+of all comments to the document. The protocol is push-based: When you
+have a peer that is subscribed to a document you have, and you have a
+comment to that document, you send that comment to the peer. The
+protocol attempts to keep the network for a document a connected graph
+by allways electing a "root node" among themselves, and keeping track
+of their distances from that root node. This way, no closed,
+disconnected circles can form (circles can still form, bur they'r
+obvious). This means that a document is only present on the nodes
+actually interested in that particular document. It is a bit like what
+NNTP would be, where nodes subscribe to newsgroups, if every message
+had its own newsgroup.
+
+Node A only pushes comments to document x to B if A and B share
+document x. Every node should probably have a max-peers-per-document
+setting to keep the branching level reasonable. For two nodes to
+initiate contact, they both need to know a third node, and share the
+same document with that third node. For eaxmple a "root document"
+
+Every "virtual forum" consist of a root document, and you have to have
+its id, and the address of a peer that also has it, to initiate
+contact / usage of that forum. Every document (forum message) linked
+from teh root, or from documents linked from the root (and so on)
+forms its own network, and the original peer with the root document
+need not be part of every such network.
+
+You install i2p and cliqueclique on your machine, then go to
+localhost:whatever in your browser. You enter a peer address and forum
+root document id You _can_ of course run a node publicly as a website
+too
+
+My current django code supports multiple nodes in one installation,
+each node connected to a django user object It's a rather simple idea
+really. Only drawback I can think of is overhead :S

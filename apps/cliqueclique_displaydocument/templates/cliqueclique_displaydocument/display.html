@@ -1,0 +1,27 @@
+Is read: {{ document_subscription.read }}<br>
+Is bookmarked: {{ document_subscription.bookmarked }}<br>
+Is a comment to:
+{% for parent in document_subscription.parents.all %}
+  <a href="{{ parent.document.document_id }}">{{ parent.document.as_mime.subject}}</a>
+{% endfor %}
+<br>
+Comments in:
+{% for child in document_subscription.children.all %}
+  <a href="{{ child.document.document_id }}">{{ child.document.as_mime.subject}}</a>
+{% endfor %}
+<br>
+<br>
+Subject: {{ document_subscription.document.as_mime.subject }}<br>
+{{ body }}
+<br>
+<br>
+
+
+
+Comment:
+<form method="POST">
+  {% csrf_token %}
+  <input type="text" name="subject"><br>
+  <textarea name="body"></textarea><br>
+  <input type="submit" name="post" value="Post">
+</form>
