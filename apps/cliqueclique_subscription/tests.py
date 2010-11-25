@@ -36,10 +36,10 @@ class SimpleTest(django.test.TestCase):
 
         local = save(cliqueclique_node.models.LocalNode(node_id=n+"local", public_key="X", address="localhost", private_key="X"))
 
-        root_doc = save(cliqueclique_document.models.Document(content=self.makedoc("root content")))
+        root_doc = save(cliqueclique_document.models.Document(content=self.makedoc(n+"root content")))
 
-        child_doc = save(cliqueclique_document.models.Document(content=self.makedoc("child content", parent_document_id=root_doc.document_id)))
-        parent_doc = save(cliqueclique_document.models.Document(content=self.makedoc("parent content", child_document_id=root_doc.document_id)))
+        child_doc = save(cliqueclique_document.models.Document(content=self.makedoc(n+"child content", parent_document_id=root_doc.document_id)))
+        parent_doc = save(cliqueclique_document.models.Document(content=self.makedoc(n+"parent content", child_document_id=root_doc.document_id)))
 
         root_sub = save(cliqueclique_subscription.models.DocumentSubscription(
                 node = local,
@@ -56,14 +56,14 @@ class SimpleTest(django.test.TestCase):
         self.assertTrue(len(parent_sub.children.all()) == 1)
         self.assertTrue(len(root_sub.children.all()) == 1)
         mime = root_sub.children.all()[0].document.as_mime
-        self.assertEqual(root_sub.children.all()[0].document.as_mime.get_payload(), "child content")
+        self.assertEqual(root_sub.children.all()[0].document.as_mime.get_payload(), n+"child content")
 
 
     def test_upstream(self):
         n = "test_upstream"
 
         local = save(cliqueclique_node.models.LocalNode(node_id=n+"local", public_key="X", address="localhost", private_key="X"))
-        peer = save(cliqueclique_node.models.Peer(node = local, node_id=n+"peer", public_key="X", address="localhost"))
+        peer = save(cliqueclique_node.models.Peer(local = local, node_id=n+"peer", public_key="X", address="localhost"))
 
         doc = save(cliqueclique_document.models.Document(content=self.makedoc("content")))
         local_sub = save(cliqueclique_subscription.models.DocumentSubscription(
@@ -101,3 +101,32 @@ class SimpleTest(django.test.TestCase):
         peer_sub = peer_sub.receive(update)
         
         self.assertTrue(peer_sub.is_downstream())
+
+    def test_child_distribution(self):
+        n = "test_child_distribution"
+        local1 = save(cliqueclique_node.models.LocalNode(node_id=n+"node1", public_key="X", address="addr1", private_key="X"))
+        local2 = save(cliqueclique_node.models.LocalNode(node_id=n+"node2", public_key="Y", address="addr2", private_key="Y"))
+
+        peer1 = save(cliqueclique_node.models.Peer(local = local1, node_id=n+"node2", public_key="Y", address="addr2"))
+        peer2 = save(cliqueclique_node.models.Peer(local = local2, node_id=n+"node1", public_key="X", address="addr1"))
+
+        root_doc = save(cliqueclique_document.models.Document(content=self.makedoc(n+"root content")))
+        child_doc = save(cliqueclique_document.models.Document(content=self.makedoc(n+"child content", parent_document_id=root_doc.document_id)))
+
+        root_sub1 = save(cliqueclique_subscription.models.DocumentSubscription(node = local1, document = root_doc, local_is_subscribed=True))
+        child_sub1 = save(cliqueclique_subscription.models.DocumentSubscription(node = local1, document = child_doc))
+
+        root_sub2 = save(cliqueclique_subscription.models.DocumentSubscription(node = local2, document = root_doc, local_is_subscribed=False))
+
+        root_peer_sub1 = save(cliqueclique_subscription.models.PeerDocumentSubscription(local_subscription = root_sub1, peer = peer1))
+        root_peer_sub2 = save(cliqueclique_subscription.models.PeerDocumentSubscription(local_subscription = root_sub2, peer = peer2))
+
+        root_peer_sub1.receive(root_peer_sub2.send())
+        root_peer_sub2.receive(root_peer_sub1.send())
+
+        root_sub2.local_is_subscribed = True
+        root_sub2.save()
+
+        root_peer_sub1.receive(root_peer_sub2.send())
+        
+        self.assertTrue(child_sub1.peer_subscription(peer1) is not None)

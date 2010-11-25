@@ -58,7 +58,7 @@ class DocumentSubscription(BaseDocumentSubscription):
 
     def peer_subscription(self, peer):
         try:
-            return DocumentSubscription.objects.get(local_subscription=self, peer=peer) 
+            return PeerDocumentSubscription.objects.get(local_subscription=self, peer=peer)
         except:
             return None
 
@@ -77,6 +77,23 @@ class DocumentSubscription(BaseDocumentSubscription):
                 self.children.add(child_subscription)
                 self.save()
 
+    def update_center_from_upstream_peer(self, peer_subscription):
+        peer = curryprefix(peer_subscription, "peer_")
+
+        self.center_node_is_subscribed = peer.center_node_is_subscribed
+        self.center_node_id = peer.center_node_id
+        self.center_distance = peer.center_distance + 1
+        self.save()
+
+    def update_subscription_from_downstream_peer(self, peer_subscription):
+        peer = curryprefix(peer_subscription, "peer_")
+
+        if peer.subscribers != peer.old_subscribers:
+            self.subscribers += peer.subscribers - peer.old_subscribers
+            peer.old_is_subscribed = peer.is_subscribed
+            self.save()
+            peer_subscription.save()
+
     @classmethod
     def pre_save(cls, sender, instance, **kwargs):
         self = instance
@@ -87,6 +104,7 @@ class DocumentSubscription(BaseDocumentSubscription):
 
     @classmethod
     def post_save(cls, sender, instance, **kwargs):
+        # This only works for downstream 
         self = instance
         self.update_child_subscriptions()
         for peer_subscription in self.peer_subscriptions.all():
@@ -140,12 +158,13 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
         if self.peer_is_subscribed:
             for child in self.local_subscription.children.all():
                 if not child.peer_subscription(self.peer):
+                    print "Creating PeerDocumentSubscription(document=%s, peer=%s)" % (child.document.document_id, self.peer.node_id)
                     PeerDocumentSubscription(local_subscription=child, peer=self.peer, is_dirty=True).save()
 
     def set_dirty(self):
         for attr in self.PROTOCOL_ATTRS:
             if getattr(self, attr) != getattr(self.local_subscription, attr):
-                #print "DIRTY BECAUSE %s: peer=%s != local=%s" % (attr, getattr(self, attr), getattr(self.local_subscription, attr))
+                print "DIRTY BECAUSE %s/%s.%s: peer=%s != local=%s" % (self.local_subscription.node.node_id, self.peer.node_id, attr, getattr(self, attr), getattr(self.local_subscription, attr))
                 self.is_dirty = True
                 self.save()
                 return
@@ -154,25 +173,12 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
     def pre_save(cls, sender, instance, **kwargs):
         self = instance
         if not self.is_dirty:
+            self.update_child_subscriptions()
+
             if self.is_upstream(1):
-                local = self.local_subscription
-                peer = curryprefix(self, "peer_")
-
-                local.center_node_is_subscribed = peer.center_node_is_subscribed
-                local.center_node_id = peer.center_node_id
-                local.center_distance = peer.center_distance + 1
-                local.save()
-
+                self.local_subscription.update_center_from_upstream_peer(self)
             elif self.is_downstream(1):
-
-                local = self.local_subscription
-                peer = curryprefix(self, "peer_")
-
-                if peer.subscribers != peer.old_subscribers:
-                    local.subscribers += peer.subscribers - peer.old_subscribers
-                    peer.old_is_subscribed = peer.is_subscribed
-                    local.save()
-                    self.save()
+                self.local_subscription.update_subscription_from_downstream_peer(self)
 
     def find_update(self):
         local = self.local_subscription
@@ -239,12 +245,12 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
             local_subscription = DocumentSubscription.objects.get(document__document_id = msg['document_id'],
                                                                   node__node_id = msg['receiver_node_id'])
             peers = cliqueclique_node.models.Peer.objects.filter(node_id = msg['sender_node_id'],
-                                                                 node__node_id = msg['receiver_node_id']).all()
+                                                                 local__node_id = msg['receiver_node_id']).all()
             if peers:
                 peer = peers[0]
             else:
                 node = cliqueclique_node.models.LocalNode.objects.get(node_id = msg['receiver_node_id'])
-                peer = cliqueclique_node.models.Peer(node_id = msg['sender_node_id'], node = node)
+                peer = cliqueclique_node.models.Peer(node_id = msg['sender_node_id'], local = node)
                 peer.save()
 
             sub = cls(local_subscription = local_subscription,

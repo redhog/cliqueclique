@@ -11,11 +11,11 @@ class Node(idmapper.models.SharedMemoryModel):
     address = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_ADDRESS_LENGTH)
 
 class LocalNode(Node):
-    owner = django.db.models.OneToOneField(django.contrib.auth.models.User, related_name="node")
+    owner = django.db.models.OneToOneField(django.contrib.auth.models.User, related_name="node", blank=True, null=True)
     private_key = django.db.models.TextField()
 
 class Peer(Node):
-    node = django.db.models.ForeignKey(LocalNode, related_name="peers")
+    local = django.db.models.ForeignKey(LocalNode, related_name="peers")
 
     @property
     def updates(self):
