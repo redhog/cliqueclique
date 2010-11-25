@@ -130,3 +130,7 @@ class SimpleTest(django.test.TestCase):
         root_peer_sub1.receive(root_peer_sub2.send())
         
         self.assertTrue(child_sub1.peer_subscription(peer1) is not None)
+
+        for x in peer1.get_updates_as_mime():
+            print "===================================="
+            print x

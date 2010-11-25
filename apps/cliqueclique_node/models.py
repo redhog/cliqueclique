@@ -19,11 +19,11 @@ class Peer(Node):
 
     @property
     def updates(self):
-        self.subscriptions.filter(is_dirty=True)
+        return self.subscriptions.filter(is_dirty=True)
 
     @property
     def new(self):
-        self.subscriptions.filter(has_copy=False)
+        return self.subscriptions.filter(has_copy=False)
 
     def get_updates_as_mime(self):
         return ([sub.send() for sub in self.updates.all()] +
