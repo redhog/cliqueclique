@@ -220,12 +220,15 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
         update['sender_node_id'] = self.local_subscription.node.node_id
         update['receiver_node_id'] = self.peer.node_id
 
-        msg = email.mime.text.MIMEText("")
+        msg = email.mime.multipart.MIMEMultipart()
         
         keys = update.keys()
         keys.sort()
         for key in keys:
             msg.add_header(key, str(update[key]))
+
+        if not self.has_copy:
+            msg.attach(self.local_subscription.document.as_mime)
 
         return msg
 

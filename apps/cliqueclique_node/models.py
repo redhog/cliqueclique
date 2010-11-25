@@ -26,7 +26,6 @@ class Peer(Node):
         return self.subscriptions.filter(has_copy=False)
 
     def get_updates_as_mime(self):
-        return ([sub.send() for sub in self.updates.all()] +
-                [sub.local_subscription.document.as_mime for sub in self.new.all()])
+        return [sub.send() for sub in self.updates.all()]
         
 
