@@ -180,18 +180,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
             elif self.is_downstream(1):
                 self.local_subscription.update_subscription_from_downstream_peer(self)
 
-    def find_update(self):
-        local = self.local_subscription
-        peer = curryprefix(self, "peer_")
-        
-        update = {}
-        for attr in self.PROTOCOL_ATTRS:
-            update['sender_' + attr] = getattr(local, attr)
-            update['receiver_' + attr] = getattr(peer, attr)
-
-        return update
-
-    def update(self, update):
+    def receive(self, update):
         local = self # yes, not self.local_subscription - this is
                      # about what the other node knows, not about
                      # what's true
@@ -213,12 +202,16 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
         self.save()
 
     def send(self):
-        update = self.find_update()
-
+        local = self.local_subscription
+        peer = curryprefix(self, "peer_")
+        
+        update = {}
         update['message_type'] = 'subscription_update'
         update['document_id'] = self.local_subscription.document.document_id
-        update['sender_node_id'] = self.local_subscription.node.node_id
-        update['receiver_node_id'] = self.peer.node_id
+
+        for attr in self.PROTOCOL_ATTRS:
+            update['sender_' + attr] = getattr(local, attr)
+            update['receiver_' + attr] = getattr(peer, attr)
 
         msg = email.mime.multipart.MIMEMultipart()
         
@@ -231,33 +224,3 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
             msg.attach(self.local_subscription.document.as_mime)
 
         return msg
-
-    @classmethod
-    def receive(cls, msg):
-        if isinstance(msg, unicode):
-            msg = str(msg)
-        if isinstance(msg, str):
-            msg = email.message_from_string(msg)
-
-        subs = cls.objects.filter(local_subscription__document__document_id = msg['document_id'],
-                                  peer__node_id = msg['sender_node_id'],
-                                  local_subscription__node__node_id = msg['receiver_node_id']).all()
-        if subs:
-            sub = subs[0]
-        else:
-            local_subscription = DocumentSubscription.objects.get(document__document_id = msg['document_id'],
-                                                                  node__node_id = msg['receiver_node_id'])
-            peers = cliqueclique_node.models.Peer.objects.filter(node_id = msg['sender_node_id'],
-                                                                 local__node_id = msg['receiver_node_id']).all()
-            if peers:
-                peer = peers[0]
-            else:
-                node = cliqueclique_node.models.LocalNode.objects.get(node_id = msg['receiver_node_id'])
-                peer = cliqueclique_node.models.Peer(node_id = msg['sender_node_id'], local = node)
-                peer.save()
-
-            sub = cls(local_subscription = local_subscription,
-                      peer = peer)
-
-        sub.update(msg)
-        return sub

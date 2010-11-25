@@ -121,16 +121,20 @@ class SimpleTest(django.test.TestCase):
         root_peer_sub1 = save(cliqueclique_subscription.models.PeerDocumentSubscription(local_subscription = root_sub1, peer = peer1))
         root_peer_sub2 = save(cliqueclique_subscription.models.PeerDocumentSubscription(local_subscription = root_sub2, peer = peer2))
 
-        root_peer_sub1.receive(root_peer_sub2.send())
-        root_peer_sub2.receive(root_peer_sub1.send())
+        peer1.receive(peer2.send())
+        peer2.receive(peer1.send())
 
         root_sub2.local_is_subscribed = True
         root_sub2.save()
 
-        root_peer_sub1.receive(root_peer_sub2.send())
+        peer1.receive(peer2.send())
         
         self.assertTrue(child_sub1.peer_subscription(peer1) is not None)
 
-        for x in peer1.get_updates_as_mime():
-            print "===================================="
-            print x
+        peer2.receive(peer1.send())
+
+        self.assertTrue(len(root_sub2.children.all()) == 1)
+        child_sub2 = root_sub2.children.all()[0]
+        self.assertTrue(child_sub2.peer_subscription(peer2) is not None)
+
+#        print peer1.send()
