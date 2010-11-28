@@ -19,6 +19,9 @@ import difflib
 class VerifierError(Exception): pass
 class VerifierContentError(VerifierError): pass
 
+def der2pem(der):
+    return "-----BEGIN CERTIFICATE-----\n%s-----END CERTIFICATE-----" % base64.encodestring(der)
+
 _parse_headers = email.feedparser.FeedParser._parse_headers
 def parse_headers(self, lines):
     res = _parse_headers(self, lines)
@@ -95,7 +98,6 @@ class MIMESigned(MIMEM2):
             s = M2Crypto.SMIME.SMIME()
             
             s.load_key_bio(M2Crypto.BIO.MemoryBuffer(self.private_key), M2Crypto.BIO.MemoryBuffer(self.cert))
-            #s.load_key('signer_key.pem', 'signer.pem')
             p7 = s.sign(M2Crypto.BIO.MemoryBuffer(payload_data))
 
             out = M2Crypto.BIO.MemoryBuffer()
@@ -110,6 +112,9 @@ class MIMESigned(MIMEM2):
         self.cert = cert
 
     def verify(self):
+        """Verify the signatures of the message and returns a list of
+        the signing certificates in DER encoded form."""
+
         payload = self.get_payload()
         assert len(payload) == 2
         
@@ -137,7 +142,5 @@ class MIMESigned(MIMEM2):
                                            '\n'.join(list(difflib.unified_diff(data.split('\n'), v.split('\n'), n = 1))))
         signer_certs = []
         for cert in sk3:
-            signer_certs.append(
-                "-----BEGIN CERTIFICATE-----\n%s-----END CERTIFICATE-----" \
-                    % base64.encodestring(cert.as_der()))
+            signer_certs.append(cert.as_der())
         return signer_certs
