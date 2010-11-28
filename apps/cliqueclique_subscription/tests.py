@@ -24,7 +24,7 @@ class SimpleTest(django.test.TestCase):
 
     def reverse_update(self, update):
         tmp = {}
-        for attr in PROTOCOL_ATTRS + ('node_id',):
+        for attr in PROTOCOL_ATTRS:
             tmp['sender_' + attr] = update['receiver_' + attr]
             tmp['receiver_' + attr] = update['sender_' + attr]
         for key, value in tmp.iteritems():
@@ -34,7 +34,7 @@ class SimpleTest(django.test.TestCase):
     def test_child_links(self):
         n = "test_child_links"
 
-        local = save(cliqueclique_node.models.LocalNode(node_id=n+"local", public_key="X", address="localhost", private_key="X"))
+        local = save(cliqueclique_node.models.LocalNode(name=n+"_local", address="localhost"))
 
         root_doc = save(cliqueclique_document.models.Document(content=self.makedoc(n+"root content")))
 
@@ -62,8 +62,9 @@ class SimpleTest(django.test.TestCase):
     def test_upstream(self):
         n = "test_upstream"
 
-        local = save(cliqueclique_node.models.LocalNode(node_id=n+"local", public_key="X", address="localhost", private_key="X"))
-        peer = save(cliqueclique_node.models.Peer(local = local, node_id=n+"peer", public_key="X", address="localhost"))
+        local = save(cliqueclique_node.models.LocalNode(name=n+"_local", address="localhost"))
+        other = save(cliqueclique_node.models.LocalNode(name=n+"_peer", address="localhost"))
+        peer = save(cliqueclique_node.models.Peer(local = local, public_key=other.public_key, address=other.address))
 
         doc = save(cliqueclique_document.models.Document(content=self.makedoc("content")))
         local_sub = save(cliqueclique_subscription.models.DocumentSubscription(
@@ -98,17 +99,17 @@ class SimpleTest(django.test.TestCase):
         
         update.replace_header('sender_center_distance', str(int(update['sender_center_distance']) + 1))
         update.replace_header('sender_is_subscribed', "False")
-        peer_sub = peer_sub.receive(update)
+        peer_sub.receive(update)
         
         self.assertTrue(peer_sub.is_downstream())
 
     def test_child_distribution(self):
         n = "test_child_distribution"
-        local1 = save(cliqueclique_node.models.LocalNode(node_id=n+"node1", public_key="X", address="addr1", private_key="X"))
-        local2 = save(cliqueclique_node.models.LocalNode(node_id=n+"node2", public_key="Y", address="addr2", private_key="Y"))
+        local1 = save(cliqueclique_node.models.LocalNode(name=n+"_node1", address="addr1"))
+        local2 = save(cliqueclique_node.models.LocalNode(name=n+"_node2", address="addr2"))
 
-        peer1 = save(cliqueclique_node.models.Peer(local = local1, node_id=n+"node2", public_key="Y", address="addr2"))
-        peer2 = save(cliqueclique_node.models.Peer(local = local2, node_id=n+"node1", public_key="X", address="addr1"))
+        peer1 = save(cliqueclique_node.models.Peer(local = local1, public_key=local2.public_key, address=local2.address))
+        peer2 = save(cliqueclique_node.models.Peer(local = local2, public_key=local1.public_key, address=local1.address))
 
         root_doc = save(cliqueclique_document.models.Document(content=self.makedoc(n+"root content")))
         child_doc = save(cliqueclique_document.models.Document(content=self.makedoc(n+"child content", parent_document_id=root_doc.document_id)))

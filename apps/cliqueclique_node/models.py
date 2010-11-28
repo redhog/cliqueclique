@@ -3,8 +3,9 @@ import idmapper.models
 import django.contrib.auth.models
 from django.db.models import Q
 import utils.modelhelpers
+import utils.smime
 import settings
-
+import hashlib
 import email
 import email.mime.message
 import email.mime.application
@@ -12,16 +13,37 @@ import email.mime.text
 import email.mime.multipart
 
 class Node(idmapper.models.SharedMemoryModel):
-    node_id = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_HASH_LENGTH)
-    public_key = django.db.models.TextField()
-    address = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_ADDRESS_LENGTH)
+    __metaclass__ = utils.modelhelpers.SignalAutoConnectMeta
+
+    # max_length should really be the max-length supported by X509 for CN
+    name = django.db.models.CharField(max_length=200, blank=True)
+    node_id = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_HASH_LENGTH, blank=True)
+    public_key = utils.modelhelpers.Base64Field(blank=True)
+    address = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_ADDRESS_LENGTH, blank=True)
 
 class LocalNode(Node):
     owner = django.db.models.OneToOneField(django.contrib.auth.models.User, related_name="node", blank=True, null=True)
-    private_key = django.db.models.TextField()
+    private_key = utils.modelhelpers.Base64Field(blank=True)
+
+    @classmethod
+    def pre_save(cls, sender, instance, **kwargs):
+        if not instance.public_key:
+            instance.public_key, instance.private_key = utils.smime.make_self_signed_cert(instance.name, settings.CLIQUECLIQUE_KEY_SIZE)
+        if not instance.node_id:
+            h = hashlib.sha512()
+            h.update(instance.public_key)
+            instance.node_id = h.hexdigest()[:settings.CLIQUECLIQUE_HASH_LENGTH]
 
 class Peer(Node):
     local = django.db.models.ForeignKey(LocalNode, related_name="peers")
+
+    @classmethod
+    def pre_save(cls, sender, instance, **kwargs):
+        assert instance.public_key
+        if not instance.node_id:
+            h = hashlib.sha512()
+            h.update(instance.public_key)
+            instance.node_id = h.hexdigest()[:settings.CLIQUECLIQUE_HASH_LENGTH]
 
     @property
     def updates(self):

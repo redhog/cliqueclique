@@ -23,6 +23,9 @@ class VerifierContentError(VerifierError): pass
 def der2pem(der):
     return "-----BEGIN CERTIFICATE-----\n%s-----END CERTIFICATE-----" % base64.encodestring(der)
 
+def pem2der(pem):
+    return base64.decodestring(
+        ("\n" + pem + "\n").split("\n-----BEGIN", 1)[1].split("-----\n", 1)[1].split("\n-----END")[0])
 
 def make_self_signed_cert(CN, bits=1024):
     pk = M2Crypto.EVP.PKey()
