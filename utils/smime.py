@@ -15,12 +15,35 @@ import M2Crypto.X509
 
 import base64
 import difflib
+import time
 
 class VerifierError(Exception): pass
 class VerifierContentError(VerifierError): pass
 
 def der2pem(der):
     return "-----BEGIN CERTIFICATE-----\n%s-----END CERTIFICATE-----" % base64.encodestring(der)
+
+
+def make_self_signed_cert(CN, bits=1024):
+    pk = M2Crypto.EVP.PKey()
+    pk.assign_rsa(M2Crypto.RSA.gen_key(bits, 65537, lambda *args: None))
+
+    cert = M2Crypto.X509.X509()
+    cert.set_serial_number(1)
+    cert.set_version(2)    
+    cert.get_subject().CN = CN
+    start = M2Crypto.ASN1.ASN1_UTCTIME()
+    start.set_time(long(time.time()) + time.timezone)
+    cert.set_not_before(start)
+    end = M2Crypto.ASN1.ASN1_UTCTIME()
+    # This seems to be MAX possible date in X509, after that it wraps around!?
+    end.set_time(60 * 60 * 24 * 365 * 80)
+    cert.set_not_after(end)
+    cert.set_pubkey(pk)
+    cert.sign(pk, 'sha1')
+
+    return cert.as_der(), pk.as_der()
+
 
 _parse_headers = email.feedparser.FeedParser._parse_headers
 def parse_headers(self, lines):
