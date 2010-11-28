@@ -101,10 +101,6 @@ INSTALLED_APPS = [
     'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
-#    'cliqueclique_node',
-#    'cliqueclique_document',
-#    'cliqueclique_subscription',
-#    'cliqueclique_displaydocument',
 ]
 INSTALLED_APPS.extend(
     LOCAL_APPS
