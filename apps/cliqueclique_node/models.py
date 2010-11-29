@@ -21,6 +21,12 @@ class Node(idmapper.models.SharedMemoryModel):
     public_key = utils.modelhelpers.Base64Field(blank=True)
     address = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_ADDRESS_LENGTH, blank=True)
 
+    @classmethod
+    def node_id_from_public_key(cls, public_key):
+        h = hashlib.sha512()
+        h.update(public_key)
+        return h.hexdigest()[:settings.CLIQUECLIQUE_HASH_LENGTH]
+
 class LocalNode(Node):
     owner = django.db.models.OneToOneField(django.contrib.auth.models.User, related_name="node", blank=True, null=True)
     private_key = utils.modelhelpers.Base64Field(blank=True)
@@ -30,9 +36,7 @@ class LocalNode(Node):
         if not instance.public_key:
             instance.public_key, instance.private_key = utils.smime.make_self_signed_cert(instance.name, settings.CLIQUECLIQUE_KEY_SIZE)
         if not instance.node_id:
-            h = hashlib.sha512()
-            h.update(instance.public_key)
-            instance.node_id = h.hexdigest()[:settings.CLIQUECLIQUE_HASH_LENGTH]
+            instance.node_id = instance.node_id_from_public_key(instance.public_key)
 
 class Peer(Node):
     local = django.db.models.ForeignKey(LocalNode, related_name="peers")
@@ -41,9 +45,7 @@ class Peer(Node):
     def pre_save(cls, sender, instance, **kwargs):
         assert instance.public_key
         if not instance.node_id:
-            h = hashlib.sha512()
-            h.update(instance.public_key)
-            instance.node_id = h.hexdigest()[:settings.CLIQUECLIQUE_HASH_LENGTH]
+            instance.node_id = instance.node_id_from_public_key(instance.public_key)
 
     @property
     def updates(self):
@@ -56,8 +58,7 @@ class Peer(Node):
     def send(self):
         msg = email.mime.multipart.MIMEMultipart()
 
-        update = {'sender_node_id': self.local.node_id,
-                  'receiver_node_id': self.node_id}
+        update = {'receiver_node_id': self.node_id}
 
         keys = update.keys()
         keys.sort()
@@ -67,7 +68,12 @@ class Peer(Node):
         for sub in self.updates.all():
             msg.attach(sub.send())
         
-        return msg
+        signed = utils.smime.MIMESigned()
+        signed.set_private_key(utils.smime.der2pem(self.local.private_key, "PRIVATE KEY"))
+        signed.set_cert(utils.smime.der2pem(self.local.public_key))
+        signed.attach(msg)
+
+        return signed
 
     def receive(self, msg):
         import cliqueclique_document.models
@@ -78,11 +84,16 @@ class Peer(Node):
         if isinstance(msg, str):
             msg = email.message_from_string(msg)
 
+        cert = msg.verify()[0]
+        msg = msg.get_payload()[0]
+
+        sender_node_id = self.node_id_from_public_key(cert)
+
         for part in msg.get_payload():
             if part['message_type'] == 'subscription_update':
                 subs = cliqueclique_subscription.models.PeerDocumentSubscription.objects.filter(
                     local_subscription__document__document_id = part['document_id'],
-                    peer__node_id = msg['sender_node_id'],
+                    peer__node_id = sender_node_id,
                     local_subscription__node__node_id = msg['receiver_node_id']).all()
                 if subs:
                     sub = subs[0]

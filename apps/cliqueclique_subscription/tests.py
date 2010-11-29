@@ -4,6 +4,7 @@ import cliqueclique_document.models
 import cliqueclique_subscription.models
 import email.mime.text
 import email
+import utils.smime
 
 def save(obj):
     obj.save()
@@ -122,17 +123,20 @@ class SimpleTest(django.test.TestCase):
         root_peer_sub1 = save(cliqueclique_subscription.models.PeerDocumentSubscription(local_subscription = root_sub1, peer = peer1))
         root_peer_sub2 = save(cliqueclique_subscription.models.PeerDocumentSubscription(local_subscription = root_sub2, peer = peer2))
 
-        peer1.receive(peer2.send())
-        peer2.receive(peer1.send())
+#        print utils.smime.der2pem(peer2.local.public_key)
+#        print peer2.send().as_string()
+
+        peer1.receive(peer2.send().as_string())
+        peer2.receive(peer1.send().as_string())
 
         root_sub2.local_is_subscribed = True
         root_sub2.save()
 
-        peer1.receive(peer2.send())
+        peer1.receive(peer2.send().as_string())
         
         self.assertTrue(child_sub1.peer_subscription(peer1) is not None)
 
-        peer2.receive(peer1.send())
+        peer2.receive(peer1.send().as_string())
 
         self.assertTrue(len(root_sub2.children.all()) == 1)
         child_sub2 = root_sub2.children.all()[0]
