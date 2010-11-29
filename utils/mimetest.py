@@ -52,8 +52,8 @@ msg2.add_header("Msg", "msg2")
 msg1.attach(msg2)
 
 msg3 = utils.smime.MIMESigned()
-msg3.set_private_key(signer_key)
-msg3.set_cert(signer_cert)
+msg3.set_private_key(utils.smime.der2pem(utils.smime.pem2der(signer_key), "RSA PRIVATE KEY"))
+msg3.set_cert(utils.smime.der2pem(utils.smime.pem2der(signer_cert)))
 msg3.add_header("Msg", "msg3")
 
 msg4 = email.mime.multipart.MIMEMultipart()

@@ -16,12 +16,15 @@ import M2Crypto.X509
 import base64
 import difflib
 import time
+import re
 
 class VerifierError(Exception): pass
 class VerifierContentError(VerifierError): pass
 
-def der2pem(der):
-    return "-----BEGIN CERTIFICATE-----\n%s-----END CERTIFICATE-----" % base64.encodestring(der)
+der2pem_linewrapre = re.compile('(' + '.'*64 + ')')
+
+def der2pem(der, type="CERTIFICATE"):
+    return "-----BEGIN %s-----\n%s\n-----END %s-----" % (type, der2pem_linewrapre.sub('\\1\n', base64.encodestring(der).replace("\n", "")), type)
 
 def pem2der(pem):
     return base64.decodestring(
