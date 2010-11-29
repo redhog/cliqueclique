@@ -38,6 +38,7 @@ def make_self_signed_cert(CN, bits=1024):
     cert.set_serial_number(1)
     cert.set_version(2)    
     cert.get_subject().CN = CN
+    cert.get_issuer().CN = CN
     start = M2Crypto.ASN1.ASN1_UTCTIME()
     start.set_time(long(time.time()) + time.timezone)
     cert.set_not_before(start)
@@ -47,8 +48,9 @@ def make_self_signed_cert(CN, bits=1024):
     cert.set_not_after(end)
     cert.set_pubkey(pk)
     cert.sign(pk, 'sha1')
+    assert cert.verify(pk)
 
-    return cert.as_der(), pk.as_der()
+    return cert.as_der(), pem2der(pk.as_pem(None))  #cert.as_der(), pk.as_der()
 
 
 _parse_headers = email.feedparser.FeedParser._parse_headers
