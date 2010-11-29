@@ -5,6 +5,7 @@
 import email
 import email.generator
 import email.mime.multipart
+import email.mime.text
 import email.header
 import email.feedparser
 
@@ -50,7 +51,8 @@ def make_self_signed_cert(CN, bits=1024):
     cert.sign(pk, 'sha1')
     assert cert.verify(pk)
 
-    return cert.as_der(), pem2der(pk.as_pem(None))  #cert.as_der(), pk.as_der()
+    # pk.as_der() returns wrong data - maybe public key?
+    return cert.as_der(), pem2der(pk.as_pem(None))
 
 
 _parse_headers = email.feedparser.FeedParser._parse_headers
@@ -64,9 +66,10 @@ def parse_headers(self, lines):
         cur = self._cur
         self._cur = meth()
         self._msgstack[-1] = self._cur
-        payload = self._msgstack[-2].get_payload()
-        payload.remove(cur)
-        payload.append(self._cur)
+        if len(self._msgstack) > 1:
+            payload = self._msgstack[-2].get_payload()
+            payload.remove(cur)
+            payload.append(self._cur)
         for key in self._cur.keys():
             del self._cur[key]
         for key, val in cur.items():
@@ -74,6 +77,9 @@ def parse_headers(self, lines):
     return res
 email.feedparser.FeedParser._parse_headers = parse_headers
 
+def get_message_class_multipart(self):
+    return email.mime.multipart.MIMEMultipart()
+email.feedparser.FeedParser._get_message_class_multipart = get_message_class_multipart
 
 def get_message_class_multipart_signed(self):
     return MIMESigned()
@@ -83,6 +89,29 @@ email.feedparser.FeedParser._get_message_class_multipart_signed = get_message_cl
 def handle_multipart_signed(self, msg):
     msg._write(self)
 email.generator.Generator._handle_multipart_signed = handle_multipart_signed
+
+# Bugfix: if epiloque is None, no new-line is added at the end of the
+# message, but the feedparser reads such a message as having an
+# epiloque of '', which then when printed again results in a message
+# that ends in a new-line... This makes the thingy idempotent...
+# Same thing with an empty payload...
+_handle_multipart = email.generator.Generator._handle_multipart
+def handle_multipart(self, msg):
+    try:
+        epilogue = msg.epilogue
+        payload = msg.get_payload()
+        if msg.epilogue == '':
+            msg.epilogue = None
+        if payload == []:
+            empty = email.mime.text.MIMEText('')
+            for key in empty.keys():
+                del empty[key]
+            msg.set_payload([empty])
+        return _handle_multipart(self, msg)
+    finally:
+        msg.set_payload(payload)
+        msg.epilogue = epilogue
+email.generator.Generator._handle_multipart = handle_multipart
 
 class MIMEM2(email.mime.multipart.MIMEMultipart):
     def _write_headers(self, gen):
@@ -169,8 +198,8 @@ class MIMESigned(MIMEM2):
         if data_bio is not None:
             data = data_bio.read()
             if data != v:
-                raise VerifierContentError("message verification failed: payload vs SMIME.verify output diff\n%s" %
-                                           '\n'.join(list(difflib.unified_diff(data.split('\n'), v.split('\n'), n = 1))))
+                raise VerifierContentError("message verification failed: payload vs SMIME.verify output diff\n%s\n\n--------{Payload}--------\n%s\n--------{end payload}--------" %
+                                           ('\n'.join(list(difflib.unified_diff(data.split('\n'), v.split('\n'), n = 1))), data))
         signer_certs = []
         for cert in sk3:
             signer_certs.append(cert.as_der())
