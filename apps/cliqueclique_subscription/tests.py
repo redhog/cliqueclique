@@ -126,17 +126,17 @@ class SimpleTest(django.test.TestCase):
 #        print utils.smime.der2pem(peer2.local.public_key)
 #        print peer2.send().as_string()
 
-        peer1.receive(peer2.send().as_string())
-        peer2.receive(peer1.send().as_string())
+        local1.receive(peer2.send().as_string())
+        local2.receive(peer1.send().as_string())
 
         root_sub2.local_is_subscribed = True
         root_sub2.save()
 
-        peer1.receive(peer2.send().as_string())
+        local1.receive(peer2.send().as_string())
         
         self.assertTrue(child_sub1.peer_subscription(peer1) is not None)
 
-        peer2.receive(peer1.send().as_string())
+        local2.receive(peer1.send().as_string())
 
         self.assertTrue(len(root_sub2.children.all()) == 1)
         child_sub2 = root_sub2.children.all()[0]

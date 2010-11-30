@@ -38,6 +38,32 @@ class LocalNode(Node):
         if not instance.node_id:
             instance.node_id = instance.node_id_from_public_key(instance.public_key)
 
+    def send(self):
+        for peer in self.peers.all():
+            data = peer.send()
+            if data is not None:
+                yield data
+    
+    def receive(self, msg):
+        if isinstance(msg, unicode):
+            msg = str(msg)
+        if isinstance(msg, str):
+            msg = email.message_from_string(msg)
+
+        cert = msg.verify()[0]
+        msg = msg.get_payload()[0]
+
+        sender_node_id = self.node_id_from_public_key(cert)
+        peers = self.peers.filter(node_id = sender_node_id).all()
+        if peers:
+            peer = peers[0]
+        else:
+            peer = Peer(local=self, node_id = sender_node_id)
+
+        for part in msg.get_payload():
+            peer.receive(part)
+        
+
 class Peer(Node):
     local = django.db.models.ForeignKey(LocalNode, related_name="peers")
 
@@ -56,6 +82,10 @@ class Peer(Node):
         return self.subscriptions.filter(has_copy=False)
 
     def send(self):
+        updates = self.updates.all()
+        if len(updates) == 0:
+            return None
+
         msg = email.mime.multipart.MIMEMultipart()
 
         update = {'receiver_node_id': self.node_id}
@@ -65,7 +95,7 @@ class Peer(Node):
         for key in keys:
             msg.add_header(key, str(update[key]))
 
-        for sub in self.updates.all():
+        for sub in updates:
             msg.attach(sub.send())
         
         signed = utils.smime.MIMESigned()
@@ -75,50 +105,38 @@ class Peer(Node):
 
         return signed
 
-    def receive(self, msg):
+    def receive(self, part):
         import cliqueclique_document.models
         import cliqueclique_subscription.models
 
-        if isinstance(msg, unicode):
-            msg = str(msg)
-        if isinstance(msg, str):
-            msg = email.message_from_string(msg)
-
-        cert = msg.verify()[0]
-        msg = msg.get_payload()[0]
-
-        sender_node_id = self.node_id_from_public_key(cert)
-
-        for part in msg.get_payload():
-            if part['message_type'] == 'subscription_update':
-                subs = cliqueclique_subscription.models.PeerDocumentSubscription.objects.filter(
-                    local_subscription__document__document_id = part['document_id'],
-                    peer__node_id = sender_node_id,
-                    local_subscription__node__node_id = msg['receiver_node_id']).all()
-                if subs:
-                    sub = subs[0]
-                else:
-                    local_subs = cliqueclique_subscription.models.DocumentSubscription.objects.filter(
-                        document__document_id = part['document_id'],
-                        node__node_id = msg['receiver_node_id']).all()
-                    if local_subs:
-                        local_sub = local_subs[0]
-                    else:
-                        docs = cliqueclique_document.models.Document.objects.filter(
-                            document_id = part['document_id']).all()
-                        if docs:
-                            doc = docs[0]
-                        else:
-                            doc = cliqueclique_document.models.Document(content = part.get_payload())
-                            doc.save()
-                        local_sub = cliqueclique_subscription.models.DocumentSubscription(node = self.local, document = doc)
-                        local_sub.save()
-
-                    sub = cliqueclique_subscription.models.PeerDocumentSubscription(
-                        local_subscription = local_sub,
-                        peer = self)
-                    sub.save()
-                sub.receive(part)
+        if part['message_type'] == 'subscription_update':
+            subs = cliqueclique_subscription.models.PeerDocumentSubscription.objects.filter(
+                local_subscription__document__document_id = part['document_id'],
+                peer = self,
+                local_subscription__node = self.local).all()
+            if subs:
+                sub = subs[0]
             else:
-                raise "Unknown message type %s" % (part['message_type'],)
-            
+                local_subs = cliqueclique_subscription.models.DocumentSubscription.objects.filter(
+                    document__document_id = part['document_id'],
+                    node = self.local).all()
+                if local_subs:
+                    local_sub = local_subs[0]
+                else:
+                    docs = cliqueclique_document.models.Document.objects.filter(
+                        document_id = part['document_id']).all()
+                    if docs:
+                        doc = docs[0]
+                    else:
+                        doc = cliqueclique_document.models.Document(content = part.get_payload())
+                        doc.save()
+                    local_sub = cliqueclique_subscription.models.DocumentSubscription(node = self.local, document = doc)
+                    local_sub.save()
+
+                sub = cliqueclique_subscription.models.PeerDocumentSubscription(
+                    local_subscription = local_sub,
+                    peer = self)
+                sub.save()
+            sub.receive(part)
+        else:
+            raise "Unknown message type %s" % (part['message_type'],)
