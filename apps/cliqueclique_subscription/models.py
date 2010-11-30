@@ -111,6 +111,19 @@ class DocumentSubscription(BaseDocumentSubscription):
             peer_subscription.update_child_subscriptions()
             peer_subscription.set_dirty()
 
+    def send(self, include_body = False):
+        msg = email.mime.multipart.MIMEMultipart()
+        msg.add_header('message_type', 'subscription_update')
+        msg.add_header('document_id', self.document.document_id)
+
+        for attr in self.PROTOCOL_ATTRS:
+            msg.add_header('sender_' + attr, str(getattr(self, attr)))
+
+        if include_body:
+            msg.attach(self.document.as_mime)
+
+        return msg
+
 
 class PeerDocumentSubscription(BaseDocumentSubscription):
     # This is what a peer knows about us, as well as what we know about them
@@ -201,26 +214,11 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
         self.set_dirty()
         self.save()
 
-    def send(self):
-        local = self.local_subscription
+    def send(self, export = False):
+        msg = self.local_subscription.send(not self.has_copy or export)
+
         peer = curryprefix(self, "peer_")
-        
-        update = {}
-        update['message_type'] = 'subscription_update'
-        update['document_id'] = self.local_subscription.document.document_id
-
         for attr in self.PROTOCOL_ATTRS:
-            update['sender_' + attr] = getattr(local, attr)
-            update['receiver_' + attr] = getattr(peer, attr)
-
-        msg = email.mime.multipart.MIMEMultipart()
-        
-        keys = update.keys()
-        keys.sort()
-        for key in keys:
-            msg.add_header(key, str(update[key]))
-
-        if not self.has_copy:
-            msg.attach(self.local_subscription.document.as_mime)
+            msg.add_header('receiver_' + attr, str(getattr(peer, attr)))
 
         return msg
