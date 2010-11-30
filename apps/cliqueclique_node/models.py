@@ -75,6 +75,12 @@ class LocalNode(Node):
             node_id = container_msg['receiver_node_id']
             ).receive(msg)
         
+    def sign(self, msg):
+        signed = utils.smime.MIMESigned()
+        signed.set_private_key(utils.smime.der2pem(self.private_key, "PRIVATE KEY"))
+        signed.set_cert(utils.smime.der2pem(self.public_key))
+        signed.attach(msg)
+        return signed
 
 class Peer(Node):
     local = django.db.models.ForeignKey(LocalNode, related_name="peers")
@@ -110,12 +116,7 @@ class Peer(Node):
         for sub in updates:
             msg.attach(sub.send())
         
-        signed = utils.smime.MIMESigned()
-        signed.set_private_key(utils.smime.der2pem(self.local.private_key, "PRIVATE KEY"))
-        signed.set_cert(utils.smime.der2pem(self.local.public_key))
-        signed.attach(msg)
-
-        return signed
+        return self.local.sign(msg)
 
     def receive(self, part):
         import cliqueclique_document.models
