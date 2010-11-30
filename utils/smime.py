@@ -19,6 +19,13 @@ import difflib
 import time
 import re
 
+def message_from_anything(msg):
+    if isinstance(msg, unicode):
+        msg = str(msg)
+    if isinstance(msg, str):
+        msg = email.message_from_string(msg)
+    return msg
+
 class VerifierError(Exception): pass
 class VerifierContentError(VerifierError): pass
 

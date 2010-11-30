@@ -45,23 +45,35 @@ class LocalNode(Node):
                 yield data
     
     def receive(self, msg):
-        if isinstance(msg, unicode):
-            msg = str(msg)
-        if isinstance(msg, str):
-            msg = email.message_from_string(msg)
-
+        msg = utils.smime.message_from_anything(msg)
         cert = msg.verify()[0]
-        msg = msg.get_payload()[0]
+        container_msg = msg.get_payload()[0]
 
         sender_node_id = self.node_id_from_public_key(cert)
+
         peers = self.peers.filter(node_id = sender_node_id).all()
         if peers:
             peer = peers[0]
         else:
             peer = Peer(local=self, node_id = sender_node_id)
 
-        for part in msg.get_payload():
+        for part in container_msg.get_payload():
             peer.receive(part)
+
+    @classmethod
+    def send_any(cls):
+        for self in cls.objects.all():
+            for msg in self.send():
+                yield msg
+
+    @classmethod
+    def receive_any(cls, msg):
+        msg = utils.smime.message_from_anything(msg)
+        container_msg = msg.get_payload()[0]
+
+        self = cls.objects.get(
+            node_id = container_msg['receiver_node_id']
+            ).receive(msg)
         
 
 class Peer(Node):
