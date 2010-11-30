@@ -129,6 +129,8 @@ class DocumentSubscription(BaseDocumentSubscription):
         msg.attach(self.send(True))
         return self.node.sign(msg)
 
+    def __unicode__(self):
+        return "%s @ %s" % (self.document, self.node)
 
 class PeerDocumentSubscription(BaseDocumentSubscription):
     # This is what a peer knows about us, as well as what we know about them
@@ -227,3 +229,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
             msg.add_header('receiver_' + attr, str(getattr(peer, attr)))
 
         return msg
+
+
+    def __unicode__(self):
+        return "%s:s knowledge about %s" % (self.peer, self.local_subscription)

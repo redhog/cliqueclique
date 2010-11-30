@@ -35,3 +35,10 @@ class Document(idmapper.models.SharedMemoryModel):
         mime = instance.as_mime
         instance.parent_document_id = mime['parent_document_id']
         instance.child_document_id = mime['child_document_id']
+
+    def __unicode__(self):
+        try:
+            subject = self.as_mime['subject']
+        except:
+            subject = self.content[:10] + ".."
+        return "%s [%s..]" % (subject, self.document_id[:10])

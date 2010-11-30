@@ -29,6 +29,9 @@ class Node(idmapper.models.SharedMemoryModel):
         h.update(public_key)
         return h.hexdigest()[:settings.CLIQUECLIQUE_HASH_LENGTH]
 
+    def __unicode__(self):
+        return "%s %s [%s..]" % (type(self).__name__, self.name, self.node_id[:10])
+
 class LocalNode(Node):
     owner = django.db.models.OneToOneField(django.contrib.auth.models.User, related_name="node", blank=True, null=True)
     private_key = utils.modelhelpers.Base64Field(blank=True)
