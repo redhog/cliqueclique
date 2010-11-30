@@ -204,10 +204,10 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
                      # what's true
         peer = curryprefix(self, "peer_")
 
-        local.is_subscribed = update['receiver_is_subscribed'].lower() == "true"
-        local.center_node_is_subscribed = update['receiver_center_node_is_subscribed'].lower() == "true"
-        local.center_node_id = update['receiver_center_node_id']
-        local.center_distance = int(update['receiver_center_distance'])
+        if 'receiver_is_subscribed' in update: local.is_subscribed = update['receiver_is_subscribed'].lower() == "true"
+        if 'receiver_center_node_is_subscribed' in update: local.center_node_is_subscribed = update['receiver_center_node_is_subscribed'].lower() == "true"
+        if 'receiver_center_node_id' in update: local.center_node_id = update['receiver_center_node_id']
+        if 'receiver_center_distance' in update: local.center_distance = int(update['receiver_center_distance'])
 
         peer.is_subscribed = update['sender_is_subscribed'].lower() == "true"
         peer.center_node_is_subscribed = update['sender_center_node_is_subscribed'].lower() == "true"

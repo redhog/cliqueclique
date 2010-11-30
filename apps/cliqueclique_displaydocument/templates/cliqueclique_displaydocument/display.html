@@ -26,4 +26,9 @@ Comment:
   <input type="submit" name="post" value="Post">
 </form>
 
-<a href="{{ document_subscription.document.document_id }}/download">download</a>
+<a href="{{ document_subscription.document.document_id }}/download">Export</a>
+
+<form method="POST" enctype="multipart/form-data">
+  {% csrf_token %}
+  Import: <input type="file" name="file"><input type="submit" name="import" value="Import">
+</form>

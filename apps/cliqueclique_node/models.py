@@ -55,7 +55,8 @@ class LocalNode(Node):
         if peers:
             peer = peers[0]
         else:
-            peer = Peer(local=self, node_id = sender_node_id)
+            peer = Peer(local=self, node_id = sender_node_id, public_key=cert)
+            peer.save()
 
         for part in container_msg.get_payload():
             peer.receive(part)
