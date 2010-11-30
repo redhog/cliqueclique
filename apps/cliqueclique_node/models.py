@@ -40,9 +40,9 @@ class LocalNode(Node):
 
     def send(self):
         for peer in self.peers.all():
-            data = peer.send()
-            if data is not None:
-                yield data
+            msg = peer.send()
+            if msg is not None:
+                yield (msg.as_string(), peer.address)
     
     def receive(self, msg):
         msg = utils.smime.message_from_anything(msg)
