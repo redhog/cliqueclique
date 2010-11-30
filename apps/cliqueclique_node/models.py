@@ -11,6 +11,8 @@ import email.mime.message
 import email.mime.application
 import email.mime.text
 import email.mime.multipart
+import M2Crypto.X509
+import M2Crypto.BIO
 
 class Node(idmapper.models.SharedMemoryModel):
     __metaclass__ = utils.modelhelpers.SignalAutoConnectMeta
@@ -91,6 +93,12 @@ class Peer(Node):
         assert instance.public_key
         if not instance.node_id:
             instance.node_id = instance.node_id_from_public_key(instance.public_key)
+        if not instance.name:
+            cert_data = M2Crypto.BIO.MemoryBuffer(utils.smime.der2pem(instance.public_key))
+            cert = M2Crypto.X509.load_cert_bio(cert_data)
+            subject = cert.get_subject()
+            instance.name = subject.CN
+
 
     @property
     def updates(self):
