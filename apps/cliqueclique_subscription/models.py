@@ -124,6 +124,11 @@ class DocumentSubscription(BaseDocumentSubscription):
 
         return msg
 
+    def export(self):
+        msg = email.mime.multipart.MIMEMultipart()
+        msg.attach(self.send(True))
+        return self.node.sign(msg)
+
 
 class PeerDocumentSubscription(BaseDocumentSubscription):
     # This is what a peer knows about us, as well as what we know about them

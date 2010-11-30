@@ -31,4 +31,4 @@ def download(request, document_id):
     doc = cliqueclique_subscription.models.DocumentSubscription.objects.get(
         node = request.user.node,
         document__document_id=document_id)
-    return django.http.HttpResponse(doc.send(True).as_string(), mimetype="text/plain")
+    return django.http.HttpResponse(doc.export().as_string(), mimetype="text/plain")
