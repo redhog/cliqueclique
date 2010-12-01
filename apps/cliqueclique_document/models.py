@@ -15,7 +15,7 @@ import utils.modelhelpers
 class Document(idmapper.models.SharedMemoryModel):
     __metaclass__ = utils.modelhelpers.SignalAutoConnectMeta
 
-    document_id = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_HASH_LENGTH)
+    document_id = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_HASH_LENGTH, blank=True)
     parent_document_id = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_HASH_LENGTH, null=True, blank=True)
     child_document_id = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_HASH_LENGTH, null=True, blank=True)
     content = django.db.models.TextField()
@@ -40,5 +40,7 @@ class Document(idmapper.models.SharedMemoryModel):
         try:
             subject = self.as_mime['subject']
         except:
+            subject = None
+        if not subject:
             subject = self.content[:10] + ".."
         return "%s [%s..]" % (subject, self.document_id[:10])

@@ -13,6 +13,8 @@ import email.mime.text
 import email.mime.multipart
 import M2Crypto.X509
 import M2Crypto.BIO
+import i2p.socket
+import utils.i2p
 
 class Node(idmapper.models.SharedMemoryModel):
     __metaclass__ = utils.modelhelpers.SignalAutoConnectMeta
@@ -38,6 +40,10 @@ class LocalNode(Node):
 
     @classmethod
     def pre_save(cls, sender, instance, **kwargs):
+        if not instance.address:
+            sock = i2p.socket.socket(settings.CLIQUECLIQUE_I2P_SESSION_NAME, i2p.socket.SOCK_DGRAM)
+            instance.address = utils.i2p.dest2b32(sock.dest)
+            sock.close()
         if not instance.public_key:
             instance.public_key, instance.private_key = utils.smime.make_self_signed_cert(instance.name, instance.address, settings.CLIQUECLIQUE_KEY_SIZE)
         if not instance.node_id:
@@ -87,6 +93,13 @@ class LocalNode(Node):
         signed.set_cert(utils.smime.der2pem(self.public_key))
         signed.attach(msg)
         return signed
+
+def user_post_save(sender, instance, **kwargs):
+    try:
+        instance.node
+    except:
+        LocalNode(owner = instance, name = instance.username).save()
+django.db.models.signals.post_save.connect(user_post_save, sender=django.contrib.auth.models.User)
 
 class Peer(Node):
     local = django.db.models.ForeignKey(LocalNode, related_name="peers")
