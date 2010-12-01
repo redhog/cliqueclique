@@ -39,7 +39,7 @@ class LocalNode(Node):
     @classmethod
     def pre_save(cls, sender, instance, **kwargs):
         if not instance.public_key:
-            instance.public_key, instance.private_key = utils.smime.make_self_signed_cert(instance.name, settings.CLIQUECLIQUE_KEY_SIZE)
+            instance.public_key, instance.private_key = utils.smime.make_self_signed_cert(instance.name, instance.address, settings.CLIQUECLIQUE_KEY_SIZE)
         if not instance.node_id:
             instance.node_id = instance.node_id_from_public_key(instance.public_key)
 
@@ -96,12 +96,10 @@ class Peer(Node):
         assert instance.public_key
         if not instance.node_id:
             instance.node_id = instance.node_id_from_public_key(instance.public_key)
-        if not instance.name:
-            cert_data = M2Crypto.BIO.MemoryBuffer(utils.smime.der2pem(instance.public_key))
-            cert = M2Crypto.X509.load_cert_bio(cert_data)
-            subject = cert.get_subject()
-            instance.name = subject.CN
-
+        if not instance.name or not instance.address:
+            data = utils.smime.cert_get_data(instance.public_key)
+            if not instance.name: instance.name = data['name']
+            if not instance.address: instance.address = data['address']
 
     @property
     def updates(self):

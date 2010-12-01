@@ -38,15 +38,21 @@ def pem2der(pem):
     return base64.decodestring(
         ("\n" + pem + "\n").split("\n-----BEGIN", 1)[1].split("-----\n", 1)[1].split("\n-----END")[0])
 
-def make_self_signed_cert(CN, bits=1024):
+def make_self_signed_cert(name, address, bits=1024):
     pk = M2Crypto.EVP.PKey()
     pk.assign_rsa(M2Crypto.RSA.gen_key(bits, 65537, lambda *args: None))
 
     cert = M2Crypto.X509.X509()
     cert.set_serial_number(1)
     cert.set_version(2)    
-    cert.get_subject().CN = CN
-    cert.get_issuer().CN = CN
+
+    cert.get_subject().CN = name
+    cert.get_issuer().CN = name
+
+    ext = M2Crypto.X509.new_extension('subjectAltName', 'URI:clique://' + address)
+    ext.set_critical(0)
+    cert.add_ext(ext)
+
     start = M2Crypto.ASN1.ASN1_UTCTIME()
     start.set_time(long(time.time()) + time.timezone)
     cert.set_not_before(start)
@@ -54,13 +60,23 @@ def make_self_signed_cert(CN, bits=1024):
     # This seems to be MAX possible date in X509, after that it wraps around!?
     end.set_time(60 * 60 * 24 * 365 * 80)
     cert.set_not_after(end)
+
     cert.set_pubkey(pk)
     cert.sign(pk, 'sha1')
+
     assert cert.verify(pk)
 
     # pk.as_der() returns wrong data - maybe public key?
     return cert.as_der(), pem2der(pk.as_pem(None))
 
+def cert_get_data(cert):
+    cert_data = M2Crypto.BIO.MemoryBuffer(der2pem(cert))
+    cert = M2Crypto.X509.load_cert_bio(cert_data)
+    subject = cert.get_subject()
+    data = {}
+    data['name'] = subject.CN
+    data['address'] = cert.get_ext('subjectAltName').get_value()[len('URI:clique://'):]
+    return data
 
 _parse_headers = email.feedparser.FeedParser._parse_headers
 def parse_headers(self, lines):
