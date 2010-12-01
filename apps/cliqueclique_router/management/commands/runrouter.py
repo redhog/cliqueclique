@@ -15,6 +15,22 @@ import settings
 import utils.i2p
 import utils.smime
 
+def msg2debug(msg):
+    msg = utils.smime.message_from_anything(msg)
+    cert = msg.verify()[0]
+    container_msg = msg.get_payload()[0]
+
+    sender_node_id = cliqueclique_node.models.Node.node_id_from_public_key(cert)
+    receiver_node_id = container_msg['receiver_node_id']
+
+    print "%s <- %s" % (receiver_node_id, sender_node_id)
+    for part in container_msg.get_payload():
+        print "  %s" % part['document_id']
+        for prefix in ('sender', 'receiver'):
+            for attr in cliqueclique_subscription.models.BaseDocumentSubscription.PROTOCOL_ATTRS:
+                name = '%s_%s' % (prefix, attr)
+                print "    %s = %s" % (name, part[name])
+
 class Command(django.core.management.commands.runserver.Command):
     args = ''
 
@@ -47,7 +63,7 @@ class Command(django.core.management.commands.runserver.Command):
                     (msg, address) = sock.recvfrom(-1)
 
                     print "========{From %s}========" % (utils.i2p.dest2b32(address),)
-#                    print msg
+                    msg2debug(msg)
                     cliqueclique_node.models.LocalNode.receive_any(msg)
 
         class Sender(threading.Thread):
@@ -56,7 +72,8 @@ class Command(django.core.management.commands.runserver.Command):
                 while True:
                     for (msg, address) in cliqueclique_node.models.LocalNode.send_any():
                         print "========{To %s}========" % (address,)
-#                        print msg
+                        msg2debug(msg)
+
                         sock.sendto(msg, 0, address)
                         time.sleep(5)
                     time.sleep(5)

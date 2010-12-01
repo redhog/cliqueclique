@@ -15,6 +15,7 @@ import M2Crypto.X509
 import M2Crypto.BIO
 import i2p.socket
 import utils.i2p
+import utils.hash
 
 class Node(idmapper.models.SharedMemoryModel):
     __metaclass__ = utils.modelhelpers.SignalAutoConnectMeta
@@ -27,9 +28,7 @@ class Node(idmapper.models.SharedMemoryModel):
 
     @classmethod
     def node_id_from_public_key(cls, public_key):
-        h = hashlib.sha512()
-        h.update(public_key)
-        return h.hexdigest()[:settings.CLIQUECLIQUE_HASH_LENGTH]
+        return utils.hash.has_id_from_data(public_key)
 
     def __unicode__(self):
         return "%s %s [%s..]" % (type(self).__name__, self.name, self.node_id[:10])
