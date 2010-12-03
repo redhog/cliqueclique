@@ -39,3 +39,39 @@ too
 My current django code supports multiple nodes in one installation,
 each node connected to a django user object It's a rather simple idea
 really. Only drawback I can think of is overhead :S
+
+
+Algorithms
+-----------
+
+Three-valued sync
+------------------
+
+Problem: Two nodes have some data each. They also need to have a current copy of the other nodes' data.
+Solution:
+
+Each node has three data copies:
+ local: Its own data
+ peer: a copy of the other nodes' data
+ localcopy: copy of the other nodes' copy of its own data
+
+In addition it has a counter.
+
+At each node:
+
+While localcopy != local:
+   Send (local, peer) to other node
+   Wait some taime
+
+When receiving:
+   if received.peer != localcopy:
+     counter = 0
+   else:
+     counter += 1
+
+   Copy received.local to peer
+   Copy received.peer to localcopy
+
+   if counter modulo 2 == 0:
+     Send (local, peer) to other node
+
