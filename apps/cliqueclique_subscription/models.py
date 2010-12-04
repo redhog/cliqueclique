@@ -139,6 +139,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
     peer = django.db.models.ForeignKey(cliqueclique_node.models.Peer, related_name="subscriptions")
 
     is_dirty = django.db.models.BooleanField(default = True)
+    update_copies_received = django.db.models.IntegerField(default = 0)
 
     has_copy = django.db.models.BooleanField(default = False)
     is_subscribed = django.db.models.BooleanField(default = False)
@@ -182,6 +183,14 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
                     PeerDocumentSubscription(local_subscription=child, peer=self.peer, is_dirty=True).save()
 
     def set_dirty(self):
+        # Change 2 to a higher number if you gets lots of spurious
+        # resends (e.g. latency is way higher than resend-timout of
+        # peer). Maybe we should detect that dynamically?
+        if self.update_copies_received % 2 == 0:
+            print "DIRTY BECAUSE a need to send ACK"
+            self.is_dirty = True
+            self.save()
+
         for attr in self.PROTOCOL_ATTRS:
             if getattr(self, attr) != getattr(self.local_subscription, attr):
                 print "DIRTY BECAUSE %s/%s.%s: peer=%s != local=%s" % (self.local_subscription.node.node_id, self.peer.node_id, attr, getattr(self, attr), getattr(self.local_subscription, attr))
@@ -200,21 +209,42 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
             elif self.is_downstream(1):
                 self.local_subscription.update_subscription_from_downstream_peer(self)
 
+    @classmethod
+    def deserialize_update(cls, update):
+        res = {}
+        for prefix in ('sender', 'receiver'):
+            if prefix+'_is_subscribed' in update:
+                name = prefix+'_is_subscribed'; res[name] = update[name].lower() == 'true'
+                name = prefix+'_center_node_is_subscribed'; res[name] = update[name].lower() == 'true'
+                name = prefix+'_center_node_id'; res[name] = update[name]
+                name = prefix+'_center_distance'; res[name] = int(update[name])
+        return res
+
     def receive(self, update):
+        update = self.deserialize_update(update)
+
         local = self # yes, not self.local_subscription - this is
                      # about what the other node knows, not about
                      # what's true
         peer = curryprefix(self, "peer_")
 
-        if 'receiver_is_subscribed' in update: local.is_subscribed = update['receiver_is_subscribed'].lower() == "true"
-        if 'receiver_center_node_is_subscribed' in update: local.center_node_is_subscribed = update['receiver_center_node_is_subscribed'].lower() == "true"
-        if 'receiver_center_node_id' in update: local.center_node_id = update['receiver_center_node_id']
-        if 'receiver_center_distance' in update: local.center_distance = int(update['receiver_center_distance'])
+        is_change = False
+        if 'receiver_is_subscribed' not in update:
+            is_change = True
+        else:
+            for attr in self.PROTOCOL_ATTRS:
+                if getattr(local, attr) != update['receiver_' + attr]:
+                    is_change = True
+                setattr(local, attr, update['receiver_' + attr])
+        for attr in self.PROTOCOL_ATTRS:
+            if getattr(peer, attr) != update['sender_' + attr]:
+                is_change = True
+            setattr(peer, attr, update['sender_' + attr])
 
-        peer.is_subscribed = update['sender_is_subscribed'].lower() == "true"
-        peer.center_node_is_subscribed = update['sender_center_node_is_subscribed'].lower() == "true"
-        peer.center_node_id = update['sender_center_node_id']
-        peer.center_distance = int(update['sender_center_distance'])
+        if is_change:
+            self.update_copies_received = 0
+        else:
+            self.update_copies_received += 1
 
         self.has_copy = True
         self.is_dirty = False

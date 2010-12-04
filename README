@@ -42,14 +42,19 @@ really. Only drawback I can think of is overhead :S
 
 
 Algorithms
------------
+===========
 
 Three-valued sync
 ------------------
 
-Problem: Two nodes have some data each. They also need to have a current copy of the other nodes' data.
-Solution:
+Problem
+--------
+Two nodes have some data each. They also need to have a current copy
+of the other nodes' data. (Data packets sent between nodes can be lost
+or duplicated)
 
+Solution
+----------
 Each node has three data copies:
  local: Its own data
  peer: a copy of the other nodes' data
@@ -59,9 +64,9 @@ In addition it has a counter.
 
 At each node:
 
-While localcopy != local:
-   Send (local, peer) to other node
-   Wait some taime
+When localcopy != local:
+  Send (local, peer) to other node
+  Wait some time
 
 When receiving:
    if received.peer != localcopy:

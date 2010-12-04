@@ -145,6 +145,7 @@ class Peer(Node):
         import cliqueclique_subscription.models
 
         if part['message_type'] == 'subscription_update':
+            is_new = False
             subs = cliqueclique_subscription.models.PeerDocumentSubscription.objects.filter(
                 local_subscription__document__document_id = part['document_id'],
                 peer = self,
@@ -167,11 +168,20 @@ class Peer(Node):
                         doc.save()
                     local_sub = cliqueclique_subscription.models.DocumentSubscription(node = self.local, document = doc)
                     local_sub.save()
+                    is_new = True
 
                 sub = cliqueclique_subscription.models.PeerDocumentSubscription(
                     local_subscription = local_sub,
                     peer = self)
                 sub.save()
             sub.receive(part)
+
+            # We don't want the other node to continue spamming us
+            # about this, so make sure we send them something so they
+            # know we now have a copy, to make them stop :)
+
+            if is_new:
+                sub.is_dirty = True
+                sub.save()
         else:
             raise "Unknown message type %s" % (part['message_type'],)
