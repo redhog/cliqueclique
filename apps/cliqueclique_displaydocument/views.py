@@ -38,7 +38,7 @@ def set_document_flags(request, document_id):
     sub = cliqueclique_subscription.models.DocumentSubscription.objects.get(
         node = request.user.node,
         document__document_id = document_id)
-    for attr in ('bookmarked', 'read'):
+    for attr in ('bookmarked', 'read', 'local_is_subscribed'):
         if attr in request.POST:
             attrvalue = request.POST[attr]
         elif attr in request.GET:

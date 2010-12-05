@@ -1,0 +1,18 @@
+.menubar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 200pt;
+  border-right: 1pt solid black;
+  padding: 10pt;
+}
+
+.document_area {
+  position: absolute;
+  left: 221pt;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  padding: 10pt;
+}

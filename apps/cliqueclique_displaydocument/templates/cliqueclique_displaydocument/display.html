@@ -1,17 +1,35 @@
 {% load document %}
+{% load i18n %}
 
-<div class="bookmarks">
-  <h1>Bookmarks</h1>
-  {% for bookmark in bookmarks %}
-    <a href="{% url cliqueclique_displaydocument.views.display_document document_id=bookmark.document.document_id %}">{{ bookmark.document.as_mime.subject}}</a>
-  {% endfor %}
-</div>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="{% if LANGUAGE_BIDI %}rtl{% else %}ltr{% endif %}" xml:lang="{{ LANGUAGE_CODE }}" lang="{{ LANGUAGE_CODE }}">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>CliqueClique</title>
+    <link rel="stylesheet" href="{{ STATIC_URL }}cliqueclique_displaydocument/css/global.css" />
+  </head>
+  <body>
+    <div class="menubar">
+      <form method="POST" enctype="multipart/form-data">
+	{% csrf_token %}
+	Import: <input type="file" name="file"><input type="submit" name="import" value="Import">
+      </form>
+      <div class="bookmarks">
+	{% block bookmarks %}
+	  <h1>Bookmarks</h1>
+          <ul>
+  	    {% for bookmark in bookmarks %}
+	      <li><a href="{% url cliqueclique_displaydocument.views.display_document document_id=bookmark.document.document_id %}">{{ bookmark.document.as_mime.subject}}</a></li>
+	    {% endfor %}
+          </ul>
+	{% endblock %}
+      </div>
+    </div>
+    <div class="document_area">
+      {% if document_id %}
+        {% display_document document_id %}
+      {% endif %}
+    </div>
+  </body>
+</html>
 
-{% if document_id %}
-  {% display_document document_id %}
-{% endif %}
-
-<form method="POST" enctype="multipart/form-data">
-  {% csrf_token %}
-  Import: <input type="file" name="file"><input type="submit" name="import" value="Import">
-</form>

@@ -13,4 +13,8 @@ def display_document(context, document_id):
         document__document_id=document_id)
     info['body'] = info['document_subscription'].document.as_mime.get_payload()
 
+    # if not info['document_subscription'].read:
+    #     info['document_subscription'].read = True
+    #     info['document_subscription'].save()
+
     return info

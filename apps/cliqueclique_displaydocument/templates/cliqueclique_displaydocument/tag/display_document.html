@@ -1,4 +1,5 @@
 <a href="{% url cliqueclique_displaydocument.views.download_document document_id=document_subscription.document.document_id %}">Export</a><br>
+Is subscribed: <a href="{% url cliqueclique_displaydocument.views.set_document_flags document_id=document_subscription.document.document_id %}?local_is_subscribed=toggle">{{ document_subscription.local_is_subscribed }}</a><br>
 Is read: <a href="{% url cliqueclique_displaydocument.views.set_document_flags document_id=document_subscription.document.document_id %}?read=toggle">{{ document_subscription.read }}</a><br>
 Is bookmarked: <a href="{% url cliqueclique_displaydocument.views.set_document_flags document_id=document_subscription.document.document_id %}?bookmarked=toggle">{{ document_subscription.bookmarked }}</a><br>
 Is a comment to:
