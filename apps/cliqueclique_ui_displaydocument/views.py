@@ -6,15 +6,18 @@ import cliqueclique_subscription.models
 import email.mime.text
 import django.http
 import utils.smime
+import django.contrib.auth.decorators
 
+@django.contrib.auth.decorators.login_required
 def import_document(request):
     msg = request.FILES['file'].read()
     request.user.node.receive(msg)
     msg = utils.smime.message_from_anything(msg)
     container_msg = msg.get_payload()[0]
     update_msg = container_msg.get_payload()[0]
-    return django.shortcuts.redirect("cliqueclique_displaydocument.views.display_document", document_id=update_msg['document_id'])
+    return django.shortcuts.redirect("cliqueclique_ui_displaydocument.views.display_document", document_id=update_msg['document_id'])
 
+@django.contrib.auth.decorators.login_required
 def post_document(request):
     doc = email.mime.text.MIMEText(request.POST['body'])
     for hdr in ('subject', 'parent_document_id'):
@@ -30,14 +33,16 @@ def post_document(request):
         if not parent.local_is_subscribed:
             parent.local_is_subscribed = True
             parent.save()
-    return django.shortcuts.redirect("cliqueclique_displaydocument.views.display_document", document_id=doc.document_id)
+    return django.shortcuts.redirect("cliqueclique_ui_displaydocument.views.display_document", document_id=doc.document_id)
 
+@django.contrib.auth.decorators.login_required
 def download_document(request, document_id):
     doc = cliqueclique_subscription.models.DocumentSubscription.objects.get(
         node = request.user.node,
         document__document_id=document_id)
     return django.http.HttpResponse(doc.export().as_string(), mimetype="text/plain")
 
+@django.contrib.auth.decorators.login_required
 def set_document_flags(request, document_id):
     sub = cliqueclique_subscription.models.DocumentSubscription.objects.get(
         node = request.user.node,
@@ -57,11 +62,12 @@ def set_document_flags(request, document_id):
             value = False
         setattr(sub, attr, value)
     sub.save()
-    return django.shortcuts.redirect("cliqueclique_displaydocument.views.display_document", document_id=sub.document.document_id)
+    return django.shortcuts.redirect("cliqueclique_ui_displaydocument.views.display_document", document_id=sub.document.document_id)
 
+@django.contrib.auth.decorators.login_required
 def display_document(request, document_id = None):
     return django.shortcuts.render_to_response(
-        'cliqueclique_displaydocument/display.html',
+        'cliqueclique_ui_displaydocument/display.html',
         {'document_id': document_id,
          'bookmarks': cliqueclique_subscription.models.DocumentSubscription.objects.filter(
                 node = request.user.node,

@@ -3,7 +3,7 @@ import cliqueclique_subscription.models
 
 register = django.template.Library()
 
-@register.inclusion_tag("cliqueclique_displaydocument/tag/display_document.html", takes_context=True)
+@register.inclusion_tag("cliqueclique_ui_displaydocument/tag/display_document.html", takes_context=True)
 def display_document(context, document_id):
     info = {}
     if 'STATIC_URL' in context:
