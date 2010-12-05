@@ -1,7 +1,34 @@
-<a href="{% url cliqueclique_displaydocument.views.download_document document_id=document_subscription.document.document_id %}">Export</a><br>
-Is subscribed: <a href="{% url cliqueclique_displaydocument.views.set_document_flags document_id=document_subscription.document.document_id %}?local_is_subscribed=toggle">{{ document_subscription.local_is_subscribed }}</a><br>
-Is read: <a href="{% url cliqueclique_displaydocument.views.set_document_flags document_id=document_subscription.document.document_id %}?read=toggle">{{ document_subscription.read }}</a><br>
-Is bookmarked: <a href="{% url cliqueclique_displaydocument.views.set_document_flags document_id=document_subscription.document.document_id %}?bookmarked=toggle">{{ document_subscription.bookmarked }}</a><br>
+<div class="action_icons">
+  <a href="{% url cliqueclique_displaydocument.views.download_document document_id=document_subscription.document.document_id %}">
+    <img src="{{ STATIC_URL }}cliqueclique_displaydocument/img/silk_companion/icons/disk_black.png" alt="Export">
+  </a>
+
+  <a href="{% url cliqueclique_displaydocument.views.set_document_flags document_id=document_subscription.document.document_id %}?local_is_subscribed=toggle">
+    {% if document_subscription.local_is_subscribed %}
+      <img src="{{ STATIC_URL }}cliqueclique_displaydocument/img/silk_icons/icons/comments_add.png" alt="Subscribing to new comments">
+    {% else %}
+      <img src="{{ STATIC_URL }}cliqueclique_displaydocument/img/silk_icons/icons/comments.png" alt="Not subscribing to new comments">
+    {% endif %}
+  </a>
+
+  <a href="{% url cliqueclique_displaydocument.views.set_document_flags document_id=document_subscription.document.document_id %}?read=toggle">
+    {% if document_subscription.read %}
+      <img src="{{ STATIC_URL }}cliqueclique_displaydocument/img/silk_icons/icons/eye.png" alt="Read">
+    {% else %}
+      <img src="{{ STATIC_URL }}cliqueclique_displaydocument/img/silk_icons/icons/new.png" alt="Not previously read">
+    {% endif %}
+  </a>
+
+  <a href="{% url cliqueclique_displaydocument.views.set_document_flags document_id=document_subscription.document.document_id %}?bookmarked=toggle">
+    {% if document_subscription.bookmarked %}
+      <img src="{{ STATIC_URL }}cliqueclique_displaydocument/img/silk_companion/icons/star_gold.png" alt="Bookmarked">
+    {% else %}
+      <img src="{{ STATIC_URL }}cliqueclique_displaydocument/img/silk_companion/icons/star_silver.png" alt="Not bookmarked">
+    {% endif %}
+  </a>
+</div>
+
+Subject: {{ document_subscription.document.as_mime.subject }}<br>
 Is a comment to:
 {% for parent in document_subscription.parents.all %}
   <a href="{% url cliqueclique_displaydocument.views.display_document document_id=parent.document.document_id %}">{{ parent.document.as_mime.subject}}</a>
@@ -11,14 +38,11 @@ Comments in:
 {% for child in document_subscription.children.all %}
   <a href="{% url cliqueclique_displaydocument.views.display_document document_id=child.document.document_id %}">{{ child.document.as_mime.subject}}</a>
 {% endfor %}
-<br>
-<br>
-Subject: {{ document_subscription.document.as_mime.subject }}<br>
-{{ body }}
-<br>
-<br>
 
-Comment:
+<div class="document_body">
+  {{ body }}
+</div>
+
 <form method="POST" action="{% url cliqueclique_displaydocument.views.post_document %}">
   {% csrf_token %}
   <input type="hidden" name="parent_document_id" value="{{ document_subscription.document.document_id }}">
