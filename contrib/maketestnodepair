@@ -2,7 +2,7 @@ rm node.db
 python manage.py syncdb --noinput
 NODE1=$(python manage.py createnode test1 saltgurka)
 NODE2=$(python manage.py createnode test2 saltgurka)
-ROOTDOC=$(python manage.py postdocument $NODE1 contrib/rootdoc)
+ROOTDOC=$(python manage.py postdocument --bookmark $NODE1 contrib/rootdoc)
 python manage.py exportdocument $NODE1 $ROOTDOC contrib/rootdoc.exp 
-python manage.py importdocument $NODE2 contrib/rootdoc.exp 
+python manage.py importdocument --bookmark $NODE2 contrib/rootdoc.exp 
 python manage.py runrouter
