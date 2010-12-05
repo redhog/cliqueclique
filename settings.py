@@ -1,3 +1,15 @@
+# Find all locally installed apps
+import os.path, sys
+PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+sys.path.append(os.path.join(PROJECT_ROOT, "apps"))
+LOCAL_APPS = filter(
+    lambda x: os.path.isfile(os.path.join(PROJECT_ROOT, 'apps', x,'__init__.py')), 
+    os.listdir(os.path.join(PROJECT_ROOT, 'apps')))
+
+virtualenv = os.path.join(PROJECT_ROOT, "deps/bin/activate_this.py")
+if os.path.exists(virtualenv):
+    execfile(virtualenv, dict(__file__=virtualenv))
+
 # Django settings for cliqueclique project.
 
 DEBUG = True
@@ -19,14 +31,6 @@ DATABASES = {
         'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
     }
 }
-
-# Find all locally installed apps
-import os.path, sys
-PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
-sys.path.append(os.path.join(PROJECT_ROOT, "apps"))
-LOCAL_APPS = filter(
-    lambda x: os.path.isfile(os.path.join(PROJECT_ROOT, 'apps', x,'__init__.py')), 
-    os.listdir(os.path.join(PROJECT_ROOT, 'apps')))
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -91,7 +95,19 @@ TEMPLATE_DIRS = (
     # Don't forget to use absolute paths, not relative paths.
 )
 
+TEMPLATE_CONTEXT_PROCESSORS = [
+    "django.core.context_processors.auth",
+    "django.core.context_processors.debug",
+    "django.core.context_processors.i18n",
+    "django.core.context_processors.media",
+    "django.core.context_processors.request",
+    "django.contrib.messages.context_processors.messages",
+    
+    "staticfiles.context_processors.static_url"
+]
+
 INSTALLED_APPS = [
+    'staticfiles',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -105,6 +121,17 @@ INSTALLED_APPS = [
 INSTALLED_APPS.extend(
     LOCAL_APPS
     )
+
+STATIC_URL = "/static/"
+
+STATICFILES_DIRS = [
+    os.path.join(PROJECT_ROOT, "media"),
+]
+
+STATICFILES_DIRS.extend(
+    map(
+        lambda x: os.path.join(PROJECT_ROOT,'apps',x,'media'), 
+        LOCAL_APPS))
 
 CLIQUECLIQUE_ADDRESS_LENGTH = 61
 CLIQUECLIQUE_HASH_LENGTH = 53 # Same as i2p b32 address length, just for fun :)
