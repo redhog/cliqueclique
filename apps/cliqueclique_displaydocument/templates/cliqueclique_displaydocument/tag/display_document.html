@@ -1,0 +1,27 @@
+<a href="{% url cliqueclique_displaydocument.views.download_document document_id=document_subscription.document.document_id %}">Export</a><br>
+Is read: <a href="{% url cliqueclique_displaydocument.views.set_document_flags document_id=document_subscription.document.document_id %}?read=toggle">{{ document_subscription.read }}</a><br>
+Is bookmarked: <a href="{% url cliqueclique_displaydocument.views.set_document_flags document_id=document_subscription.document.document_id %}?bookmarked=toggle">{{ document_subscription.bookmarked }}</a><br>
+Is a comment to:
+{% for parent in document_subscription.parents.all %}
+  <a href="{% url cliqueclique_displaydocument.views.display_document document_id=parent.document.document_id %}">{{ parent.document.as_mime.subject}}</a>
+{% endfor %}
+<br>
+Comments in:
+{% for child in document_subscription.children.all %}
+  <a href="{% url cliqueclique_displaydocument.views.display_document document_id=child.document.document_id %}">{{ child.document.as_mime.subject}}</a>
+{% endfor %}
+<br>
+<br>
+Subject: {{ document_subscription.document.as_mime.subject }}<br>
+{{ body }}
+<br>
+<br>
+
+Comment:
+<form method="POST" action="{% url cliqueclique_displaydocument.views.post_document %}">
+  {% csrf_token %}
+  <input type="hidden" name="parent_document_id" value="{{ document_subscription.document.document_id }}">
+  <input type="text" name="subject"><br>
+  <textarea name="body"></textarea><br>
+  <input type="submit" name="post" value="Post">
+</form>
