@@ -26,6 +26,10 @@ def post_document(request):
         node = request.user.node,
         document = doc)
     sub.save()
+    for parent in sub.parents.all():
+        if not parent.local_is_subscribed:
+            parent.local_is_subscribed = True
+            parent.save()
     return django.shortcuts.redirect("cliqueclique_displaydocument.views.display_document", document_id=doc.document_id)
 
 def download_document(request, document_id):
