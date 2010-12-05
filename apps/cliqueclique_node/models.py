@@ -115,7 +115,7 @@ class Peer(Node):
 
     @property
     def updates(self):
-        return self.subscriptions.filter(is_dirty=True)
+        return self.subscriptions.filter(Q(is_dirty=True)|Q(needs_ack=True))
 
     @property
     def new(self):
@@ -181,7 +181,7 @@ class Peer(Node):
             # know we now have a copy, to make them stop :)
 
             if is_new:
-                sub.is_dirty = True
+                sub.is_dirty = True # FIXME: needs_ack or dirty here?
                 sub.save()
         else:
             raise "Unknown message type %s" % (part['message_type'],)

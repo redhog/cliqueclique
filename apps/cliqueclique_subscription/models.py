@@ -139,6 +139,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
     peer = django.db.models.ForeignKey(cliqueclique_node.models.Peer, related_name="subscriptions")
 
     is_dirty = django.db.models.BooleanField(default = True)
+    needs_ack = django.db.models.BooleanField(default = True)
     update_copies_received = django.db.models.IntegerField(default = 0)
 
     has_copy = django.db.models.BooleanField(default = False)
@@ -187,8 +188,8 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
         # resends (e.g. latency is way higher than resend-timout of
         # peer). Maybe we should detect that dynamically?
         if self.update_copies_received % 2 == 0:
-            print "DIRTY BECAUSE a need to send ACK"
-            self.is_dirty = True
+            print "NEEDS ACK ACK %s/%s" % (self.local_subscription.node.node_id, self.peer.node_id)
+            self.needs_ack = True
             self.save()
 
         for attr in self.PROTOCOL_ATTRS:
@@ -257,6 +258,10 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
         peer = curryprefix(self, "peer_")
         for attr in self.PROTOCOL_ATTRS:
             msg.add_header('receiver_' + attr, str(getattr(peer, attr)))
+
+        if self.needs_ack:
+            self.needs_ack = False
+            self.save()
 
         return msg
 

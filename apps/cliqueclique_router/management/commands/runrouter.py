@@ -48,12 +48,15 @@ class Command(django.core.management.commands.runserver.Command):
     help = 'Run the message router'
 
     def handle(self, *args, **options):
+        print 'Connecting to i2p router...'
+
         sock = i2p.socket.socket(settings.CLIQUECLIQUE_I2P_SESSION_NAME, i2p.socket.SOCK_DGRAM)
-        print 'Serving at: %s.' % (sock.dest,)
+        local_address = utils.i2p.dest2b32(sock.dest)
+        print 'Serving at: %s.' % (local_address,)
 
         for local in cliqueclique_node.models.LocalNode.objects.all():
-            if local.address != sock.dest:
-                local.address = sock.dest
+            if local.address != local_address:
+                local.address = local_address
                 local.save()
 
         class Receiver(threading.Thread):
@@ -79,9 +82,13 @@ class Command(django.core.management.commands.runserver.Command):
                     time.sleep(5)
 
         sender = Sender()
+        sender.daemon = True
         sender.start()
         receiver = Receiver()
+        receiver.daemon = True
         receiver.start()
 
         print "Starting webserver..."
+        import os
+        os.environ["RUN_MAIN"] = "true"
         django.core.management.commands.runserver.Command.handle(self, *args, **options)
