@@ -6,9 +6,8 @@ admin.autodiscover()
 
 urlpatterns = patterns(
     '',
-    (r'^document/', include('cliqueclique_ui_displaydocument.urls')),
-    (r'^accounts/login', 'django.contrib.auth.views.login'),
-    (r'^accounts/logout', 'django.contrib.auth.views.logout'),
+    (r'', include('cliqueclique_ui_displaydocument.urls')),
+    (r'^accounts/', include('registration.urls')),
 
     # Uncomment the admin/doc line below to enable admin documentation:
     # (r'^admin/doc/', include('django.contrib.admindocs.urls')),

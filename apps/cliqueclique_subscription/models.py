@@ -14,6 +14,7 @@ import email.mime.application
 import email.mime.text
 import email.mime.multipart
 
+import time
 
 # TODO:
 #
@@ -29,11 +30,13 @@ class BaseDocumentSubscription(idmapper.models.SharedMemoryModel):
     center_node_is_subscribed = django.db.models.BooleanField(default=False)
     center_node_id = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_HASH_LENGTH, null=True, blank=True)
     center_distance = django.db.models.IntegerField(default = 0)
+    serial = django.db.models.IntegerField(default = 0)
 
     PROTOCOL_ATTRS = ('is_subscribed',
                       'center_node_is_subscribed',
                       'center_node_id',
-                      'center_distance')
+                      'center_distance',
+                      'serial')
 
 class DocumentSubscription(BaseDocumentSubscription):
     node = django.db.models.ForeignKey(cliqueclique_node.models.LocalNode, related_name="subscriptions")
@@ -48,6 +51,11 @@ class DocumentSubscription(BaseDocumentSubscription):
     # Did _we_ subscribe to this?
     local_is_subscribed = django.db.models.BooleanField(default = False)
     subscribers = django.db.models.SmallIntegerField(default = 0) # Don't change this one manually
+
+    old_is_subscribed = django.db.models.BooleanField(default = False)
+    old_center_node_is_subscribed = django.db.models.BooleanField(default=False)
+    old_center_node_id = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_HASH_LENGTH, null=True, blank=True)
+    old_center_distance = django.db.models.IntegerField(default = 0)
 
     @property
     def is_subscribed(self): return self.subscribers > 0 or self.local_is_subscribed
@@ -78,29 +86,38 @@ class DocumentSubscription(BaseDocumentSubscription):
                 self.save()
 
     def update_center_from_upstream_peer(self, peer_subscription):
-        peer = curryprefix(peer_subscription, "peer_")
-
-        self.center_node_is_subscribed = peer.center_node_is_subscribed
-        self.center_node_id = peer.center_node_id
-        self.center_distance = peer.center_distance + 1
+        self.center_node_is_subscribed = peer_subscription.center_node_is_subscribed
+        self.center_node_id = peer_subscription.center_node_id
+        self.center_distance = peer_subscription.center_distance + 1
         self.save()
 
     def update_subscription_from_downstream_peer(self, peer_subscription):
-        peer = curryprefix(peer_subscription, "peer_")
-
-        if peer.subscribers != peer.old_subscribers:
-            self.subscribers += peer.subscribers - peer.old_subscribers
-            peer.old_is_subscribed = peer.is_subscribed
+        if self.subscribers != peer_subscription.old_subscribers:
+            self.subscribers += peer_subscription.subscribers - peer_subscription.old_subscribers
+            peer_subscription.old_is_subscribed = peer_subscription.is_subscribed
             self.save()
             peer_subscription.save()
 
-    @classmethod
-    def pre_save(cls, sender, instance, **kwargs):
-        self = instance
+    def elect_center_node(self):
         if self.center_node_id is None or self.center_node_is_subscribed < self.is_subscribed:
             self.center_node_is_subscribed = self.is_subscribed
             self.center_node_id = self.node.node_id
             self.center_distance = 0
+
+    def set_serial_on_change(self):
+        changed = False
+        for attr in self.PROTOCOL_ATTRS:
+            if attr != 'serial' and getattr(self, "old_" + attr) != getattr(self, attr):
+                changed = True
+                setattr(self, "old_" + attr, getattr(self, attr))
+        if changed:
+            self.serial += 1
+
+    @classmethod
+    def pre_save(cls, sender, instance, **kwargs):
+        self = instance
+        self.elect_center_node()
+        self.set_serial_on_change()
 
     @classmethod
     def post_save(cls, sender, instance, **kwargs):
@@ -109,7 +126,6 @@ class DocumentSubscription(BaseDocumentSubscription):
         self.update_child_subscriptions()
         for peer_subscription in self.peer_subscriptions.all():
             peer_subscription.update_child_subscriptions()
-            peer_subscription.set_dirty()
 
     def send(self, include_body = False):
         msg = email.mime.multipart.MIMEMultipart()
@@ -117,7 +133,7 @@ class DocumentSubscription(BaseDocumentSubscription):
         msg.add_header('document_id', self.document.document_id)
 
         for attr in self.PROTOCOL_ATTRS:
-            msg.add_header('sender_' + attr, str(getattr(self, attr)))
+            msg.add_header(attr, str(getattr(self, attr)))
 
         if include_body:
             msg.attach(self.document.as_mime)
@@ -138,25 +154,19 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
     local_subscription = django.db.models.ForeignKey(DocumentSubscription, related_name="peer_subscriptions")
     peer = django.db.models.ForeignKey(cliqueclique_node.models.Peer, related_name="subscriptions")
 
-    is_dirty = django.db.models.BooleanField(default = True)
-    needs_ack = django.db.models.BooleanField(default = True)
-    update_copies_received = django.db.models.IntegerField(default = 0)
+    local_serial = django.db.models.IntegerField(default = 0)
+    local_resend_interval = django.db.models.FloatField(default = 0)
+    local_resend_time = django.db.models.FloatField(default = 0)
+    peer_send = django.db.models.BooleanField(default = True)
 
     has_copy = django.db.models.BooleanField(default = False)
     is_subscribed = django.db.models.BooleanField(default = False)
+    old_is_subscribed = django.db.models.BooleanField(default = False)
  
-    peer_old_is_subscribed = django.db.models.BooleanField(default = False) # Don't modify this by hand, it's just for internal use by the pre_save method
-    peer_is_subscribed = django.db.models.BooleanField(default = False)
-    peer_center_node_is_subscribed = django.db.models.BooleanField(default = False)
-    peer_center_node_id = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_HASH_LENGTH, null=True, blank=True)
-    peer_center_distance = django.db.models.IntegerField(default = 0)
-
     @property
     def subscribers(self): return [0, 1][self.is_subscribed]
     @property
-    def peer_old_subscribers(self): return [0, 1][self.peer_old_is_subscribed]
-    @property
-    def peer_subscribers(self): return [0, 1][self.peer_is_subscribed]
+    def old_subscribers(self): return [0, 1][self.old_is_subscribed]
 
     @classmethod
     def _compare(cls, a, b, is_this_much_closer = 0):
@@ -170,101 +180,87 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
 
     def is_upstream(self, is_this_much_closer = 0):
         # Note: Compares to our real current local subscription, not what the other node knows about us
-        return self._compare(self.local_subscription, curryprefix(self, "peer_"), is_this_much_closer)
+        return self._compare(self.local_subscription, self, is_this_much_closer)
 
     def is_downstream(self, is_this_much_closer = 0):
         # Note: Compares to our real current local subscription, not what the other node knows about us
-        return self._compare(curryprefix(self, "peer_"), self.local_subscription, is_this_much_closer)
+        return self._compare(self, self.local_subscription, is_this_much_closer)
 
     def update_child_subscriptions(self):
-        if self.peer_is_subscribed:
+        if self.is_subscribed:
             for child in self.local_subscription.children.all():
                 if not child.peer_subscription(self.peer):
                     print "Creating PeerDocumentSubscription(document=%s, peer=%s)" % (child.document.document_id, self.peer.node_id)
-                    PeerDocumentSubscription(local_subscription=child, peer=self.peer, is_dirty=True).save()
-
-    def set_dirty(self):
-        # Change 2 to a higher number if you gets lots of spurious
-        # resends (e.g. latency is way higher than resend-timout of
-        # peer). Maybe we should detect that dynamically?
-        if self.update_copies_received % 2 == 0:
-            print "NEEDS ACK ACK %s/%s" % (self.local_subscription.node.node_id, self.peer.node_id)
-            self.needs_ack = True
-            self.save()
-
-        for attr in self.PROTOCOL_ATTRS:
-            if getattr(self, attr) != getattr(self.local_subscription, attr):
-                print "DIRTY BECAUSE %s/%s.%s: peer=%s != local=%s" % (self.local_subscription.node.node_id, self.peer.node_id, attr, getattr(self, attr), getattr(self.local_subscription, attr))
-                self.is_dirty = True
-                self.save()
-                return
+                    PeerDocumentSubscription(local_subscription=child, peer=self.peer, serial=-1).save()
 
     @classmethod
     def pre_save(cls, sender, instance, **kwargs):
         self = instance
-        if not self.is_dirty:
-            self.update_child_subscriptions()
+        self.update_child_subscriptions()
 
-            if self.is_upstream(1):
-                self.local_subscription.update_center_from_upstream_peer(self)
-            elif self.is_downstream(1):
-                self.local_subscription.update_subscription_from_downstream_peer(self)
+        if self.is_upstream(1):
+            self.local_subscription.update_center_from_upstream_peer(self)
+        elif self.is_downstream(1):
+            self.local_subscription.update_subscription_from_downstream_peer(self)
 
     @classmethod
     def deserialize_update(cls, update):
         res = {}
-        for prefix in ('sender', 'receiver'):
-            if prefix+'_is_subscribed' in update:
-                name = prefix+'_is_subscribed'; res[name] = update[name].lower() == 'true'
-                name = prefix+'_center_node_is_subscribed'; res[name] = update[name].lower() == 'true'
-                name = prefix+'_center_node_id'; res[name] = update[name]
-                name = prefix+'_center_distance'; res[name] = int(update[name])
+        res['is_subscribed'] = update['is_subscribed'].lower() == 'true'
+        res['center_node_is_subscribed'] = update['center_node_is_subscribed'].lower() == 'true'
+        res['center_node_id'] = update['center_node_id']
+        res['center_distance'] = int(update['center_distance'])
+        res['serial'] = int(update['serial'])
         return res
 
-    def receive(self, update):
+    def receive_update(self, update):
         update = self.deserialize_update(update)
-
-        local = self # yes, not self.local_subscription - this is
-                     # about what the other node knows, not about
-                     # what's true
-        peer = curryprefix(self, "peer_")
-
-        is_change = False
-        if 'receiver_is_subscribed' not in update:
-            is_change = True
-        else:
-            for attr in self.PROTOCOL_ATTRS:
-                if getattr(local, attr) != update['receiver_' + attr]:
-                    is_change = True
-                setattr(local, attr, update['receiver_' + attr])
         for attr in self.PROTOCOL_ATTRS:
-            if getattr(peer, attr) != update['sender_' + attr]:
-                is_change = True
-            setattr(peer, attr, update['sender_' + attr])
-
-        if is_change:
-            self.update_copies_received = 0
-        else:
-            self.update_copies_received += 1
-
-        self.has_copy = True
-        self.is_dirty = False
-        self.set_dirty()
+            setattr(self, attr, update[attr])
+        self.peer_send = True
         self.save()
 
-    def send(self, export = False):
-        msg = self.local_subscription.send(not self.has_copy or export)
-
-        peer = curryprefix(self, "peer_")
-        for attr in self.PROTOCOL_ATTRS:
-            msg.add_header('receiver_' + attr, str(getattr(peer, attr)))
-
-        if self.needs_ack:
-            self.needs_ack = False
+    def receive_ack(self, update):
+        update = self.deserialize_update(update)
+        if self.local_subscription.serial == update['serial']:
+            self.local_serial = self.local_subscription.serial
+            self.has_copy = True
             self.save()
 
-        return msg
+    def receive(self, update):
+        if update['message_type'] == 'subscription_update':
+            self.receive_update(update)
+        elif update['message_type'] == 'subscription_ack':
+            self.receive_ack(update)
 
+    def send_update(self, export = False):
+        if self.local_serial == self.local_subscription.serial:
+            return []
+
+        self.local_resend_interval *= 2.0
+        self.local_resend_time = time.time() + self.local_resend_interval
+        self.save()
+
+        return [self.local_subscription.send(not self.has_copy or export)]
+
+    def send_ack(self):
+        if not self.peer_send:
+            return []
+
+        self.peer_send = False
+        self.save()
+
+        msg = email.mime.multipart.MIMEMultipart()
+        msg.add_header('message_type', 'subscription_ack')
+        msg.add_header('document_id', self.local_subscription.document.document_id)
+
+        for attr in self.PROTOCOL_ATTRS:
+            msg.add_header(attr, str(getattr(self, attr)))
+
+        return [msg]
+
+    def send(self, export = False):
+        return self.send_update(export) + self.send_ack()
 
     def __unicode__(self):
         return "%s:s knowledge about %s" % (self.peer, self.local_subscription)

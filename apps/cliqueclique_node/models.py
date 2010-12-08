@@ -2,6 +2,7 @@ import django.db.models
 import idmapper.models
 import django.contrib.auth.models
 from django.db.models import Q
+from django.db.models import F
 import utils.modelhelpers
 import utils.smime
 import settings
@@ -50,8 +51,7 @@ class LocalNode(Node):
 
     def send(self):
         for peer in self.peers.all():
-            msg = peer.send()
-            if msg is not None:
+            for msg in peer.send():
                 yield (msg.as_string(), peer.address)
     
     def receive(self, msg):
@@ -115,7 +115,7 @@ class Peer(Node):
 
     @property
     def updates(self):
-        return self.subscriptions.filter(Q(is_dirty=True)|Q(needs_ack=True))
+        return self.subscriptions.filter(~Q(serial=F("local_subscription__serial"))|Q(peer_send=True))
 
     @property
     def new(self):
@@ -124,6 +124,11 @@ class Peer(Node):
     def send(self):
         updates = self.updates.all()
         if len(updates) == 0:
+            return None
+        update_msgs = []
+        for sub in updates:
+            update_msgs.extend(sub.send())
+        if len(update_msgs) == 0:
             return None
 
         msg = email.mime.multipart.MIMEMultipart()
@@ -135,8 +140,8 @@ class Peer(Node):
         for key in keys:
             msg.add_header(key, str(update[key]))
 
-        for sub in updates:
-            msg.attach(sub.send())
+        for update in update_msgs:
+            msg.attach(update)
         
         return self.local.sign(msg)
 
@@ -144,7 +149,7 @@ class Peer(Node):
         import cliqueclique_document.models
         import cliqueclique_subscription.models
 
-        if part['message_type'] == 'subscription_update':
+        if part['message_type'] in ('subscription_update', 'subscription_ack'):
             is_new = False
             subs = cliqueclique_subscription.models.PeerDocumentSubscription.objects.filter(
                 local_subscription__document__document_id = part['document_id'],
@@ -153,6 +158,8 @@ class Peer(Node):
             if subs:
                 sub = subs[0]
             else:
+                if part['message_type'] == 'subscription_ack':
+                    raise Exception("Received an ACK for a non-existent message %s" % (part['document_id'],))
                 local_subs = cliqueclique_subscription.models.DocumentSubscription.objects.filter(
                     document__document_id = part['document_id'],
                     node = self.local).all()
@@ -184,4 +191,4 @@ class Peer(Node):
                 sub.is_dirty = True # FIXME: needs_ack or dirty here?
                 sub.save()
         else:
-            raise "Unknown message type %s" % (part['message_type'],)
+            raise Exception("Unknown message type %s" % (part['message_type'],))

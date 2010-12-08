@@ -44,39 +44,41 @@ really. Only drawback I can think of is overhead :S
 Algorithms
 ===========
 
-Three-valued sync
-------------------
+Metadata sync
+--------------
 
-Problem
---------
-Two nodes have some data each. They also need to have a current copy
-of the other nodes' data. (Data packets sent between nodes can be lost
-or duplicated)
 
-Solution
-----------
-Each node has three data copies:
+Node1 (server)
+---------------
+Data:
  local: Its own data
- peer: a copy of the other nodes' data
  localcopy: copy of the other nodes' copy of its own data
-
-In addition it has a counter.
-
-At each node:
+ serial: Version of its data
+ time=1
+ needs_ack=False
 
 When localcopy != local:
-  Send (local, peer) to other node
-  Wait some time
+  serial += 1
+  needs_ack = True
+  time = 1
+
+While needs_ack:
+  Send (local, serial) to other node
+  Wait time
+  time *= 2
 
 When receiving:
-   if received.peer != localcopy:
-     counter = 0
-   else:
-     counter += 1
+  if recv.serial == serial:
+    needs_ack = False
+     
 
-   Copy received.local to peer
-   Copy received.peer to localcopy
+Node2 (client)
+---------------
+Data
+  peer: a copy of the other nodes' data
 
-   if counter modulo 2 == 0:
-     Send (local, peer) to other node
+When receiving:
+  Copy received.local to peer
+  Send received back to other node
+
 

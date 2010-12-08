@@ -9,6 +9,7 @@ cd "$TMPDIR"
 pip install django
 pip install django-staticfiles
 pip install django-idmapper
+pip install django-registration
 
 wget http://mirror.i2p2.de/i2psource_0.8.1.tar.bz2
 tar -xvjf i2psource_0.8.1.tar.bz2
