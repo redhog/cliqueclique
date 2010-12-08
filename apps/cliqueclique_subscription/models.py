@@ -155,7 +155,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
     peer = django.db.models.ForeignKey(cliqueclique_node.models.Peer, related_name="subscriptions")
 
     local_serial = django.db.models.IntegerField(default = 0)
-    local_resend_interval = django.db.models.FloatField(default = 0)
+    local_resend_interval = django.db.models.FloatField(blank=True, null=True)
     local_resend_time = django.db.models.FloatField(default = 0)
     peer_send = django.db.models.BooleanField(default = True)
 
@@ -235,9 +235,15 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
 
     def send_update(self, export = False):
         if self.local_serial == self.local_subscription.serial:
+            if self.local_resend_interval is not None:
+                self.local_resend_interval = None
+                self.save()
             return []
 
-        self.local_resend_interval *= 2.0
+        if self.local_resend_interval is None:
+            self.local_resend_interval = 1.0
+        else:
+            self.local_resend_interval *= 2.0
         self.local_resend_time = time.time() + self.local_resend_interval
         self.save()
 

@@ -17,6 +17,7 @@ import M2Crypto.BIO
 import i2p.socket
 import utils.i2p
 import utils.hash
+import time
 
 class Node(idmapper.models.SharedMemoryModel):
     __metaclass__ = utils.modelhelpers.SignalAutoConnectMeta
@@ -116,7 +117,9 @@ class Peer(Node):
 
     @property
     def updates(self):
-        return self.subscriptions.filter(~Q(serial=F("local_subscription__serial"))|Q(peer_send=True))
+        return self.subscriptions.filter(Q(~Q(serial=F("local_subscription__serial")),
+                                           local_resend_time__lte = time.time())
+                                         |Q(peer_send=True))
 
     @property
     def new(self):
