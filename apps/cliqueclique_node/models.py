@@ -51,7 +51,8 @@ class LocalNode(Node):
 
     def send(self):
         for peer in self.peers.all():
-            for msg in peer.send():
+            msg = peer.send()
+            if msg is not None:
                 yield (msg.as_string(), peer.address)
     
     def receive(self, msg):

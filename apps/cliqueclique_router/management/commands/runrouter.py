@@ -23,13 +23,12 @@ def msg2debug(msg):
     sender_node_id = cliqueclique_node.models.Node.node_id_from_public_key(cert)
     receiver_node_id = container_msg['receiver_node_id']
 
-    print "%s <- %s" % (receiver_node_id, sender_node_id)
+    print "%s <- %s" % (receiver_node_id[:5], sender_node_id[:5])
     for part in container_msg.get_payload():
-        print "  %s" % part['document_id']
-        for prefix in ('sender', 'receiver'):
-            for attr in cliqueclique_subscription.models.BaseDocumentSubscription.PROTOCOL_ATTRS:
-                name = '%s_%s' % (prefix, attr)
-                print "    %s = %s" % (name, part[name])
+        print "  %s(%s)" % (part['message_type'], part['document_id'][:5])
+        for key, value in part.items():
+            if key.lower() not in ('content-type', 'mime-version', 'message_type', 'document_id'):
+                print "    %s = %s" % (key, value)
 
 class Command(django.core.management.commands.runserver.Command):
     args = ''
@@ -78,8 +77,8 @@ class Command(django.core.management.commands.runserver.Command):
                         msg2debug(msg)
 
                         sock.sendto(msg, 0, address)
-                        time.sleep(5)
-                    time.sleep(5)
+                        time.sleep(1)
+                    time.sleep(1)
 
         sender = Sender()
         sender.daemon = True

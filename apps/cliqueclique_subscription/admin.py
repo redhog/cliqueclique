@@ -5,28 +5,32 @@ django.contrib.admin.site.register(cliqueclique_subscription.models.DocumentSubs
 
 class PeerDocumentSubscriptionAdmin(django.contrib.admin.ModelAdmin):
     fieldsets = [("The subscription of the peer",
-                  {'fields': ('peer_old_is_subscribed',
-                              'peer_is_subscribed',
-                              'peer_center_node_is_subscribed',
-                              'peer_center_node_id',
-                              'peer_center_distance',
-                              'has_copy')}),
-                 ("Peers' knowledge about us",
-                  {'fields': ('is_subscribed',
+                  {'fields': ('serial',
+                              'is_subscribed',
                               'center_node_is_subscribed',
                               'center_node_id',
-                              'center_distance')}),
-                 
-
-                 ('Metadata',
+                              'center_distance',
+                              'has_copy')}),
+                 ("Sync metadata",
+                  {'fields': ('local_serial',
+                              'local_resend_interval',
+                              'local_resend_time',
+                              'peer_send')}),
+                 ('Subscription metadata',
                   {'fields': ('peer',
                               'local_subscription')}),
                  ]
 
     list_display_links = list_display = (
-        'local_subscription',
         'peer',
-        'is_dirty')
+        'local_subscription',
+        'local_serial',
+        'serial',
+        'is_subscribed',
+        'center_node_is_subscribed',
+        'center_node_id',
+        'center_distance',
+        'has_copy')
     search_fields = ()
 
 
