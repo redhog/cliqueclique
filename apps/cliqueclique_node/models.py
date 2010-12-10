@@ -39,7 +39,7 @@ class LocalNode(Node):
     private_key = fcdjangoutils.fields.Base64Field(blank=True)
 
     @classmethod
-    def pre_save(cls, sender, instance, **kwargs):
+    def on_pre_save(cls, sender, instance, **kwargs):
         if not instance.address:
             sock = i2p.socket.socket(settings.CLIQUECLIQUE_I2P_SESSION_NAME, i2p.socket.SOCK_DGRAM)
             instance.address = utils.i2p.dest2b32(sock.dest)
@@ -94,18 +94,18 @@ class LocalNode(Node):
         signed.attach(msg)
         return signed
 
-def user_post_save(sender, instance, **kwargs):
+def user_on_post_save(sender, instance, **kwargs):
     try:
         instance.node
     except:
         LocalNode(owner = instance, name = instance.username).save()
-django.db.models.signals.post_save.connect(user_post_save, sender=django.contrib.auth.models.User)
+django.db.models.signals.post_save.connect(user_on_post_save, sender=django.contrib.auth.models.User)
 
 class Peer(Node):
     local = django.db.models.ForeignKey(LocalNode, related_name="peers")
 
     @classmethod
-    def pre_save(cls, sender, instance, **kwargs):
+    def on_pre_save(cls, sender, instance, **kwargs):
         assert instance.public_key
         if not instance.node_id:
             instance.node_id = instance.node_id_from_public_key(instance.public_key)

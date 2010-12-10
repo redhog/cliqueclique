@@ -10,6 +10,7 @@ import email.mime.application
 import email.mime.text
 import email.mime.multipart
 import hashlib
+import utils
 
 class Document(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnectModel):
     document_id = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_HASH_LENGTH, blank=True)
@@ -26,7 +27,7 @@ class Document(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnec
         return email.message_from_string(str(self.content))
 
     @classmethod
-    def pre_save(cls, sender, instance, **kwargs):
+    def on_pre_save(cls, sender, instance, **kwargs):
         # Generate id from content
         instance.document_id = instance.document_id_from_content(instance.content)
 

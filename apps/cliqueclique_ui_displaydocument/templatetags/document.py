@@ -22,4 +22,7 @@ def display_document(context, document_id):
 
 @register.filter
 def formatid(id):
+    if id is None:
+        return 'None'
     return id[:settings.CLIQUECLIQUE_HASH_PRINT_LENGTH]
+

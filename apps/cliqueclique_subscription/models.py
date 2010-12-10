@@ -132,13 +132,13 @@ class DocumentSubscription(BaseDocumentSubscription):
             self.serial += 1
 
     @classmethod
-    def pre_save(cls, sender, instance, **kwargs):
+    def on_pre_save(cls, sender, instance, **kwargs):
         self = instance
         self.elect_center_node()
         self.set_serial_on_change()
 
     @classmethod
-    def post_save(cls, sender, instance, **kwargs):
+    def on_post_save(cls, sender, instance, **kwargs):
         # This only works for downstream 
         self = instance
         self.update_child_subscriptions()
@@ -217,7 +217,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
                     PeerDocumentSubscription(local_subscription=child, peer=self.peer, serial=-1).save()
 
     @classmethod
-    def pre_save(cls, sender, instance, **kwargs):
+    def on_pre_save(cls, sender, instance, **kwargs):
         self = instance
         self.update_child_subscriptions()
 
