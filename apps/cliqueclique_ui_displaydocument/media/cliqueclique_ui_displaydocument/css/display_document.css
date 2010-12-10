@@ -1,0 +1,23 @@
+.action_icons {
+  float: right;
+}
+
+.document_body {
+  border-top: 1pt solid black;
+  border-bottom: 1pt solid black;
+  padding-top: 10pt;
+  padding-bottom: 10pt;
+  margin-top: 10pt;
+  margin-bottom: 10pt;
+}
+
+.peer_subscription {
+  marging-top: 10pt;
+  border: 1pt solid #555555;
+  padding: 5pt;
+}
+.document_subscription_details {
+  border: 1pt solid #55555;
+  margin-top: 10pt;
+  padding: 5pt;
+}

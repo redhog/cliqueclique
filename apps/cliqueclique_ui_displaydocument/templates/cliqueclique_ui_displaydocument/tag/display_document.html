@@ -1,4 +1,13 @@
 {% load document %}
+{% load widgettag_tags %}
+{% load datatypes %}
+
+{% with STATIC_URL|aadd:"cliqueclique_ui_displaydocument/css/display_document.css" as url %}{% widget_addcssfile url %}{% endwith %}
+
+{% with STATIC_URL|aadd:"fcdjangoutils/js/jquery.js" as url %}{% widget_addjsfile url %}{% endwith %}
+
+{% with STATIC_URL|aadd:"fcdjangoutils/css/expand.css" as url %}{% widget_addcssfile url %}{% endwith %}
+{% with STATIC_URL|aadd:"fcdjangoutils/js/expand.js" as url %}{% widget_addjsfile url %}{% endwith %}
 
 <div class="action_icons">
   <a href="{% url cliqueclique_ui_displaydocument.views.download_document document_id=document_subscription.document.document_id %}">
@@ -54,23 +63,28 @@ Comments in:
   <input type="submit" name="post" value="Post">
 </form>
 
-Wanters: {{ document_subscription.wanters }}<br>
-Subscribers: {{ document_subscription.subscribers }}<br>
-Is wanted {{ document_subscription.is_wanted }}<br>
-Is subscribed {{ document_subscription.is_subscribed }}<br>
+<div class="document_subscription_details">
+  <div class="autohide-button" id="document_subscription_details_{{ document_subscription.document.document_id }}-button">Subscription detalils</div>
+  <div class="autohide-body" id="document_subscription_details_{{ document_subscription.document.document_id }}-body">
+    Wanters: {{ document_subscription.wanters }}<br>
+    Subscribers: {{ document_subscription.subscribers }}<br>
+    Is wanted {{ document_subscription.is_wanted }}<br>
+    Is subscribed {{ document_subscription.is_subscribed }}<br>
 
-Serial: {{ document_subscription.serial }}<br>
-Center node ID: {{ document_subscription.center_node_id|formatid }}<br>
-Center distance: {{ document_subscription.center_distance }}<br>
-Center node is subscribed: {{ document_subscription.center_node_is_subscribed }}<br>
+    Serial: {{ document_subscription.serial }}<br>
+    Center node ID: {{ document_subscription.center_node_id|formatid }}<br>
+    Center distance: {{ document_subscription.center_distance }}<br>
+    Center node is subscribed: {{ document_subscription.center_node_is_subscribed }}<br>
 
-{% for peer_subscription in document_subscription.peer_subscriptions.all %}
-  <div class="peer_subscription">
-    Peer: {{ peer_subscription.peer.node_id|formatid}}<br>
-    Serial: {{ peer_subscription.serial }}<br>
-    Is subscribed: {{ peer_subscription.is_subscribed }}<br>
-    Center node ID: {{ peer_subscription.center_node_id|formatid }}<br>
-    Center distance: {{ peer_subscription.center_distance }}<br>
-    Center node is subscribed: {{ peer_subscription.center_node_is_subscribed }}<br>
+    {% for peer_subscription in document_subscription.peer_subscriptions.all %}
+      <div class="peer_subscription">
+	Peer: {{ peer_subscription.peer.node_id|formatid}}<br>
+	Serial: {{ peer_subscription.serial }}<br>
+	Is subscribed: {{ peer_subscription.is_subscribed }}<br>
+	Center node ID: {{ peer_subscription.center_node_id|formatid }}<br>
+	Center distance: {{ peer_subscription.center_distance }}<br>
+	Center node is subscribed: {{ peer_subscription.center_node_is_subscribed }}<br>
+      </div>
+    {% endfor %}
   </div>
-{% endfor %}
+</div>
