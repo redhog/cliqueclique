@@ -16,8 +16,12 @@
   border: 1pt solid #555555;
   padding: 5pt;
 }
+
 .document_subscription_details {
-  border: 1pt solid #55555;
   margin-top: 10pt;
+}
+
+.document_subscription_details .autohide-body {
   padding: 5pt;
+  border: 1pt solid #555555;
 }
