@@ -52,25 +52,51 @@ Node1 (server)
 ---------------
 Data:
  local: Its own data
- localcopy: copy of the other nodes' copy of its own data
  serial: Version of its data
+ serialcopy: copy of the other nodes' copy of its own serial
  time=1
- needs_ack=False
 
-When localcopy != local:
+When local changes:
   serial += 1
-  needs_ack = True
   time = 1
 
-While needs_ack:
+While serial != serialcopy:
   Send (local, serial) to other node
   Wait time
   time *= 2
 
 When receiving:
-  if recv.serial == serial:
-    needs_ack = False
+  if received.serial == serial:
+    serialcopy = serial
      
+
+Node2 (client)
+---------------
+Data
+  peer: a copy of the other nodes' data
+  peerserial: copy of the other nodes' serial
+
+When receiving:
+  Copy received.local to peer
+  Send received.serial back to other node
+
+
+
+Metadata deletion
+------------------
+
+
+Node1 (server)
+---------------
+Data:
+ local: Its own data
+
+While local exists:
+ Send delete request to other node
+
+When receiving:
+ Delete local
+
 
 Node2 (client)
 ---------------
@@ -78,7 +104,5 @@ Data
   peer: a copy of the other nodes' data
 
 When receiving:
-  Copy received.local to peer
-  Send received back to other node
-
-
+ Delete peer
+ Send ACK to peer

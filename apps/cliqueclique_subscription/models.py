@@ -48,14 +48,19 @@ class DocumentSubscription(BaseDocumentSubscription):
     # exists at this node yet
     parents = django.db.models.ManyToManyField("DocumentSubscription", related_name="children", null=True, blank=True)
 
+    wanters = django.db.models.SmallIntegerField(default = 0) # Don't change this one manually
+
     # Did _we_ subscribe to this?
     local_is_subscribed = django.db.models.BooleanField(default = False)
     subscribers = django.db.models.SmallIntegerField(default = 0) # Don't change this one manually
 
-    old_is_subscribed = django.db.models.BooleanField(default = False)
+    old_is_subscribed = django.db.models.BooleanField(default=False)
     old_center_node_is_subscribed = django.db.models.BooleanField(default=False)
     old_center_node_id = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_HASH_LENGTH, null=True, blank=True)
     old_center_distance = django.db.models.IntegerField(default = 0)
+
+    @property
+    def is_wanted(self): return self.wanters > 0 or self.bookmarked or self.parents.filter(local_is_subscribed=True).count()
 
     @property
     def is_subscribed(self): return self.subscribers > 0 or self.local_is_subscribed
@@ -86,15 +91,23 @@ class DocumentSubscription(BaseDocumentSubscription):
                 self.save()
 
     def update_center_from_upstream_peer(self, peer_subscription):
-        self.center_node_is_subscribed = peer_subscription.center_node_is_subscribed
-        self.center_node_id = peer_subscription.center_node_id
-        self.center_distance = peer_subscription.center_distance + 1
-        self.save()
+        if peer_subscription.is_upstream(1):
+            self.center_node_is_subscribed = peer_subscription.center_node_is_subscribed
+            self.center_node_id = peer_subscription.center_node_id
+            self.center_distance = peer_subscription.center_distance + 1
+            self.save()
 
     def update_subscription_from_downstream_peer(self, peer_subscription):
-        if self.subscribers != peer_subscription.old_subscribers:
+        updated = False
+        if self.wanters != peer_subscription.old_subscribers:
+            updated = True
+            self.wanters += peer_subscription.wanters - peer_subscription.old_wanters
+            peer_subscription.old_wanters = peer_subscription.wanters
+        if peer_subscription.subscribers != peer_subscription.old_subscribers:
+            updated = True
             self.subscribers += peer_subscription.subscribers - peer_subscription.old_subscribers
-            peer_subscription.old_is_subscribed = peer_subscription.is_subscribed
+            peer_subscription.old_subscribers = peer_subscription.subscribers
+        if updated:
             self.save()
             peer_subscription.save()
 
@@ -161,12 +174,14 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
 
     has_copy = django.db.models.BooleanField(default = False)
     is_subscribed = django.db.models.BooleanField(default = False)
-    old_is_subscribed = django.db.models.BooleanField(default = False)
+
+    old_wanters = django.db.models.IntegerField(default = 0)
+    old_subscribers = django.db.models.IntegerField(default = 0)
  
     @property
-    def subscribers(self): return [0, 1][self.is_subscribed]
+    def wanters(self): return [0, 1][self.is_downstream(1)]
     @property
-    def old_subscribers(self): return [0, 1][self.old_is_subscribed]
+    def subscribers(self): return [0, 1][self.is_downstream(1) and self.is_subscribed]
 
     @classmethod
     def _compare(cls, a, b, is_this_much_closer = 0):
@@ -198,10 +213,8 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
         self = instance
         self.update_child_subscriptions()
 
-        if self.is_upstream(1):
-            self.local_subscription.update_center_from_upstream_peer(self)
-        elif self.is_downstream(1):
-            self.local_subscription.update_subscription_from_downstream_peer(self)
+        self.local_subscription.update_center_from_upstream_peer(self)
+        self.local_subscription.update_subscription_from_downstream_peer(self)
 
     @classmethod
     def deserialize_update(cls, update):

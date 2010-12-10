@@ -28,6 +28,11 @@
   </a>
 </div>
 
+Wanters: {{ document_subscription.wanters }}<br>
+Subscribers: {{ document_subscription.subscribers }}<br>
+is_wanted {{ document_subscription.is_wanted }}<br>
+is_subscribed {{ document_subscription.is_subscribed }}<br>
+
 Subject: {{ document_subscription.document.as_mime.subject }}<br>
 Is a comment to:
 {% for parent in document_subscription.parents.all %}
