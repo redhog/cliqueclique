@@ -1,7 +1,7 @@
 import django.db.models
 import idmapper.models
 import django.contrib.auth.models
-import utils.modelhelpers
+import fcdjangoutils.signalautoconnectmodel
 import settings
 import cliqueclique_node.models
 import cliqueclique_document.models
@@ -22,11 +22,9 @@ import sys
 # * Handle unsubscribed
 # * Handle delete
 
-class BaseDocumentSubscription(idmapper.models.SharedMemoryModel):
+class BaseDocumentSubscription(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnectModel):
     class Meta:
         abstract = True
-
-    __metaclass__ = utils.modelhelpers.SignalAutoConnectMeta
 
     center_node_is_subscribed = django.db.models.BooleanField(default=False)
     center_node_id = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_HASH_LENGTH, null=True, blank=True)

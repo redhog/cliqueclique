@@ -3,7 +3,8 @@ import idmapper.models
 import django.contrib.auth.models
 from django.db.models import Q
 from django.db.models import F
-import utils.modelhelpers
+import fcdjangoutils.signalautoconnectmodel
+import fcdjangoutils.fields
 import utils.smime
 import settings
 import hashlib
@@ -19,13 +20,11 @@ import utils.i2p
 import utils.hash
 import time
 
-class Node(idmapper.models.SharedMemoryModel):
-    __metaclass__ = utils.modelhelpers.SignalAutoConnectMeta
-
+class Node(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnectModel):
     # max_length should really be the max-length supported by X509 for CN
     name = django.db.models.CharField(max_length=200, blank=True)
     node_id = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_HASH_LENGTH, blank=True)
-    public_key = utils.modelhelpers.Base64Field(blank=True)
+    public_key = fcdjangoutils.fields.Base64Field(blank=True)
     address = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_ADDRESS_LENGTH, blank=True)
 
     @classmethod
@@ -37,7 +36,7 @@ class Node(idmapper.models.SharedMemoryModel):
 
 class LocalNode(Node):
     owner = django.db.models.OneToOneField(django.contrib.auth.models.User, related_name="node", blank=True, null=True)
-    private_key = utils.modelhelpers.Base64Field(blank=True)
+    private_key = fcdjangoutils.fields.Base64Field(blank=True)
 
     @classmethod
     def pre_save(cls, sender, instance, **kwargs):

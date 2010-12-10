@@ -2,7 +2,7 @@ import django.db.models
 import idmapper.models
 import django.contrib.auth.models
 from django.db.models import Q
-import utils.modelhelpers
+import fcdjangoutils.signalautoconnectmodel
 import settings
 import email
 import email.mime.message
@@ -10,11 +10,8 @@ import email.mime.application
 import email.mime.text
 import email.mime.multipart
 import hashlib
-import utils.modelhelpers
 
-class Document(idmapper.models.SharedMemoryModel):
-    __metaclass__ = utils.modelhelpers.SignalAutoConnectMeta
-
+class Document(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnectModel):
     document_id = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_HASH_LENGTH, blank=True)
     parent_document_id = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_HASH_LENGTH, null=True, blank=True)
     child_document_id = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_HASH_LENGTH, null=True, blank=True)
