@@ -10,6 +10,8 @@
   </head>
   <body>
     <div class="menubar">
+      Username: {{ request.user.username }}<br>
+      Node ID: {{ request.user.node.node_id|formatid }}<br>
       <a href="{% url django.contrib.auth.views.logout %}">Log out</a>
       <form method="POST" enctype="multipart/form-data">
 	{% csrf_token %}

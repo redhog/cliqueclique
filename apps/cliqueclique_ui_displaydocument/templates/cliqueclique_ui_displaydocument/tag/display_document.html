@@ -1,3 +1,5 @@
+{% load document %}
+
 <div class="action_icons">
   <a href="{% url cliqueclique_ui_displaydocument.views.download_document document_id=document_subscription.document.document_id %}">
     <img src="{{ STATIC_URL }}cliqueclique_ui_displaydocument/img/silk_companion/icons/disk_black.png" alt="Export">
@@ -28,11 +30,7 @@
   </a>
 </div>
 
-Wanters: {{ document_subscription.wanters }}<br>
-Subscribers: {{ document_subscription.subscribers }}<br>
-is_wanted {{ document_subscription.is_wanted }}<br>
-is_subscribed {{ document_subscription.is_subscribed }}<br>
-
+ID: {{ document_subscription.document.document_id|formatid }}<br>
 Subject: {{ document_subscription.document.as_mime.subject }}<br>
 Is a comment to:
 {% for parent in document_subscription.parents.all %}
@@ -55,3 +53,24 @@ Comments in:
   <textarea name="body"></textarea><br>
   <input type="submit" name="post" value="Post">
 </form>
+
+Wanters: {{ document_subscription.wanters }}<br>
+Subscribers: {{ document_subscription.subscribers }}<br>
+Is wanted {{ document_subscription.is_wanted }}<br>
+Is subscribed {{ document_subscription.is_subscribed }}<br>
+
+Serial: {{ document_subscription.serial }}<br>
+Center node ID: {{ document_subscription.center_node_id|formatid }}<br>
+Center distance: {{ document_subscription.center_distance }}<br>
+Center node is subscribed: {{ document_subscription.center_node_is_subscribed }}<br>
+
+{% for peer_subscription in document_subscription.peer_subscriptions.all %}
+  <div class="peer_subscription">
+    Peer: {{ peer_subscription.peer.node_id|formatid}}<br>
+    Serial: {{ peer_subscription.serial }}<br>
+    Is subscribed: {{ peer_subscription.is_subscribed }}<br>
+    Center node ID: {{ peer_subscription.center_node_id|formatid }}<br>
+    Center distance: {{ peer_subscription.center_distance }}<br>
+    Center node is subscribed: {{ peer_subscription.center_node_is_subscribed }}<br>
+  </div>
+{% endfor %}

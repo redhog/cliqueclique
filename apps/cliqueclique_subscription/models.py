@@ -15,6 +15,7 @@ import email.mime.text
 import email.mime.multipart
 
 import time
+import sys
 
 # TODO:
 #
@@ -91,7 +92,7 @@ class DocumentSubscription(BaseDocumentSubscription):
                 self.save()
 
     def update_center_from_upstream_peer(self, peer_subscription):
-        if peer_subscription.is_upstream(1):
+        if peer_subscription.is_upstream():
             self.center_node_is_subscribed = peer_subscription.center_node_is_subscribed
             self.center_node_id = peer_subscription.center_node_id
             self.center_distance = peer_subscription.center_distance + 1
@@ -112,7 +113,13 @@ class DocumentSubscription(BaseDocumentSubscription):
             peer_subscription.save()
 
     def elect_center_node(self):
-        if self.center_node_id is None or self.center_node_is_subscribed < self.is_subscribed:
+        sys.stderr.write("%s ELECTION: %s < %s\n" % (self.node.node_id[:5], self.center_node_is_subscribed, self.is_subscribed))
+        if self.center_node_id == self.node.node_id:
+            if self.center_node_is_subscribed != self.is_subscribed:
+                sys.stderr.write("%s %s %s\n" % (self.node.node_id[:5], "UPDATE CENTER NODE SUBSCRIPTION TO", self.is_subscribed))
+            self.center_node_is_subscribed = self.is_subscribed
+        elif self.center_node_id is None or self.center_node_is_subscribed < self.is_subscribed:
+            sys.stderr.write("%s %s\n" % (self.node.node_id[:5], "CHANGE CENTER NODE TO SELFT"))
             self.center_node_is_subscribed = self.is_subscribed
             self.center_node_id = self.node.node_id
             self.center_distance = 0
@@ -185,27 +192,30 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
 
     @classmethod
     def _compare(cls, a, b, is_this_much_closer = 0):
-        # Test if a is downstream from b. Should really have the same
-        # semantics as cmp, but it doesn't :P
-        return (   a.center_node_is_subscribed < b.center_node_is_subscribed
-                or (   a.center_node_is_subscribed == b.center_node_is_subscribed
-                    and (   a.center_node_id < b.center_node_id
-                         or (    a.center_node_id == b.center_node_id
-                             and a.center_distance > b.center_distance + is_this_much_closer))))
+        # Test if a is upstream from b. NOTE: CHANGED ORDER A B!!!
+
+        if a.center_node_id == b.center_node_id:
+            # Yes, a.distance < b.distance for a to be upstream :)
+            return cmp(b.center_distance, a.center_distance + is_this_much_closer)
+        else:
+            if a.center_node_is_subscribed == b.center_node_is_subscribed:
+                return cmp(a.center_node_id, b.center_node_id)
+            else:
+                return cmp(a.center_node_is_subscribed, b.center_node_is_subscribed)
 
     def is_upstream(self, is_this_much_closer = 0):
         # Note: Compares to our real current local subscription, not what the other node knows about us
-        return self._compare(self.local_subscription, self, is_this_much_closer)
+        return self._compare(self, self.local_subscription, is_this_much_closer) > 0
 
     def is_downstream(self, is_this_much_closer = 0):
         # Note: Compares to our real current local subscription, not what the other node knows about us
-        return self._compare(self, self.local_subscription, is_this_much_closer)
+        return self._compare(self.local_subscription, self, is_this_much_closer) > 0
 
     def update_child_subscriptions(self):
         if self.is_subscribed:
             for child in self.local_subscription.children.all():
                 if not child.peer_subscription(self.peer):
-                    print "Creating PeerDocumentSubscription(document=%s, peer=%s)" % (child.document.document_id, self.peer.node_id)
+                    sys.stderr.write("Creating PeerDocumentSubscription(document=%s, peer=%s)\n" % (child.document.document_id, self.peer.node_id))
                     PeerDocumentSubscription(local_subscription=child, peer=self.peer, serial=-1).save()
 
     @classmethod

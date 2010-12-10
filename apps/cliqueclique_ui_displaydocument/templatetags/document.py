@@ -1,5 +1,6 @@
 import django.template
 import cliqueclique_subscription.models
+import settings
 
 register = django.template.Library()
 
@@ -18,3 +19,7 @@ def display_document(context, document_id):
     #     info['document_subscription'].save()
 
     return info
+
+@register.filter
+def formatid(id):
+    return id[:settings.CLIQUECLIQUE_HASH_PRINT_LENGTH]

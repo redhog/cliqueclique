@@ -33,3 +33,9 @@ a img {
   margin-top: 10pt;
   margin-bottom: 10pt;
 }
+
+.peer_subscription {
+  marging-top: 10pt;
+  border: 1pt solid #555555;
+  padding: 5pt;
+}
