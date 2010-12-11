@@ -79,7 +79,10 @@ Comments in:
     {% for peer_subscription in document_subscription.peer_subscriptions.all %}
       <div class="peer_subscription">
 	Peer: {{ peer_subscription.peer.node_id|formatid}}<br>
+        Local serial: {{ peer_subscription.local_serial }}<br>
+	Peer send: {{ peer_subscription.peer_send }}<br>
 	Serial: {{ peer_subscription.serial }}<br>
+	Is wanted {{ peer_subscription.is_wanted }}<br>
 	Is subscribed: {{ peer_subscription.is_subscribed }}<br>
 	Center node ID: {{ peer_subscription.center_node_id|formatid }}<br>
 	Center distance: {{ peer_subscription.center_distance }}<br>

@@ -31,7 +31,8 @@ class BaseDocumentSubscription(fcdjangoutils.signalautoconnectmodel.SharedMemory
     center_distance = django.db.models.IntegerField(default = 0)
     serial = django.db.models.IntegerField(default = 0)
 
-    PROTOCOL_ATTRS = ('is_subscribed',
+    PROTOCOL_ATTRS = ('is_wanted',
+                      'is_subscribed',
                       'center_node_is_subscribed',
                       'center_node_id',
                       'center_distance',
@@ -53,13 +54,20 @@ class DocumentSubscription(BaseDocumentSubscription):
     local_is_subscribed = django.db.models.BooleanField(default = False)
     subscribers = django.db.models.SmallIntegerField(default = 0) # Don't change this one manually
 
+    old_is_wanted = django.db.models.BooleanField(default=False)
     old_is_subscribed = django.db.models.BooleanField(default=False)
     old_center_node_is_subscribed = django.db.models.BooleanField(default=False)
     old_center_node_id = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_HASH_LENGTH, null=True, blank=True)
     old_center_distance = django.db.models.IntegerField(default = 0)
 
     @property
-    def is_wanted(self): return self.wanters > 0 or self.bookmarked or self.parents.filter(local_is_subscribed=True).count()
+    def is_wanted(self):
+        subscribed_parents = 0
+        try:
+            subscribed_parents = self.parents.filter(local_is_subscribed=True).count()
+        except:
+            pass
+        return self.wanters > 0 or self.bookmarked or subscribed_parents > 0
 
     @property
     def is_subscribed(self): return self.subscribers > 0 or self.local_is_subscribed
@@ -178,6 +186,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
     peer_send = django.db.models.BooleanField(default = True)
 
     has_copy = django.db.models.BooleanField(default = False)
+    is_wanted = django.db.models.BooleanField(default = False)
     is_subscribed = django.db.models.BooleanField(default = False)
 
     old_wanters = django.db.models.IntegerField(default = 0)
@@ -227,6 +236,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
     @classmethod
     def deserialize_update(cls, update):
         res = {}
+        res['is_wanted'] = update['is_wanted'].lower() == 'true'
         res['is_subscribed'] = update['is_subscribed'].lower() == 'true'
         res['center_node_is_subscribed'] = update['center_node_is_subscribed'].lower() == 'true'
         res['center_node_id'] = update['center_node_id']
@@ -274,8 +284,11 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
         if not self.peer_send:
             return []
 
-        self.peer_send = False
-        self.save()
+        if self.is_wanted:
+            self.peer_send = False
+            self.save()
+        else:
+            self.delete()
 
         msg = email.mime.multipart.MIMEMultipart()
         msg.add_header('message_type', 'subscription_ack')

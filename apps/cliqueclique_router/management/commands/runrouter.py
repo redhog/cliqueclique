@@ -73,8 +73,8 @@ class Command(django.core.management.commands.runserver.Command):
                 print "Sender is running."
                 while True:
                     for (msg, address) in cliqueclique_node.models.LocalNode.send_any():
-                        print "========{To %s}========" % (address,)
-                        msg2debug(msg)
+                        # print "========{To %s}========" % (address,)
+                        # msg2debug(msg)
 
                         sock.sendto(msg, 0, address)
                         time.sleep(1)
