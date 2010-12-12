@@ -43,15 +43,15 @@ class DocumentSubscription(BaseDocumentSubscription):
     document = django.db.models.ForeignKey(cliqueclique_document.models.Document, related_name="subscriptions")
     read = django.db.models.BooleanField(default=False)
     bookmarked = django.db.models.BooleanField(default=False)
+    local_is_subscribed = django.db.models.BooleanField(default = False)
 
     # Note, this might be empty if no document with self.document.{up,down}_document_id
     # exists at this node yet
     parents = django.db.models.ManyToManyField("DocumentSubscription", related_name="children", null=True, blank=True)
 
     wanters = django.db.models.SmallIntegerField(default = 0) # Don't change this one manually
+    subscribed_parents = django.db.models.SmallIntegerField(default = 0) # Don't change this one manually
 
-    # Did _we_ subscribe to this?
-    local_is_subscribed = django.db.models.BooleanField(default = False)
     subscribers = django.db.models.SmallIntegerField(default = 0) # Don't change this one manually
 
     old_is_wanted = django.db.models.BooleanField(default=False)
@@ -62,12 +62,7 @@ class DocumentSubscription(BaseDocumentSubscription):
 
     @property
     def is_wanted(self):
-        subscribed_parents = 0
-        try:
-            subscribed_parents = self.parents.filter(local_is_subscribed=True).count()
-        except:
-            pass
-        return self.wanters > 0 or self.bookmarked or subscribed_parents > 0
+        return self.wanters > 0 or self.bookmarked or self.subscribed_parents > 0
 
     @property
     def is_subscribed(self): return self.subscribers > 0 or self.local_is_subscribed
@@ -81,6 +76,20 @@ class DocumentSubscription(BaseDocumentSubscription):
             return PeerDocumentSubscription.objects.get(local_subscription=self, peer=peer)
         except:
             return None
+
+    def ensure_peer_subscription(self, peer):
+        peer_subscription = self.peer_subscription(peer)
+        if not peer_subscription:
+            sys.stderr.write("Creating PeerDocumentSubscription(document=%s, peer=%s)\n" % (self.document.document_id, peer.node_id))
+            peer_subscription = PeerDocumentSubscription(local_subscription=self, peer=peer, serial=-1)
+            peer_subscription.save()
+        return peer_subscription
+
+    def update_subscribed_parents(self):
+        subscribed_parents = self.parents.filter(local_is_subscribed=True).count()
+        if subscribed_parents != self.subscribed_parents:
+            self.subscribed_parents = subscribed_parents
+            self.save()
 
     def update_child_subscriptions(self):
         if self.document.parent_document_id is not None:
@@ -96,6 +105,14 @@ class DocumentSubscription(BaseDocumentSubscription):
             if child_subscription not in self.children.all():
                 self.children.add(child_subscription)
                 self.save()
+
+        for child in self.children.all():
+            child.update_subscribed_parents()
+
+        for parent in self.parents.all():
+            if parent.is_subscribed:
+                for peer_subscription in parent.peer_subscriptions.all():
+                    self.ensure_peer_subscription(peer_subscription.peer)
 
     def update_center_from_upstream_peer(self, peer_subscription):
         if peer_subscription.is_upstream():
@@ -221,9 +238,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
     def update_child_subscriptions(self):
         if self.is_subscribed:
             for child in self.local_subscription.children.all():
-                if not child.peer_subscription(self.peer):
-                    sys.stderr.write("Creating PeerDocumentSubscription(document=%s, peer=%s)\n" % (child.document.document_id, self.peer.node_id))
-                    PeerDocumentSubscription(local_subscription=child, peer=self.peer, serial=-1).save()
+                child.ensure_peer_subscription(self.peer)
 
     @classmethod
     def on_pre_save(cls, sender, instance, **kwargs):
