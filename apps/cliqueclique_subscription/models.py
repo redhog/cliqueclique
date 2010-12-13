@@ -97,6 +97,7 @@ class DocumentSubscription(BaseDocumentSubscription):
             parent_subscription = self.subscription_for_document(self.node, parent_document) 
             if parent_subscription not in self.parents.all():
                 self.parents.add(parent_subscription)
+                self.update_subscribed_parents()
                 self.save()
 
         if self.document.child_document_id is not None:
@@ -303,7 +304,10 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
             self.peer_send = False
             self.save()
         else:
-            self.delete()
+            print "DELETING PEER SUBSCRIPTION"
+            self.peer_send = False
+            self.save()
+            #self.delete()
 
         msg = email.mime.multipart.MIMEMultipart()
         msg.add_header('message_type', 'subscription_ack')
