@@ -111,8 +111,8 @@ class DocumentSubscription(BaseDocumentSubscription):
             child.update_subscribed_parents()
 
         for parent in self.parents.all():
-            if parent.is_subscribed:
-                for peer_subscription in parent.peer_subscriptions.all():
+            for peer_subscription in parent.peer_subscriptions.all():
+                if peer_subscription.is_subscribed:
                     self.ensure_peer_subscription(peer_subscription.peer)
 
     def update_center_from_upstream_peer(self, peer_subscription):
