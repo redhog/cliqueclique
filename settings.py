@@ -134,6 +134,7 @@ STATICFILES_DIRS.extend(
         lambda x: os.path.join(PROJECT_ROOT,'apps',x,'media'), 
         LOCAL_APPS))
 
+CLIQUECLIQUE_LOCALHOST = False
 CLIQUECLIQUE_ADDRESS_LENGTH = 61
 CLIQUECLIQUE_HASH_LENGTH = 53 # Same as i2p b32 address length, just for fun :)
 

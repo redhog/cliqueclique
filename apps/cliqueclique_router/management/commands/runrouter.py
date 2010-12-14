@@ -8,12 +8,14 @@ import cliqueclique_node.models
 import cliqueclique_document.models
 import cliqueclique_subscription.models
 import i2p.socket
+import socket
 import threading
 import time
 import django.core.management.commands.runserver
 import settings
 import utils.i2p
 import utils.smime
+import os
 
 def msg2debug(msg):
     msg = utils.smime.message_from_anything(msg)
@@ -49,8 +51,16 @@ class Command(django.core.management.commands.runserver.Command):
     def handle(self, *args, **options):
         print 'Connecting to i2p router...'
 
-        sock = i2p.socket.socket(settings.CLIQUECLIQUE_I2P_SESSION_NAME, i2p.socket.SOCK_DGRAM)
-        local_address = utils.i2p.dest2b32(sock.dest)
+        if settings.CLIQUECLIQUE_LOCALHOST:
+            local_address = '/tmp/'+settings.CLIQUECLIQUE_I2P_SESSION_NAME
+            if os.path.exists(local_address):
+                os.unlink(local_address)
+            sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+            sock.bind(local_address)
+            #sock.listen(1)
+        else:
+            sock = i2p.socket.socket(settings.CLIQUECLIQUE_I2P_SESSION_NAME, i2p.socket.SOCK_DGRAM)
+            local_address = utils.i2p.dest2b32(sock.dest)
         print 'Serving at: %s.' % (local_address,)
 
         for local in cliqueclique_node.models.LocalNode.objects.all():
@@ -62,7 +72,10 @@ class Command(django.core.management.commands.runserver.Command):
             def run(self):
                 print "Receiver is running."
                 while True:
-                    (msg, address) = sock.recvfrom(-1)
+                    if settings.CLIQUECLIQUE_LOCALHOST:
+                        (msg, address) = sock.recvfrom(10000)
+                    else:
+                        (msg, address) = sock.recvfrom(-1)
 
                     print "========{From %s}========" % (utils.i2p.dest2b32(address),)
                     msg2debug(msg)
@@ -73,7 +86,7 @@ class Command(django.core.management.commands.runserver.Command):
                 print "Sender is running."
                 while True:
                     for (msg, address) in cliqueclique_node.models.LocalNode.send_any():
-                        # print "========{To %s}========" % (address,)
+                        print "========{To %s}========" % (address,)
                         # msg2debug(msg)
 
                         sock.sendto(msg, 0, address)
@@ -88,6 +101,5 @@ class Command(django.core.management.commands.runserver.Command):
         receiver.start()
 
         print "Starting webserver..."
-        import os
         os.environ["RUN_MAIN"] = "true"
         django.core.management.commands.runserver.Command.handle(self, *args, **options)

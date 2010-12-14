@@ -2,6 +2,7 @@ import django.template
 import cliqueclique_subscription.models
 import cliqueclique_node.models
 import settings
+import utils.smime
 
 register = django.template.Library()
 
@@ -15,7 +16,7 @@ def display_document(context, document_id):
         document__document_id=document_id)
     doc = info['document_subscription'].document.as_mime
 
-    if doc['content-type'] == 'multipart/signed':
+    if doc.get_content_type() == 'multipart/signed':
         cert = doc.verify()[0]
         doc = doc.get_payload()[0]
 
@@ -24,6 +25,7 @@ def display_document(context, document_id):
         info['document_signature_name'] = data['name']
         info['document_signature_address'] = data['address']
 
+    info['document_id'] = document_id
     info['document'] = doc
     info['document_body'] = doc.get_payload()
 

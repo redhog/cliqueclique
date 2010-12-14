@@ -47,9 +47,12 @@ class LocalNode(Node):
     @classmethod
     def on_pre_save(cls, sender, instance, **kwargs):
         if not instance.address:
-            sock = i2p.socket.socket(settings.CLIQUECLIQUE_I2P_SESSION_NAME, i2p.socket.SOCK_DGRAM)
-            instance.address = utils.i2p.dest2b32(sock.dest)
-            sock.close()
+            if settings.CLIQUECLIQUE_LOCALHOST:
+                instance.address = '/tmp/'+settings.CLIQUECLIQUE_I2P_SESSION_NAME
+            else:
+                sock = i2p.socket.socket(settings.CLIQUECLIQUE_I2P_SESSION_NAME, i2p.socket.SOCK_DGRAM)
+                instance.address = utils.i2p.dest2b32(sock.dest)
+                sock.close()
         if not instance.public_key:
             instance.public_key, instance.private_key = utils.smime.make_self_signed_cert(instance.name, instance.address, settings.CLIQUECLIQUE_KEY_SIZE)
         if not instance.node_id:

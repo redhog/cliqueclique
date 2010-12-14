@@ -39,11 +39,11 @@
   </a>
 </div>
 
-ID: {{ document.document_id|formatid }}<br>
-{% if document_signature % }
-Sender: {{ document_signature|formatid }}<br>
-Sender name: {{ document_signature_name }}<br>
-Sender address: {{ document_signature_address }}<br>
+ID: {{ document_id|formatid }}<br>
+{% if document_signature %}
+  Sender: {{ document_signature|formatid }}<br>
+  Sender name: {{ document_signature_name }}<br>
+  Sender address: {{ document_signature_address }}<br>
 {% endif %}
 Is a comment to:
 {% for parent in document_subscription.parents.all %}
@@ -56,7 +56,7 @@ Comments in:
 {% endfor %}
 
 <div class="document_body">
-  {{ body }}
+  {{ document_body }}
 </div>
 
 <form method="POST" action="{% url cliqueclique_ui_displaydocument.views.post_document %}">
