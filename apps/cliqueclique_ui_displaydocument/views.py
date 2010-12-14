@@ -23,7 +23,13 @@ def post_document(request):
     for hdr in ('subject', 'parent_document_id'):
         if hdr in request.POST:
             doc.add_header(hdr, request.POST[hdr])
-    doc = cliqueclique_document.models.Document(content=doc.as_string())
+
+    signed = utils.smime.MIMESigned()
+    signed.set_private_key(utils.smime.der2pem(request.user.node.private_key, "PRIVATE KEY"))
+    signed.set_cert(utils.smime.der2pem(request.user.node.public_key))
+    signed.attach(doc)
+
+    doc = cliqueclique_document.models.Document(content=signed.as_string())
     doc.save()
     sub = cliqueclique_subscription.models.DocumentSubscription(
         node = request.user.node,

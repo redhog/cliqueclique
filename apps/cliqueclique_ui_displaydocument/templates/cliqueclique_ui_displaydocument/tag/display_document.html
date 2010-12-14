@@ -10,11 +10,11 @@
 {% with STATIC_URL|aadd:"fcdjangoutils/js/expand.js" as url %}{% widget_addjsfile url %}{% endwith %}
 
 <div class="action_icons">
-  <a href="{% url cliqueclique_ui_displaydocument.views.download_document document_id=document_subscription.document.document_id %}">
+  <a href="{% url cliqueclique_ui_displaydocument.views.download_document document_id=document.document_id %}">
     <img src="{{ STATIC_URL }}cliqueclique_ui_displaydocument/img/silk_companion/icons/disk_black.png" alt="Export">
   </a>
 
-  <a href="{% url cliqueclique_ui_displaydocument.views.set_document_flags document_id=document_subscription.document.document_id %}?local_is_subscribed=toggle">
+  <a href="{% url cliqueclique_ui_displaydocument.views.set_document_flags document_id=document.document_id %}?local_is_subscribed=toggle">
     {% if document_subscription.local_is_subscribed %}
       <img src="{{ STATIC_URL }}cliqueclique_ui_displaydocument/img/silk_icons/icons/comments_add.png" alt="Subscribing to new comments">
     {% else %}
@@ -22,7 +22,7 @@
     {% endif %}
   </a>
 
-  <a href="{% url cliqueclique_ui_displaydocument.views.set_document_flags document_id=document_subscription.document.document_id %}?read=toggle">
+  <a href="{% url cliqueclique_ui_displaydocument.views.set_document_flags document_id=document.document_id %}?read=toggle">
     {% if document_subscription.read %}
       <img src="{{ STATIC_URL }}cliqueclique_ui_displaydocument/img/silk_icons/icons/eye.png" alt="Read">
     {% else %}
@@ -30,7 +30,7 @@
     {% endif %}
   </a>
 
-  <a href="{% url cliqueclique_ui_displaydocument.views.set_document_flags document_id=document_subscription.document.document_id %}?bookmarked=toggle">
+  <a href="{% url cliqueclique_ui_displaydocument.views.set_document_flags document_id=document.document_id %}?bookmarked=toggle">
     {% if document_subscription.bookmarked %}
       <img src="{{ STATIC_URL }}cliqueclique_ui_displaydocument/img/silk_companion/icons/star_gold.png" alt="Bookmarked">
     {% else %}
@@ -39,8 +39,12 @@
   </a>
 </div>
 
-ID: {{ document_subscription.document.document_id|formatid }}<br>
-Subject: {{ document_subscription.document.as_mime.subject }}<br>
+ID: {{ document.document_id|formatid }}<br>
+{% if document_signature % }
+Sender: {{ document_signature|formatid }}<br>
+Sender name: {{ document_signature_name }}<br>
+Sender address: {{ document_signature_address }}<br>
+{% endif %}
 Is a comment to:
 {% for parent in document_subscription.parents.all %}
   <a href="{% url cliqueclique_ui_displaydocument.views.display_document document_id=parent.document.document_id %}">{{ parent.document.as_mime.subject}}</a>
@@ -57,15 +61,15 @@ Comments in:
 
 <form method="POST" action="{% url cliqueclique_ui_displaydocument.views.post_document %}">
   {% csrf_token %}
-  <input type="hidden" name="parent_document_id" value="{{ document_subscription.document.document_id }}">
+  <input type="hidden" name="parent_document_id" value="{{ document.document_id }}">
   <input type="text" name="subject"><br>
   <textarea name="body"></textarea><br>
   <input type="submit" name="post" value="Post">
 </form>
 
 <div class="document_subscription_details">
-  <div class="autohide-button" id="document_subscription_details_{{ document_subscription.document.document_id }}-button">Subscription detalils</div>
-  <div class="autohide-body" id="document_subscription_details_{{ document_subscription.document.document_id }}-body">
+  <div class="autohide-button" id="document_subscription_details_{{ document.document_id }}-button">Subscription detalils</div>
+  <div class="autohide-body" id="document_subscription_details_{{ document.document_id }}-body">
     Wanters: {{ document_subscription.wanters }}<br>
     Subscribers: {{ document_subscription.subscribers }}<br>
     Is wanted {{ document_subscription.is_wanted }}<br>

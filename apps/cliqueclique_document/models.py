@@ -33,6 +33,10 @@ class Document(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnec
 
         # Grep out any document pointers and store them separately for easy access
         mime = instance.as_mime
+
+        if mime['content-type'] == 'multipart/signed':
+            mime = mime.get_payload()[0]
+
         instance.parent_document_id = mime['parent_document_id']
         instance.child_document_id = mime['child_document_id']
 
