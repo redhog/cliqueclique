@@ -352,7 +352,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
         self.local_subscription.update_subscription_from_downstream_peer(self)
 
     @classmethod
-    def on_pre_delete(cls, sender, instance, **kwargs):
+    def on_post_delete(cls, sender, instance, **kwargs):
         sys.stderr.write("DELETING PEER SUBSCRIPTION\n")
         if not instance.local_subscription.is_wanted:
             sys.stderr.write("    DELETING SUBSCRIPTION\n")
