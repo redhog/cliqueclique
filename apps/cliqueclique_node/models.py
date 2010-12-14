@@ -21,6 +21,9 @@ import utils.hash
 import time
 
 class Node(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnectModel):
+    class Meta:
+        abstract = True
+
     # max_length should really be the max-length supported by X509 for CN
     name = django.db.models.CharField(max_length=200, blank=True)
     node_id = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_HASH_LENGTH, blank=True)
@@ -35,6 +38,9 @@ class Node(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnectMod
         return "%s %s [%s..]" % (type(self).__name__, self.name, self.node_id[:10])
 
 class LocalNode(Node):
+    class Meta:
+        unique_together = (("node_id",),)    
+
     owner = django.db.models.OneToOneField(django.contrib.auth.models.User, related_name="node", blank=True, null=True)
     private_key = fcdjangoutils.fields.Base64Field(blank=True)
 
@@ -102,6 +108,9 @@ def user_on_post_save(sender, instance, **kwargs):
 django.db.models.signals.post_save.connect(user_on_post_save, sender=django.contrib.auth.models.User)
 
 class Peer(Node):
+    class Meta:
+        unique_together = (("local", "node_id",),)
+
     local = django.db.models.ForeignKey(LocalNode, related_name="peers")
 
     @classmethod
@@ -154,36 +163,39 @@ class Peer(Node):
 
         if part['message_type'] in ('subscription_update', 'subscription_ack'):
             is_new = False
+
+            local_subs = cliqueclique_subscription.models.DocumentSubscription.objects.filter(
+                document__document_id = part['document_id'],
+                node = self.local).all()
+            if local_subs:
+                local_sub = local_subs[0]
+            else:
+                if part['message_type'] == 'subscription_ack':
+                    raise Exception("Received an ACK for a non-existent message %s" % (part['document_id'],))
+                docs = cliqueclique_document.models.Document.objects.filter(
+                    document_id = part['document_id']).all()
+                if docs:
+                    doc = docs[0]
+                else:
+                    doc = cliqueclique_document.models.Document(content = part.get_payload())
+                    doc.save()
+                local_sub = cliqueclique_subscription.models.DocumentSubscription(node = self.local, document = doc)
+                local_sub.save()
+                is_new = True
+
             subs = cliqueclique_subscription.models.PeerDocumentSubscription.objects.filter(
-                local_subscription__document__document_id = part['document_id'],
-                peer = self,
-                local_subscription__node = self.local).all()
+                local_subscription = local_sub,
+                peer = self).all()
             if subs:
                 sub = subs[0]
             else:
                 if part['message_type'] == 'subscription_ack':
                     raise Exception("Received an ACK for a non-existent message %s" % (part['document_id'],))
-                local_subs = cliqueclique_subscription.models.DocumentSubscription.objects.filter(
-                    document__document_id = part['document_id'],
-                    node = self.local).all()
-                if local_subs:
-                    local_sub = local_subs[0]
-                else:
-                    docs = cliqueclique_document.models.Document.objects.filter(
-                        document_id = part['document_id']).all()
-                    if docs:
-                        doc = docs[0]
-                    else:
-                        doc = cliqueclique_document.models.Document(content = part.get_payload())
-                        doc.save()
-                    local_sub = cliqueclique_subscription.models.DocumentSubscription(node = self.local, document = doc)
-                    local_sub.save()
-                    is_new = True
-
                 sub = cliqueclique_subscription.models.PeerDocumentSubscription(
                     local_subscription = local_sub,
                     peer = self)
                 sub.save()
+
             sub.receive(part)
 
             # We don't want the other node to continue spamming us

@@ -17,10 +17,16 @@ import email.mime.multipart
 import time
 import sys
 
-# TODO:
-#
-# * Handle unsubscribed
-# * Handle delete
+def format_change(n, o, trunk = False):
+   nn = n
+   oo = o
+   if trunk:
+       nn = nn[:settings.CLIQUECLIQUE_HASH_PRINT_LENGTH]
+       oo = oo[:settings.CLIQUECLIQUE_HASH_PRINT_LENGTH]
+   res = str(nn)
+   if n != o:
+       res += '(%s)' % (oo,)
+   return res
 
 class BaseDocumentSubscription(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnectModel):
     class Meta:
@@ -39,8 +45,12 @@ class BaseDocumentSubscription(fcdjangoutils.signalautoconnectmodel.SharedMemory
                       'serial')
 
 class DocumentSubscription(BaseDocumentSubscription):
+    class Meta:
+        unique_together = (("node", "document"),)
+
     node = django.db.models.ForeignKey(cliqueclique_node.models.LocalNode, related_name="subscriptions")
     document = django.db.models.ForeignKey(cliqueclique_document.models.Document, related_name="subscriptions")
+
     read = django.db.models.BooleanField(default=False)
     bookmarked = django.db.models.BooleanField(default=False)
     local_is_subscribed = django.db.models.BooleanField(default = False)
@@ -59,6 +69,48 @@ class DocumentSubscription(BaseDocumentSubscription):
     old_center_node_is_subscribed = django.db.models.BooleanField(default=False)
     old_center_node_id = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_HASH_LENGTH, null=True, blank=True)
     old_center_distance = django.db.models.IntegerField(default = 0)
+
+    def format_to_dict(self):
+        return {
+            'node_id': self.node.node_id[:settings.CLIQUECLIQUE_HASH_PRINT_LENGTH],
+            'document_id': self.document.document_id[:settings.CLIQUECLIQUE_HASH_PRINT_LENGTH],
+
+            'read': ['unread', 'read'][self.read],
+            'bookmarked': ['unmarked', 'bookmarked'][self.bookmarked],
+            'local_is_subscribed': ['nonsub', 'subscribed'][self.local_is_subscribed],
+
+            'children': ', '.join(child.document.document_id[:settings.CLIQUECLIQUE_HASH_PRINT_LENGTH] for child in self.children.all()),
+
+            'wanters': self.wanters,
+            'subscribed_parents': self.subscribed_parents,
+
+            'subscribers': self.subscribers,
+
+            'serial': self.serial,
+            'is_wanted': format_change(self.is_wanted, self.old_is_wanted),
+            'is_subscribed': format_change(self.is_subscribed, self.old_is_subscribed),
+            'center_node_is_subscribed': format_change(self.center_node_is_subscribed, self.old_center_node_is_subscribed),
+            'center_node_id': format_change(self.center_node_id, self.old_center_node_id, True),
+            'center_distance': format_change(self.center_distance, self.old_center_distance),
+            }
+            
+    def __repr__(self):
+        return """%(node_id)s.%(document_id)s (%(read)s %(bookmarked)s %(local_is_subscribed)s)
+Children: %(children)s
+
+Wanters: %(wanters)s
+Subscribed parents: %(subscribed_parents)s
+
+Subscribers: %(subscribers)s
+
+Serial: %(serial)s
+Is wanted: %(is_wanted)s
+Is subscribed: %(is_subscribed)s
+Center node is subscribed: %(center_node_is_subscribed)s
+Center node id: %(center_node_id)s
+Center distance: %(center_distance)s
+""" % self.format_to_dict()
+
 
     @property
     def is_wanted(self):
@@ -195,6 +247,9 @@ class DocumentSubscription(BaseDocumentSubscription):
 class PeerDocumentSubscription(BaseDocumentSubscription):
     # This is what a peer knows about us, as well as what we know about them
 
+    class Meta:
+        unique_together = (("local_subscription", "peer"),)
+
     local_subscription = django.db.models.ForeignKey(DocumentSubscription, related_name="peer_subscriptions")
     peer = django.db.models.ForeignKey(cliqueclique_node.models.Peer, related_name="subscriptions")
 
@@ -204,12 +259,59 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
     peer_send = django.db.models.BooleanField(default = True)
 
     has_copy = django.db.models.BooleanField(default = False)
-    is_wanted = django.db.models.BooleanField(default = False)
+    is_wanted = django.db.models.BooleanField(default = True)
     is_subscribed = django.db.models.BooleanField(default = False)
 
     old_wanters = django.db.models.IntegerField(default = 0)
     old_subscribers = django.db.models.IntegerField(default = 0)
  
+    
+    def format_to_dict(self):
+        return {
+            'local_subscription': repr(self.local_subscription),
+            'peer_id': self.peer.node_id[:settings.CLIQUECLIQUE_HASH_PRINT_LENGTH],
+
+            'center_node_is_subscribed': self.center_node_is_subscribed,
+            'center_node_id': self.center_node_id,
+            'center_distance': self.center_distance,
+            'serial': self.serial,
+
+            'local_serial': self.local_serial,
+            'local_resend_interval': self.local_resend_interval,
+            'local_resend_time': self.local_resend_time,
+            'peer_send': self.peer_send,
+
+            'has_copy': self.has_copy,
+            'is_wanted': self.is_wanted,
+            'is_subscribed': self.is_subscribed,
+
+            'wanters': format_change(self.wanters, self.old_wanters),
+            'subscribers': format_change(self.subscribers, self.old_subscribers),
+            }
+
+    def __repr__(self):
+        return """%(local_subscription)s
+
+    %(peer_id)s
+
+    Center node is subscribed: %(center_node_is_subscribed)s
+    Center node id: %(center_node_id)s
+    Center distance: %(center_distance)s
+    Serial: %(serial)s
+
+    Local serial: %(local_serial)s
+    Local resend interval: %(local_resend_interval)s
+    Local resend time: %(local_resend_time)s
+    Peer send: %(peer_send)s
+
+    Has copy: %(has_copy)s
+    Is wanted: %(is_wanted)s
+    Is subscribed: %(is_subscribed)s
+
+    Wanters: %(wanters)s
+    Subscribers: %(subscribers)s
+""" % self.format_to_dict()
+
     @property
     def wanters(self): return [0, 1][self.is_downstream(1)]
     @property
@@ -250,6 +352,13 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
         self.local_subscription.update_subscription_from_downstream_peer(self)
 
     @classmethod
+    def on_pre_delete(cls, sender, instance, **kwargs):
+        sys.stderr.write("DELETING PEER SUBSCRIPTION\n")
+        if not instance.local_subscription.is_wanted:
+            sys.stderr.write("    DELETING SUBSCRIPTION\n")
+            instance.local_subscription.delete()
+
+    @classmethod
     def deserialize_update(cls, update):
         res = {}
         res['is_wanted'] = update['is_wanted'].lower() == 'true'
@@ -271,8 +380,11 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
         update = self.deserialize_update(update)
         if self.local_subscription.serial == update['serial']:
             self.local_serial = self.local_subscription.serial
-            self.has_copy = True
-            self.save()
+            if self.local_subscription.is_wanted:
+                self.has_copy = True
+                self.save()
+            else:
+                self.delete()
 
     def receive(self, update):
         if update['message_type'] == 'subscription_update':
@@ -304,10 +416,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
             self.peer_send = False
             self.save()
         else:
-            print "DELETING PEER SUBSCRIPTION"
-            self.peer_send = False
-            self.save()
-            #self.delete()
+            self.delete()
 
         msg = email.mime.multipart.MIMEMultipart()
         msg.add_header('message_type', 'subscription_ack')
