@@ -61,7 +61,7 @@ Comments in:
 
 <form method="POST" action="{% url cliqueclique_ui_displaydocument.views.post_document %}">
   {% csrf_token %}
-  <input type="hidden" name="parent_document_id" value="{{ document.document_id }}">
+  <input type="hidden" name="parent_document_id" value="{{ document_id }}">
   <input type="text" name="subject"><br>
   <textarea name="body"></textarea><br>
   <input type="submit" name="post" value="Post">
