@@ -34,11 +34,44 @@ class Document(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnec
         # Grep out any document pointers and store them separately for easy access
         mime = instance.as_mime
 
-        if mime['content-type'] == 'multipart/signed':
+        keywords = {}
+        if mime.get_content_type() == 'multipart/signed':
             mime = mime.get_payload()[0]
 
         instance.parent_document_id = mime['parent_document_id']
         instance.child_document_id = mime['child_document_id']
+
+    @classmethod
+    def on_post_save(cls, sender, instance, **kwargs):
+        import cliqueclique_node.models
+
+        mime = instance.as_mime
+
+        properties = {}
+        if mime.get_content_type() == 'multipart/signed':
+            cert = mime.verify()[0]
+            mime = mime.get_payload()[0]
+
+            data = utils.smime.cert_get_data(cert)
+            properties[':signature'] = cliqueclique_node.models.Node.node_id_from_public_key(cert)
+            properties[':signature_name'] = data['name']
+            properties[':signature_address'] = data['address']
+
+        def properties_from_mime(mime, prefix = '/0'):
+            for key, value in mime.items():
+                properties[prefix + ':' + key.lower()] = value
+                if mime.get_content_maintype() == 'multipart':
+                    for idx, part in enumerate(mime.get_payload()):
+                        properties_from_mime(part, "%s/%s" % (prefix, ix))
+    
+        properties_from_mime(mime)
+
+        for property in DocumentProperty.objects.filter(document = instance).all():
+            property.delete()
+
+        for key, value in properties.iteritems():
+            doc = DocumentProperty(document=instance, key=key, value=value)
+            doc.save()
 
     def __unicode__(self):
         try:
@@ -48,3 +81,11 @@ class Document(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnec
         if not subject:
             subject = self.content[:10] + ".."
         return "%s [%s..]" % (subject, self.document_id[:10])
+
+class DocumentProperty(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnectModel):
+    document = django.db.models.ForeignKey(Document, related_name="properties")
+    key = django.db.models.TextField()
+    value = django.db.models.TextField()
+
+    class Meta:
+        unique_together = (("document", "key",),)
