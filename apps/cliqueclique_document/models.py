@@ -1,7 +1,7 @@
 import django.db.models
 import idmapper.models
 import django.contrib.auth.models
-from django.db.models import Q
+from django.db.models import Q, F
 import fcdjangoutils.signalautoconnectmodel
 import settings
 import email
@@ -45,34 +45,36 @@ class Document(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnec
     def on_post_save(cls, sender, instance, **kwargs):
         import cliqueclique_node.models
 
+        for part in instance.parts.all():
+            part.delete()
+
         mime = instance.as_mime
 
-        properties = {}
+        part = DocumentPart(document = instance, idx = 0)
+        part.save()
+
         if mime.get_content_type() == 'multipart/signed':
             cert = mime.verify()[0]
             mime = mime.get_payload()[0]
 
             data = utils.smime.cert_get_data(cert)
-            properties[':signature'] = cliqueclique_node.models.Node.node_id_from_public_key(cert)
-            properties[':signature_name'] = data['name']
-            properties[':signature_address'] = data['address']
+            DocumentProperty(part = part, key = 'node_id', value = cliqueclique_node.models.Node.node_id_from_public_key(cert)).save()
+            DocumentProperty(part = part, key = 'name', value = data['name']).save()
+            DocumentProperty(part = part, key = 'address', value = data['address']).save()
 
-        def properties_from_mime(mime, prefix = '/0'):
+        def properties_from_mime(parent, idx, mime):
+            part = DocumentPart(parent = parent, idx = idx)
+            part.save()
+
             for key, value in mime.items():
-                properties[prefix + ':' + key.lower()] = value
-                if mime.get_content_maintype() == 'multipart':
-                    for idx, part in enumerate(mime.get_payload()):
-                        properties_from_mime(part, "%s/%s" % (prefix, ix))
+                DocumentProperty(part = part, key = key, value = value).save()
+
+            if mime.get_content_maintype() == 'multipart':
+                for idx, part_mime in enumerate(mime.get_payload()):
+                    properties_from_mime(part, idx, part_mime)
     
-        properties_from_mime(mime)
-
-        for property in DocumentProperty.objects.filter(document = instance).all():
-            property.delete()
-
-        for key, value in properties.iteritems():
-            doc = DocumentProperty(document=instance, key=key, value=value)
-            doc.save()
-
+        properties_from_mime(part, 0, mime)
+        
     def __unicode__(self):
         try:
             subject = self.as_mime['subject']
@@ -82,10 +84,16 @@ class Document(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnec
             subject = self.content[:10] + ".."
         return "%s [%s..]" % (subject, self.document_id[:10])
 
+# Helper structure to organize the properties
+class DocumentPart(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnectModel):
+    document = django.db.models.ForeignKey(Document, related_name="parts", null=True)
+    parent = django.db.models.ForeignKey('DocumentPart', related_name="parts", null=True)
+    idx = django.db.models.IntegerField() # Index in get_payload() list.
+
 class DocumentProperty(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnectModel):
-    document = django.db.models.ForeignKey(Document, related_name="properties")
+    part = django.db.models.ForeignKey(DocumentPart, related_name="properties")
     key = django.db.models.TextField()
     value = django.db.models.TextField()
 
     class Meta:
-        unique_together = (("document", "key",),)
+        unique_together = (("part", "key",),)

@@ -242,7 +242,7 @@ Center distance: %(center_distance)s
         return self.node.sign(msg)
 
     def __unicode__(self):
-        return "%s @ %s" % (self.document, self.node)
+        return "%s @ %s" % (self.document, self.node)        
 
 class PeerDocumentSubscription(BaseDocumentSubscription):
     # This is what a peer knows about us, as well as what we know about them
