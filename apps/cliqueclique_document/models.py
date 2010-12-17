@@ -70,7 +70,7 @@ class Document(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnec
             part.save()
 
             for key, value in mime.items():
-                DocumentProperty(part = part, key = key, value = value).save()
+                DocumentProperty(part = part, key = key.lower(), value = value).save()
 
             if mime.get_content_maintype() == 'multipart':
                 for idx, part_mime in enumerate(mime.get_payload()):
