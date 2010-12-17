@@ -26,17 +26,20 @@ class Document(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnec
     def as_mime(self):
         return email.message_from_string(str(self.content))
 
+    @property
+    def content_as_mime(self):
+        mime = self.as_mime
+        if mime.get_content_type() == 'multipart/signed':
+            mime = mime.get_payload()[0]
+        return mime
+
     @classmethod
     def on_pre_save(cls, sender, instance, **kwargs):
         # Generate id from content
         instance.document_id = instance.document_id_from_content(instance.content)
 
         # Grep out any document pointers and store them separately for easy access
-        mime = instance.as_mime
-
-        keywords = {}
-        if mime.get_content_type() == 'multipart/signed':
-            mime = mime.get_payload()[0]
+        mime = instance.content_as_mime
 
         instance.parent_document_id = mime['parent_document_id']
         instance.child_document_id = mime['child_document_id']
