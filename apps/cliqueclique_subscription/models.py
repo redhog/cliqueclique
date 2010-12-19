@@ -37,7 +37,8 @@ class BaseDocumentSubscription(fcdjangoutils.signalautoconnectmodel.SharedMemory
     center_distance = django.db.models.IntegerField(default = 0)
     serial = django.db.models.IntegerField(default = 0)
 
-    PROTOCOL_ATTRS = ('is_wanted',
+    PROTOCOL_ATTRS = ('has_enought_peers',
+                      'is_wanted',
                       'is_subscribed',
                       'center_node_is_subscribed',
                       'center_node_id',
@@ -59,11 +60,13 @@ class DocumentSubscription(BaseDocumentSubscription):
     # exists at this node yet
     parents = django.db.models.ManyToManyField("DocumentSubscription", related_name="children", null=True, blank=True)
 
+    peer_nrs = django.db.models.SmallIntegerField(default = 0) # Don't change this one manually
     wanters = django.db.models.SmallIntegerField(default = 0) # Don't change this one manually
     subscribed_parents = django.db.models.SmallIntegerField(default = 0) # Don't change this one manually
 
     subscribers = django.db.models.SmallIntegerField(default = 0) # Don't change this one manually
 
+    old_has_enought_peers = django.db.models.BooleanField(default=False)
     old_is_wanted = django.db.models.BooleanField(default=False)
     old_is_subscribed = django.db.models.BooleanField(default=False)
     old_center_node_is_subscribed = django.db.models.BooleanField(default=False)
@@ -81,12 +84,14 @@ class DocumentSubscription(BaseDocumentSubscription):
 
             'children': ', '.join(child.document.document_id[:settings.CLIQUECLIQUE_HASH_PRINT_LENGTH] for child in self.children.all()),
 
+            'peer_nrs': self.peer_nrs,
             'wanters': self.wanters,
             'subscribed_parents': self.subscribed_parents,
 
             'subscribers': self.subscribers,
 
             'serial': self.serial,
+            'has_enought_peers': format_change(self.has_enought_peers, self.old_has_enought_peers),
             'is_wanted': format_change(self.is_wanted, self.old_is_wanted),
             'is_subscribed': format_change(self.is_subscribed, self.old_is_subscribed),
             'center_node_is_subscribed': format_change(self.center_node_is_subscribed, self.old_center_node_is_subscribed),
@@ -98,12 +103,14 @@ class DocumentSubscription(BaseDocumentSubscription):
         return """%(node_id)s.%(document_id)s (%(read)s %(bookmarked)s %(local_is_subscribed)s)
 Children: %(children)s
 
+Peers: %(peer_nrs)s
 Wanters: %(wanters)s
 Subscribed parents: %(subscribed_parents)s
 
 Subscribers: %(subscribers)s
 
 Serial: %(serial)s
+Has enought peers: %(has_enought_peers)s
 Is wanted: %(is_wanted)s
 Is subscribed: %(is_subscribed)s
 Center node is subscribed: %(center_node_is_subscribed)s
@@ -111,6 +118,12 @@ Center node id: %(center_node_id)s
 Center distance: %(center_distance)s
 """ % self.format_to_dict()
 
+
+    @property
+    def has_enought_peers(self):
+       # we allways wanna have at least two peers, even if we're next
+       # to the center node, so > not >=.
+        return self.peer_nrs > self.center_distance
 
     @property
     def is_wanted(self):
@@ -167,6 +180,14 @@ Center distance: %(center_distance)s
                 if peer_subscription.is_subscribed:
                     self.ensure_peer_subscription(peer_subscription.peer)
 
+    def update_peer_nrs(self, peer_subscription):
+       if peer_subscription is None:
+          self.peer_nrs -= 1
+          self.save()
+       elif peer_subscription.id is None:
+          self.peer_nrs += 1
+          self.save()
+
     def update_center_from_upstream_peer(self, peer_subscription):
         if peer_subscription.is_upstream():
             self.center_node_is_subscribed = peer_subscription.center_node_is_subscribed
@@ -176,7 +197,7 @@ Center distance: %(center_distance)s
 
     def update_subscription_from_downstream_peer(self, peer_subscription):
         updated = False
-        if self.wanters != peer_subscription.old_subscribers:
+        if self.wanters != peer_subscription.old_wanters:
             updated = True
             self.wanters += peer_subscription.wanters - peer_subscription.old_wanters
             peer_subscription.old_wanters = peer_subscription.wanters
@@ -259,6 +280,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
     peer_send = django.db.models.BooleanField(default = True)
 
     has_copy = django.db.models.BooleanField(default = False)
+    has_enought_peers = django.db.models.BooleanField(default=False)
     is_wanted = django.db.models.BooleanField(default = True)
     is_subscribed = django.db.models.BooleanField(default = False)
 
@@ -282,6 +304,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
             'peer_send': self.peer_send,
 
             'has_copy': self.has_copy,
+            'has_enought_peers': self.has_enought_peers,
             'is_wanted': self.is_wanted,
             'is_subscribed': self.is_subscribed,
 
@@ -305,6 +328,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
     Peer send: %(peer_send)s
 
     Has copy: %(has_copy)s
+    Has enought peers: %(has_enought_peers)s
     Is wanted: %(is_wanted)s
     Is subscribed: %(is_subscribed)s
 
@@ -348,11 +372,15 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
         self = instance
         self.update_child_subscriptions()
 
+        self.local_subscription.update_peer_nrs(self)
         self.local_subscription.update_center_from_upstream_peer(self)
         self.local_subscription.update_subscription_from_downstream_peer(self)
 
     @classmethod
     def on_post_delete(cls, sender, instance, **kwargs):
+        self = instance
+        self.local_subscription.update_peer_nrs(None)
+
         sys.stderr.write("DELETING PEER SUBSCRIPTION\n")
         if not instance.local_subscription.is_wanted:
             sys.stderr.write("    DELETING SUBSCRIPTION\n")
@@ -361,6 +389,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
     @classmethod
     def deserialize_update(cls, update):
         res = {}
+        res['has_enought_peers'] = update['has_enought_peers'].lower() == 'true'
         res['is_wanted'] = update['is_wanted'].lower() == 'true'
         res['is_subscribed'] = update['is_subscribed'].lower() == 'true'
         res['center_node_is_subscribed'] = update['center_node_is_subscribed'].lower() == 'true'
