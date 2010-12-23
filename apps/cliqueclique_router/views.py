@@ -9,7 +9,7 @@ def create_security_context(request):
 @fcdjangoutils.jsonview.json_view
 def delete_security_context(request, key, delete_key):
     assert delete_key is not None
-    return security_context.delete_security_context(request, request.POST['key'], request.POST['delete_key'])
+    return security_context.delete_security_context(request, request.POST['key'])
 
 @fcdjangoutils.jsonview.json_view
 def get_security_context(request, key):

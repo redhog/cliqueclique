@@ -35,8 +35,7 @@ def create_security_context(request, parent_key):
 
     context_address_idx = security_contexts['free'].pop()
     context_key = utils.hash.rand_id()
-    context_delete_key = utils.hash.rand_id()
-    security_contexts['used'][context_key] = {'address_idx': context_address_idx, 'delete_key': context_delete_key, 'children': []}
+    security_contexts['used'][context_key] = {'address_idx': context_address_idx, 'children': []}
 
     if parent_key is not None:
         security_contexts['used'][parent_key]['children'].append(context_key)
@@ -52,12 +51,8 @@ def get_security_context(request, key):
     context = security_contexts['used'][key]
     return {'key': key, 'address': settings.CLIQUECLIQUE_UI_SECURITY_CONTEXTS[context['address_idx']]}
 
-def delete_security_context(request, key, delete_key):
+def delete_security_context(request, key):
     security_contexts = load_security_contexts(request)
-
-    context = security_contexts['used'][key]
-    if delete_key is not None:
-        assert context['delete_key'] == delete_key
 
     def delete_context(key):
         context = security_contexts['used'][key]
@@ -72,4 +67,4 @@ def delete_security_context(request, key, delete_key):
     save_security_contexts(request, security_contexts)
 
 def context_processor(request):
-    return {'security_context': get_security_context(request, None)}
+    return {'default_security_context': get_security_context(request, None)}
