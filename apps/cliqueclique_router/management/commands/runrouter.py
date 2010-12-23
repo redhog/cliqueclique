@@ -66,9 +66,8 @@ class Command(django.core.management.commands.runserver.Command):
         receiver = cliqueclique_router.server.Receiver(sock)
         receiver.start()
 
-        webserver = None
-        for x in xrange(0, 2):
-            webserver = cliqueclique_router.server.Webserver(webserver)
+        for addr in settings.CLIQUECLIQUE_UI_SECURITY_CONTEXTS:
+            webserver = cliqueclique_router.server.Webserver(*addr.split(":"))
             webserver.start()
 
         while True:

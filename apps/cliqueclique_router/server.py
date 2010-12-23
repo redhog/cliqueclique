@@ -43,35 +43,15 @@ class Thread(threading.Thread):
         for key, value in kw.iteritems():
             setattr(self, key, value)
 
-class CloseWebserver(django.core.servers.basehttp.WSGIServerException):
-    pass
-
 class Webserver(Thread):
     local = threading.local()
 
     admin_media_path = ''
-    parent = None
-    root = None
     port = 8000
-    next_port = 8000
     addr = '127.0.0.1'
 
-    def __init__(self, parent = None, **kw):
-        self.parent = parent
-        if self.parent:
-            self.root = self.parent.root
-        else:
-            self.root = self
-        self.port = self.root.next_port
-        self.root.next_port += 1
-        self.key = utils.hash.rand_id()
-        Thread.__init__(self, **kw)
-
-    @classmethod
-    def close(cls, key):
-        if cls.local.key != key:
-            raise Exception("Wrong key used in attempt to close security context / web server port")
-        raise CloseWebserver
+    def __init__(self, addr, port, *arg, **kw):
+        Thread.__init__(self, addr=addr, port=port, *arg, **kw)
 
     def run(self):
         print "Webserver is running at http://%s:%s/" % (self.addr, self.port)

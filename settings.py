@@ -102,7 +102,8 @@ TEMPLATE_CONTEXT_PROCESSORS = [
     "django.core.context_processors.request",
     "django.contrib.messages.context_processors.messages",
     
-    "staticfiles.context_processors.static_url"
+    "staticfiles.context_processors.static_url",
+    "cliqueclique_router.security_context.context_processor",
 ]
 
 INSTALLED_APPS = [
@@ -134,7 +135,7 @@ STATICFILES_DIRS.extend(
         lambda x: os.path.join(PROJECT_ROOT,'apps',x,'media'), 
         LOCAL_APPS))
 
-CLIQUECLIQUE_LOCALHOST = False
+CLIQUECLIQUE_LOCALHOST = True
 CLIQUECLIQUE_ADDRESS_LENGTH = 61
 CLIQUECLIQUE_HASH_LENGTH = 53 # Same as i2p b32 address length, just for fun :)
 
@@ -142,3 +143,5 @@ CLIQUECLIQUE_HASH_PRINT_LENGTH = 5
 CLIQUECLIQUE_KEY_SIZE = 1024
 
 CLIQUECLIQUE_I2P_SESSION_NAME = "cliqueclique"
+
+CLIQUECLIQUE_UI_SECURITY_CONTEXTS = ["127.0.0.1:%s" % (8000 + port,) for port in xrange(0, 5)]
