@@ -22,7 +22,8 @@ def conv(obj):
     cert = obj.verify()[0]
     data = smime.cert_get_data(cert)
     return {'header': dict(obj),
-            'signature': {'node_id': cliqueclique_node.models.Node.node_id_from_public_key(cert),
+            'signature': {'cert': smime.der2pem(cert),
+                          'node_id': cliqueclique_node.models.Node.node_id_from_public_key(cert),
                           'name': data['name'],
                           'address': data['address']},
             'parts': [obj.get_payload()[0]]}
