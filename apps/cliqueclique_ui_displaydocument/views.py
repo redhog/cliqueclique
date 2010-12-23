@@ -6,7 +6,9 @@ import cliqueclique_subscription.models
 import email.mime.text
 import django.http
 import utils.smime
+import utils.djangosmime
 import django.contrib.auth.decorators
+import fcdjangoutils.jsonview
 
 @django.contrib.auth.decorators.login_required
 def import_document(request):
@@ -42,13 +44,6 @@ def post_document(request):
     return django.shortcuts.redirect("cliqueclique_ui_displaydocument.views.display_document", document_id=doc.document_id)
 
 @django.contrib.auth.decorators.login_required
-def download_document(request, document_id):
-    doc = cliqueclique_subscription.models.DocumentSubscription.objects.get(
-        node = request.user.node,
-        document__document_id=document_id)
-    return django.http.HttpResponse(doc.export().as_string(), mimetype="text/plain")
-
-@django.contrib.auth.decorators.login_required
 def set_document_flags(request, document_id):
     sub = cliqueclique_subscription.models.DocumentSubscription.objects.get(
         node = request.user.node,
@@ -80,3 +75,19 @@ def display_document(request, document_id = None):
                 node = request.user.node,
                 bookmarked=True).all()},
         context_instance=django.template.RequestContext(request))
+
+@django.contrib.auth.decorators.login_required
+def document_as_mime(request, document_id):
+    doc = cliqueclique_subscription.models.DocumentSubscription.objects.get(
+        node = request.user.node,
+        document__document_id=document_id)
+    return django.http.HttpResponse(doc.export().as_string(), mimetype="text/plain")
+
+
+@fcdjangoutils.jsonview.json_view
+@django.contrib.auth.decorators.login_required
+def document_as_json(request, document_id = None):
+    return cliqueclique_subscription.models.DocumentSubscription.objects.get(
+        node = request.user.node,
+        document__document_id = document_id
+        ).document.as_mime

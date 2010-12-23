@@ -10,7 +10,7 @@
 {% with STATIC_URL|aadd:"fcdjangoutils/js/expand.js" as url %}{% widget_addjsfile url %}{% endwith %}
 
 <div class="action_icons">
-  <a href="{% url cliqueclique_ui_displaydocument.views.download_document document_id=document_id %}">
+  <a href="{% url cliqueclique_ui_displaydocument.views.document_as_mime document_id=document_id %}">
     <img src="{{ STATIC_URL }}cliqueclique_ui_displaydocument/img/silk_companion/icons/disk_black.png" alt="Export">
   </a>
 
