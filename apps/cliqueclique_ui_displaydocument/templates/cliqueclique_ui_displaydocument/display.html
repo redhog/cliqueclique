@@ -15,7 +15,6 @@
   </head>
   <body>
     <div class="menubar">
-      {{ security_context.key }}
       Username: {{ request.user.username }}<br>
       Node ID: {{ request.user.node.node_id|formatid }}<br>
       <a href="{% url django.contrib.auth.views.logout %}">Log out</a>
