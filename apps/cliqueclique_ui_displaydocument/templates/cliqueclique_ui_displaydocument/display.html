@@ -9,10 +9,13 @@
     <link rel="stylesheet" href="{{ STATIC_URL }}cliqueclique_ui_displaydocument/css/global.css" />
     %WidgetTagMiddleware.head.css%
     %WidgetTagMiddleware.head.javascript%
+    <script>
+      security_context = {{ security_context|safe }};
+    </script>
   </head>
   <body>
     <div class="menubar">
-      {{ default_security_context }}
+      {{ security_context.key }}
       Username: {{ request.user.username }}<br>
       Node ID: {{ request.user.node.node_id|formatid }}<br>
       <a href="{% url django.contrib.auth.views.logout %}">Log out</a>
@@ -25,6 +28,8 @@
 	  <h1>Bookmarks</h1>
           <ul>
   	    {% for bookmark in bookmarks %}
+	      <li><a href="/cliqueclique_router/security_context/create/{{ security_context.key }}{% url cliqueclique_ui_displaydocument.views.display_document document_id=bookmark.document.document_id %}">{{ bookmark.document.as_mime.subject}}</a></li>
+
 	      <li><a href="{% url cliqueclique_ui_displaydocument.views.display_document document_id=bookmark.document.document_id %}">{{ bookmark.document.as_mime.subject}}</a></li>
 	    {% endfor %}
           </ul>

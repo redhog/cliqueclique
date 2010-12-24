@@ -17,15 +17,18 @@ def load_security_contexts(request):
         return django.utils.simplejson.loads(request.session['security_contexts'])
     else:
         default_key = utils.hash.rand_id()
-        return {
+        security_contexts = {
             'free': range(1, len(settings.CLIQUECLIQUE_UI_SECURITY_CONTEXTS)),
             'used': {default_key: {'address_idx': 0, 'children': []}},
-            'default': default_key
+            'idx': {'0': default_key}
             }
+        save_security_contexts(request, security_contexts)
+        return security_contexts
 
 def save_security_contexts(request, security_contexts):
-    request.session.security_contexts = django.utils.simplejson.dumps(security_contexts)
-
+    print "SAVE", request.session.items()
+    request.session['security_contexts'] = django.utils.simplejson.dumps(security_contexts)
+    request.session.save()
 
 def create_security_context(request, parent_key):
     security_contexts = load_security_contexts(request)
@@ -36,18 +39,19 @@ def create_security_context(request, parent_key):
     context_address_idx = security_contexts['free'].pop()
     context_key = utils.hash.rand_id()
     security_contexts['used'][context_key] = {'address_idx': context_address_idx, 'children': []}
+    security_contexts['idx'][str(context_address_idx)] = context_key
 
     if parent_key is not None:
         security_contexts['used'][parent_key]['children'].append(context_key)
 
     save_security_contexts(request, security_contexts)
 
-    return {'key': context_key, 'delete_key': context_delete_key, 'address': settings.CLIQUECLIQUE_UI_SECURITY_CONTEXTS[context_address_idx]}
+    return {'key': context_key, 'address': settings.CLIQUECLIQUE_UI_SECURITY_CONTEXTS[context_address_idx]}
 
-def get_security_context(request, key):
+def get_security_context(request, key = None, address = None):
     security_contexts = load_security_contexts(request)    
     if key is None:
-        key = security_contexts['default']
+        key = security_contexts['idx'][str(settings.CLIQUECLIQUE_UI_SECURITY_CONTEXTS.index(address))]
     context = security_contexts['used'][key]
     return {'key': key, 'address': settings.CLIQUECLIQUE_UI_SECURITY_CONTEXTS[context['address_idx']]}
 
@@ -57,6 +61,7 @@ def delete_security_context(request, key):
     def delete_context(key):
         context = security_contexts['used'][key]
         del security_contexts['used'][key]
+        del security_contexts['idx'][str(context['address_idx'])]
         security_contexts['free'].append(context['address_idx'])
  
         for child in context['children']:
@@ -67,4 +72,4 @@ def delete_security_context(request, key):
     save_security_contexts(request, security_contexts)
 
 def context_processor(request):
-    return {'default_security_context': get_security_context(request, None)}
+    return {'security_context': get_security_context(request, address = request.environ['HTTP_HOST'])}

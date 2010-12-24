@@ -144,4 +144,4 @@ CLIQUECLIQUE_KEY_SIZE = 1024
 
 CLIQUECLIQUE_I2P_SESSION_NAME = "cliqueclique"
 
-CLIQUECLIQUE_UI_SECURITY_CONTEXTS = ["127.0.0.1:%s" % (8000 + port,) for port in xrange(0, 5)]
+CLIQUECLIQUE_UI_SECURITY_CONTEXTS = ["localhost:%s" % (8000 + port,) for port in xrange(0, 5)]
