@@ -87,7 +87,13 @@ def document_as_mime(request, document_id):
 @fcdjangoutils.jsonview.json_view
 @django.contrib.auth.decorators.login_required
 def document_as_json(request, document_id = None):
-    return cliqueclique_subscription.models.DocumentSubscription.objects.get(
+    sub = cliqueclique_subscription.models.DocumentSubscription.objects.get(
         node = request.user.node,
         document__document_id = document_id
-        ).document.as_mime
+        )
+    return {
+        'document_id': document_id,
+        'parents': [parent.document.document_id for parent in sub.parents.all()],
+        'children': [child.document.document_id for child in sub.children.all()],
+        'content': sub.document.as_mime
+        }
