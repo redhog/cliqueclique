@@ -58,12 +58,7 @@ class Webserver(Thread):
 
         try:
             handler = django.core.servers.basehttp.AdminMediaHandler(django.core.handlers.wsgi.WSGIHandler(), self.admin_media_path)
-            while True:
-                try:
-                    django.core.servers.basehttp.run(self.addr, int(self.port), handler)
-                except CloseWebserver:
-                    # Just silently end the server
-                    break
+            django.core.servers.basehttp.run(self.addr, int(self.port), handler)
         except django.core.servers.basehttp.WSGIServerException, e:
             # Use helpful error messages instead of ugly tracebacks.
             ERRORS = {

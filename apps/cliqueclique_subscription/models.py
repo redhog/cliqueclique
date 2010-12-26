@@ -262,6 +262,12 @@ Center distance: %(center_distance)s
         msg.attach(self.send(True))
         return self.node.sign(msg)
 
+    def receive_peer_suggestion(self, suggestion):
+
+       suggestion['document_id']
+       suggestion['node_id']
+
+
     def __unicode__(self):
         return "%s @ %s" % (self.document, self.node)        
 
@@ -420,6 +426,8 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
             self.receive_update(update)
         elif update['message_type'] == 'subscription_ack':
             self.receive_ack(update)
+        else:
+            assert False
 
     def send_update(self, export = False):
         if self.local_serial == self.local_subscription.serial:
@@ -447,14 +455,26 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
         else:
             self.delete()
 
+        msgs = []
         msg = email.mime.multipart.MIMEMultipart()
         msg.add_header('message_type', 'subscription_ack')
         msg.add_header('document_id', self.local_subscription.document.document_id)
 
         for attr in self.PROTOCOL_ATTRS:
             msg.add_header(attr, str(getattr(self, attr)))
+        
+        msgs.append(msg)
 
-        return [msg]
+        if not self.has_enought_peers:
+           for peer_sub in self.local_subscription.peer_subscriptions.all()[:self.center_distance + 1]:
+              if self.peer.node_id != peer_sub.peer.node_id:
+                 msg = email.mime.multipart.MIMEMultipart()
+                 msg.add_header('message_type', 'peer_suggestion')
+                 msg.add_header('document_id', self.local_subscription.document.document_id)
+                 msg.add_header('node_id',  peer.node_id)
+                 msgs.append(msg)
+
+        return msgs
 
     def send(self, export = False):
         return self.send_update(export) + self.send_ack()
