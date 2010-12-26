@@ -2,7 +2,7 @@
 {% load widgettag_tags %}
 {% load datatypes %}
 
-{% with STATIC_URL|aadd:"cliqueclique_ui_displaydocument/css/display_document.css" as url %}{% widget_addcssfile url %}{% endwith %}
+{% with STATIC_URL|aadd:"cliqueclique_ui/css/display_document.css" as url %}{% widget_addcssfile url %}{% endwith %}
 
 {% with STATIC_URL|aadd:"fcdjangoutils/js/jquery.js" as url %}{% widget_addjsfile url %}{% endwith %}
 
@@ -10,34 +10,34 @@
 {% with STATIC_URL|aadd:"fcdjangoutils/js/expand.js" as url %}{% widget_addjsfile url %}{% endwith %}
 
 <div class="action_icons">
-  <a href="{% url cliqueclique_ui_displaydocument.views.document_as_json document_id=document_id %}">
-    <img src="{{ STATIC_URL }}cliqueclique_ui_displaydocument/img/silk_companion/icons/share.png" alt="Export">
+  <a href="{% url cliqueclique_ui_document.views.document_as_json document_id=document_id %}">
+    <img src="{{ STATIC_URL }}cliqueclique_ui/img/silk_companion/icons/share.png" alt="Export">
   </a>
-  <a href="{% url cliqueclique_ui_displaydocument.views.document_as_mime document_id=document_id %}">
-    <img src="{{ STATIC_URL }}cliqueclique_ui_displaydocument/img/silk_companion/icons/disk_black.png" alt="Export">
+  <a href="{% url cliqueclique_ui_document.views.document_as_mime document_id=document_id %}">
+    <img src="{{ STATIC_URL }}cliqueclique_ui/img/silk_companion/icons/disk_black.png" alt="Export">
   </a>
 
-  <a href="{% url cliqueclique_ui_displaydocument.views.set_document_flags document_id=document_id %}?local_is_subscribed=toggle">
+  <a href="{% url cliqueclique_ui_document.views.set_document_flags document_id=document_id %}?local_is_subscribed=toggle">
     {% if document_subscription.local_is_subscribed %}
-      <img src="{{ STATIC_URL }}cliqueclique_ui_displaydocument/img/silk_icons/icons/comments_add.png" alt="Subscribing to new comments">
+      <img src="{{ STATIC_URL }}cliqueclique_ui/img/silk_icons/icons/comments_add.png" alt="Subscribing to new comments">
     {% else %}
-      <img src="{{ STATIC_URL }}cliqueclique_ui_displaydocument/img/silk_icons/icons/comments.png" alt="Not subscribing to new comments">
+      <img src="{{ STATIC_URL }}cliqueclique_ui/img/silk_icons/icons/comments.png" alt="Not subscribing to new comments">
     {% endif %}
   </a>
 
-  <a href="{% url cliqueclique_ui_displaydocument.views.set_document_flags document_id=document_id %}?read=toggle">
+  <a href="{% url cliqueclique_ui_document.views.set_document_flags document_id=document_id %}?read=toggle">
     {% if document_subscription.read %}
-      <img src="{{ STATIC_URL }}cliqueclique_ui_displaydocument/img/silk_icons/icons/eye.png" alt="Read">
+      <img src="{{ STATIC_URL }}cliqueclique_ui/img/silk_icons/icons/eye.png" alt="Read">
     {% else %}
-      <img src="{{ STATIC_URL }}cliqueclique_ui_displaydocument/img/silk_icons/icons/new.png" alt="Not previously read">
+      <img src="{{ STATIC_URL }}cliqueclique_ui/img/silk_icons/icons/new.png" alt="Not previously read">
     {% endif %}
   </a>
 
-  <a href="{% url cliqueclique_ui_displaydocument.views.set_document_flags document_id=document_id %}?bookmarked=toggle">
+  <a href="{% url cliqueclique_ui_document.views.set_document_flags document_id=document_id %}?bookmarked=toggle">
     {% if document_subscription.bookmarked %}
-      <img src="{{ STATIC_URL }}cliqueclique_ui_displaydocument/img/silk_companion/icons/star_gold.png" alt="Bookmarked">
+      <img src="{{ STATIC_URL }}cliqueclique_ui/img/silk_companion/icons/star_gold.png" alt="Bookmarked">
     {% else %}
-      <img src="{{ STATIC_URL }}cliqueclique_ui_displaydocument/img/silk_companion/icons/star_silver.png" alt="Not bookmarked">
+      <img src="{{ STATIC_URL }}cliqueclique_ui/img/silk_companion/icons/star_silver.png" alt="Not bookmarked">
     {% endif %}
   </a>
 </div>
@@ -51,19 +51,19 @@ Subject: {{ document.subject }}<br>
 {% endif %}
 Is a comment to:
 {% for parent in document_subscription.parents.all %}
-  <a href="{% url cliqueclique_ui_displaydocument.views.display_document document_id=parent.document.document_id %}">{{ parent.document.content_as_mime.subject}}</a>
+  <a href="{% url cliqueclique_ui.views.display_document document_id=parent.document.document_id %}">{{ parent.document.content_as_mime.subject}}</a>
 {% endfor %}
 <br>
 Comments in:
 {% for child in document_subscription.children.all %}
-  <a href="{% url cliqueclique_ui_displaydocument.views.display_document document_id=child.document.document_id %}">{{ child.document.content_as_mime.subject}}</a>
+  <a href="{% url cliqueclique_ui.views.display_document document_id=child.document.document_id %}">{{ child.document.content_as_mime.subject}}</a>
 {% endfor %}
 
 <div class="document_body">
   {{ document_body }}
 </div>
 
-<form method="POST" action="{% url cliqueclique_ui_displaydocument.views.post_document %}">
+<form method="POST" action="{% url cliqueclique_ui.views.post_document %}">
   {% csrf_token %}
   <input type="hidden" name="parent_document_id" value="{{ document_id }}">
   <input type="text" name="subject"><br>

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>CliqueClique</title>
-    <link rel="stylesheet" href="{{ STATIC_URL }}cliqueclique_ui_displaydocument/css/global.css" />
+    <link rel="stylesheet" href="{{ STATIC_URL }}cliqueclique_ui/css/global.css" />
     %WidgetTagMiddleware.head.css%
     %WidgetTagMiddleware.head.javascript%
     <script>
@@ -27,7 +27,7 @@
 	  <h1>Bookmarks</h1>
           <ul>
   	    {% for bookmark in bookmarks %}
-	      <li><a href="{% url cliqueclique_ui_displaydocument.views.display_document document_id=bookmark.document.document_id %}">{{ bookmark.document.as_mime.subject}}</a></li>
+	      <li><a href="{% url cliqueclique_ui.views.display_document document_id=bookmark.document.document_id %}">{{ bookmark.document.as_mime.subject}}</a></li>
 	    {% endfor %}
           </ul>
 	{% endblock %}
