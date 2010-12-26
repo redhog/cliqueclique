@@ -73,7 +73,7 @@ class LocalNode(Node):
 
         for part in container_msg.get_payload():
             if part['message_type'] == 'peer_suggestion':
-                Peer.get_peer(self, part['cert'])[1].receive(part)
+                Peer.get_peer(self, part['node_cert'])[1].receive(part)
             else:
                 sender_peer.receive(part)
 
