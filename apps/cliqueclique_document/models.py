@@ -22,6 +22,21 @@ class Document(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnec
     def document_id_from_content(cls, content):
         return utils.hash.has_id_from_data(content)
 
+    @classmethod
+    def get_document(cls, document_id, content = None):
+        is_new = False
+        docs = Document.objects.filter(
+            document_id = document_id).all()
+        if docs:
+            doc = docs[0]
+        else:
+            if content is None:
+                raise Exception("Unable to create new document %s without any content" % (document_id,))
+            doc = Document(content = content)
+            doc.save()
+            is_new = True
+        return is_new, doc
+
     @property
     def as_mime(self):
         return email.message_from_string(str(self.content))

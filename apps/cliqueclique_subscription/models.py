@@ -18,15 +18,15 @@ import time
 import sys
 
 def format_change(n, o, trunk = False):
-   nn = n
-   oo = o
-   if trunk:
-       nn = nn[:settings.CLIQUECLIQUE_HASH_PRINT_LENGTH]
-       oo = oo[:settings.CLIQUECLIQUE_HASH_PRINT_LENGTH]
-   res = str(nn)
-   if n != o:
-       res += '(%s)' % (oo,)
-   return res
+    nn = n
+    oo = o
+    if trunk:
+        nn = nn[:settings.CLIQUECLIQUE_HASH_PRINT_LENGTH]
+        oo = oo[:settings.CLIQUECLIQUE_HASH_PRINT_LENGTH]
+    res = str(nn)
+    if n != o:
+        res += '(%s)' % (oo,)
+    return res
 
 class BaseDocumentSubscription(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnectModel):
     class Meta:
@@ -72,6 +72,22 @@ class DocumentSubscription(BaseDocumentSubscription):
     old_center_node_is_subscribed = django.db.models.BooleanField(default=False)
     old_center_node_id = django.db.models.CharField(max_length=settings.CLIQUECLIQUE_HASH_LENGTH, null=True, blank=True)
     old_center_distance = django.db.models.IntegerField(default = 0)
+
+    @classmethod
+    def get_subscription(cls, node, document_id, content = None):
+        is_new, doc = cliqueclique_document.models.Document.get_document(document_id, content)
+        local_subs = DocumentSubscription.objects.filter(
+            document = doc,
+            node = node).all()
+        if local_subs:
+            local_sub = local_subs[0]
+        else:
+            if content is None:
+                raise Exception("Unable to create new local subscription for document %s without any content" % (document_id,))
+            local_sub = DocumentSubscription(node = node, document = doc)
+            local_sub.save()
+            is_new = True
+        return is_new, local_sub
 
     def format_to_dict(self):
         return {
@@ -293,6 +309,26 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
     old_wanters = django.db.models.IntegerField(default = 0)
     old_subscribers = django.db.models.IntegerField(default = 0)
  
+    @classmethod
+    def get_peer_subscription(cls, peer, document_id, only_existing_sub = False, content = None):
+        if only_existing_sub: content = None
+        is_new, local_sub = DocumentSubscription.get_subscription(peer.local, document_id, content)
+
+        subs = PeerDocumentSubscription.objects.filter(
+            local_subscription = local_sub,
+            peer = peer).all()
+        if subs:
+            sub = subs[0]
+        else:
+            if only_existing_sub:
+                raise Exception("Got asked about a peer subscription for %s for the peer %s that doesn't subscribe to that!" % (document_id, peer.node_id))
+            sub = PeerDocumentSubscription(
+                local_subscription = local_sub,
+                peer = peer)
+            sub.save()
+            is_new = True
+            
+        return is_new, sub
     
     def format_to_dict(self):
         return {

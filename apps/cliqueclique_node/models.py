@@ -69,17 +69,13 @@ class LocalNode(Node):
         cert = msg.verify()[0]
         container_msg = msg.get_payload()[0]
 
-        sender_node_id = self.node_id_from_public_key(cert)
-
-        peers = self.peers.filter(node_id = sender_node_id).all()
-        if peers:
-            peer = peers[0]
-        else:
-            peer = Peer(local=self, node_id = sender_node_id, public_key=cert)
-            peer.save()
+        is_new, sender_peer = Peer.get_peer(self, cert)
 
         for part in container_msg.get_payload():
-            peer.receive(part)
+            if part['message_type'] == 'peer_suggestion':
+                Peer.get_peer(self, part['cert'])[1].receive(part)
+            else:
+                sender_peer.receive(part)
 
     @classmethod
     def send_any(cls):
@@ -126,6 +122,19 @@ class Peer(Node):
             if not instance.name: instance.name = data['name']
             if not instance.address: instance.address = data['address']
 
+    @classmethod
+    def get_peer(cls, local, cert):
+        is_new = False
+        node_id = cls.node_id_from_public_key(cert)
+        peers = Peer.objects.filter(node_id = node_id).all()
+        if peers:
+            peer = peers[0]
+        else:
+            peer = Peer(local=local, node_id = node_id, public_key=cert)
+            peer.save()
+            is_new = True
+        return is_new, peer
+
     @property
     def updates(self):
         return self.subscriptions.filter(Q(~Q(serial=F("local_subscription__serial")),
@@ -160,63 +169,14 @@ class Peer(Node):
         
         return self.local.sign(msg)
 
-    def ensure_document(self, document_id, only_existing_sub, content):
-        import cliqueclique_document.models
-
-        docs = cliqueclique_document.models.Document.objects.filter(
-            document_id = document_id).all()
-        if docs:
-            doc = docs[0]
-        else:
-            if only_existing_sub:
-                raise Exception("Received an ACK for a non-existent message %s" % (document_id,))
-            doc = cliqueclique_document.models.Document(content = content)
-            doc.save()
-        return doc
-
-    def ensure_subscription(self, document_id, only_existing_sub, content):
-        import cliqueclique_subscription.models
-
-        doc = self.ensure_document(document_id, only_existing_sub, content)
-
-        local_subs = cliqueclique_subscription.models.DocumentSubscription.objects.filter(
-            document = doc,
-            node = self.local).all()
-        if local_subs:
-            local_sub = local_subs[0]
-        else:
-            if only_existing_sub:
-                raise Exception("Received an ACK for a non-existent message %s" % (document_id,))
-            local_sub = cliqueclique_subscription.models.DocumentSubscription(node = self.local, document = doc)
-            local_sub.save()
-            is_new = True
-        return local_sub
-
-    def ensure_peer_subscription(self, document_id, only_existing_sub, content):
-        import cliqueclique_subscription.models
-
-        local_sub = self.ensure_subscription(document_id, only_existing_sub, content)
-
-        subs = cliqueclique_subscription.models.PeerDocumentSubscription.objects.filter(
-            local_subscription = local_sub,
-            peer = self).all()
-        if subs:
-            sub = subs[0]
-        else:
-            if only_existing_sub:
-                raise Exception("Received an ACK for a non-existent message %s" % (document_id,))
-            sub = cliqueclique_subscription.models.PeerDocumentSubscription(
-                local_subscription = local_sub,
-                peer = self)
-            sub.save()
-
-        return sub
 
     def receive(self, part):
+        import cliqueclique_subscription.models
+
         if part['message_type'] in ('subscription_update', 'subscription_ack'):
             is_new = False
             
-            sub = self.ensure_peer_subscription(part['document_id'], part['message_type'] == 'subscription_ack', part.get_payload())
+            is_new, sub = cliqueclique_subscription.models.PeerDocumentSubscription.get_peer_subscription(self, part['document_id'], part['message_type'] == 'subscription_ack', part.get_payload())
             sub.receive(part)
 
             # We don't want the other node to continue spamming us
@@ -227,6 +187,7 @@ class Peer(Node):
                 sub.is_dirty = True # FIXME: needs_ack or dirty here?
                 sub.save()
         elif part['message_type'] == 'peer_suggestion':
-            pass
+            is_new, sub = cliqueclique_subscription.models.PeerDocumentSubscription.get_peer_subscription(self, part['document_id'])
+            
         else:
             raise Exception("Unknown message type %s" % (part['message_type'],))
