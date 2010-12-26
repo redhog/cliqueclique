@@ -2,14 +2,9 @@ import django.shortcuts
 import django.template
 import django.core.urlresolvers
 import django.utils.simplejson
-import cliqueclique_document.models
-import cliqueclique_subscription.models
-import email.mime.text
 import django.http
-import utils.smime
-import utils.hash
 import django.contrib.auth.decorators
-import cliqueclique_router.server
+import utils.hash
 import settings
 
 def load_security_contexts(request):

@@ -10,7 +10,7 @@ urlpatterns = patterns(
     # Uncomment the admin/doc line below to enable admin documentation:
     # (r'^admin/doc/', include('django.contrib.admindocs.urls')),
     (r'^admin/', include(admin.site.urls)),
-    (r'^cliqueclique_router/', include('cliqueclique_router.urls')),
+    (r'^cliqueclique_ui_security_context/', include('cliqueclique_ui_security_context.urls')),
     (r'', include("staticfiles.urls")),
     (r'', include('cliqueclique_ui_displaydocument.urls')),
 )

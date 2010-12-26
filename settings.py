@@ -103,7 +103,7 @@ TEMPLATE_CONTEXT_PROCESSORS = [
     "django.contrib.messages.context_processors.messages",
     
     "staticfiles.context_processors.static_url",
-    "cliqueclique_router.security_context.context_processor",
+    "cliqueclique_ui_security_context.security_context.context_processor",
 ]
 
 INSTALLED_APPS = [
