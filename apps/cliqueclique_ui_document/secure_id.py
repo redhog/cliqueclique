@@ -1,6 +1,11 @@
 import utils.hash
 import cliqueclique_ui_security_context.security_context
 
+def secure_id_to_id(document_id):
+    if not ':' in document_id:
+        return document_id
+    return docucment_id.split(':')[0]
+
 def make_secure_id_from_server_key(server_key, document_id, do_secure = True):
     if not do_secure:
         return document_id

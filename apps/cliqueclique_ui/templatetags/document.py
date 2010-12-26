@@ -3,6 +3,7 @@ import cliqueclique_subscription.models
 import cliqueclique_node.models
 import settings
 import utils.smime
+import cliqueclique_ui_document.secure_id
 
 register = django.template.Library()
 
@@ -15,7 +16,7 @@ def display_document(context, document_id):
         info['STATIC_URL'] = context['STATIC_URL']
     info['document_subscription'] = cliqueclique_subscription.models.DocumentSubscription.objects.get(
         node = context['user'].node,
-        document__document_id=document_id)
+        document__document_id=cliqueclique_ui_document.secure_id.secure_id_to_id(document_id))
     doc = info['document_subscription'].document.as_mime
 
     if doc.get_content_type() == 'multipart/signed':
