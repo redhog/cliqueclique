@@ -29,10 +29,19 @@ def security_aware_view(fn):
         return fn(request, is_secure, document_id, *arg, **kw)
     return security_aware_view
 
+class RequiresSecureId(Exception):
+    pass
+
+def insecure_view(fn):
+    @security_aware_view
+    def secure_view(request, is_secure, document_id, *arg, **kw):
+        return fn(request, document_id, *arg, **kw)
+    return secure_view
+
 def secure_view(fn):
     @security_aware_view
     def secure_view(request, is_secure, document_id, *arg, **kw):
         if not is_secure:
-            raise Exception("Requires secure link")
+            raise RequiresSecureId("Requires secure link")
         return fn(request, document_id, *arg, **kw)
     return secure_view

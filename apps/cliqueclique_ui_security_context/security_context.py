@@ -15,7 +15,11 @@ def load_security_contexts(request):
         server_key = utils.hash.rand_id()
         security_contexts = {
             'free': range(1, len(settings.CLIQUECLIQUE_UI_SECURITY_CONTEXTS)),
-            'used': {default_key: {'address_idx': 0, 'children': [], 'server_key': server_key}},
+            'used': {default_key: {'key': default_key,
+                                   'address_idx': 0,
+                                   'children': [],
+                                   'server_key': server_key,
+                                   'owner_document_id': None}},
             'idx': {'0': default_key}
             }
         save_security_contexts(request, security_contexts)
@@ -26,7 +30,7 @@ def save_security_contexts(request, security_contexts):
     request.session['security_contexts'] = django.utils.simplejson.dumps(security_contexts)
     request.session.save()
 
-def create_security_context(request, parent_key):
+def create_security_context(request, parent_key, owner_document_id):
     security_contexts = load_security_contexts(request)
 
     if parent_key is not None:
@@ -35,7 +39,12 @@ def create_security_context(request, parent_key):
     context_address_idx = security_contexts['free'].pop()
     context_key = utils.hash.rand_id()
     server_key = utils.hash.rand_id()
-    security_contexts['used'][context_key] = {'address_idx': context_address_idx, 'children': [], 'server_key': server_key}
+    security_contexts['used'][context_key] = {
+        'key': context_key,
+        'address_idx': context_address_idx,
+        'children': [],
+        'server_key': server_key,
+        'owner_document_id': owner_document_id}
     security_contexts['idx'][str(context_address_idx)] = context_key
 
     if parent_key is not None:
@@ -55,7 +64,9 @@ def get_security_context_obj(request, key = None, address = None):
 
 def get_security_context(request, key = None, address = None):
     context = get_security_context_obj(request, key, address)
-    return {'key': key, 'address': settings.CLIQUECLIQUE_UI_SECURITY_CONTEXTS[context['address_idx']]}
+    return {'key': context['key'],
+            'address': settings.CLIQUECLIQUE_UI_SECURITY_CONTEXTS[context['address_idx']],
+            'owner_document_id': context['owner_document_id']}
 
 def get_server_key(request, key = None, address = None):
     context = get_security_context_obj(request, key, address)

@@ -9,6 +9,8 @@ register = django.template.Library()
 @register.inclusion_tag("cliqueclique_ui_displaydocument/tag/display_document.html", takes_context=True)
 def display_document(context, document_id):
     info = {}
+    if 'security_context' in context:
+        info['security_context'] = context['security_context']
     if 'STATIC_URL' in context:
         info['STATIC_URL'] = context['STATIC_URL']
     info['document_subscription'] = cliqueclique_subscription.models.DocumentSubscription.objects.get(
@@ -28,10 +30,6 @@ def display_document(context, document_id):
     info['document_id'] = document_id
     info['document'] = doc
     info['document_body'] = doc.get_payload()
-
-    # if not info['document_subscription'].read:
-    #     info['document_subscription'].read = True
-    #     info['document_subscription'].save()
 
     return info
 

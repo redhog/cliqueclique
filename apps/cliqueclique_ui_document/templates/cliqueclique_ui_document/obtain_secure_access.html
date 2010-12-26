@@ -1,0 +1,19 @@
+{% load document %}
+
+Do you want to give
+
+  <div class="document_description">
+    <h1>{{ security_context_subject }} ({{ security_context_document_id|formatid }})</h1>
+    <div>{{ security_context_author_name }} ({{ security_context_author_node_id|formatid }} @ {{ security_context_author_address }} )</div>
+  <div>
+
+linking access to
+
+  <div class="document_description">
+    <h1>{{ document_subject }} ({{ document_document_id|formatid }})</h1>
+    <div>{{ document_author_name }} ({{ document_author_node_id|formatid }} @ {{ document_author_address }} )</div>
+  <div>
+
+<form>
+  <button type="submit" name="do_give_permission" value="yes">I give permission</button>
+</form>
