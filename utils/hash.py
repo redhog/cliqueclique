@@ -2,7 +2,7 @@ import settings
 import hashlib
 import random
 
-def has_id_from_data(data):
+def hash_id_from_data(data):
     h = hashlib.sha512()
     h.update(str(data))
     return h.hexdigest()[:settings.CLIQUECLIQUE_HASH_LENGTH]

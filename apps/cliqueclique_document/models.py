@@ -20,7 +20,7 @@ class Document(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnec
 
     @classmethod
     def document_id_from_content(cls, content):
-        return utils.hash.has_id_from_data(content)
+        return utils.hash.hash_id_from_data(content)
 
     @classmethod
     def get_document(cls, document_id, content = None):

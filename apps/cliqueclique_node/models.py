@@ -32,7 +32,7 @@ class Node(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnectMod
 
     @classmethod
     def node_id_from_public_key(cls, public_key):
-        return utils.hash.has_id_from_data(public_key)
+        return utils.hash.hash_id_from_data(public_key)
 
     def __unicode__(self):
         return "%s %s [%s..]" % (type(self).__name__, self.name, self.node_id[:10])

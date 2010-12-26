@@ -12,9 +12,10 @@ def load_security_contexts(request):
         return django.utils.simplejson.loads(request.session['security_contexts'])
     else:
         default_key = utils.hash.rand_id()
+        server_key = utils.hash.rand_id()
         security_contexts = {
             'free': range(1, len(settings.CLIQUECLIQUE_UI_SECURITY_CONTEXTS)),
-            'used': {default_key: {'address_idx': 0, 'children': []}},
+            'used': {default_key: {'address_idx': 0, 'children': [], 'server_key': server_key}},
             'idx': {'0': default_key}
             }
         save_security_contexts(request, security_contexts)
@@ -33,7 +34,8 @@ def create_security_context(request, parent_key):
 
     context_address_idx = security_contexts['free'].pop()
     context_key = utils.hash.rand_id()
-    security_contexts['used'][context_key] = {'address_idx': context_address_idx, 'children': []}
+    server_key = utils.hash.rand_id()
+    security_contexts['used'][context_key] = {'address_idx': context_address_idx, 'children': [], 'server_key': server_key}
     security_contexts['idx'][str(context_address_idx)] = context_key
 
     if parent_key is not None:
@@ -43,12 +45,21 @@ def create_security_context(request, parent_key):
 
     return {'key': context_key, 'address': settings.CLIQUECLIQUE_UI_SECURITY_CONTEXTS[context_address_idx]}
 
-def get_security_context(request, key = None, address = None):
+def get_security_context_obj(request, key = None, address = None):
     security_contexts = load_security_contexts(request)    
     if key is None:
+        if address is None:
+            address = request.environ['HTTP_HOST']
         key = security_contexts['idx'][str(settings.CLIQUECLIQUE_UI_SECURITY_CONTEXTS.index(address))]
-    context = security_contexts['used'][key]
+    return security_contexts['used'][key]
+
+def get_security_context(request, key = None, address = None):
+    context = get_security_context_obj(request, key, address)
     return {'key': key, 'address': settings.CLIQUECLIQUE_UI_SECURITY_CONTEXTS[context['address_idx']]}
+
+def get_server_key(request, key = None, address = None):
+    context = get_security_context_obj(request, key, address)
+    return context['server_key']
 
 def delete_security_context(request, key):
     security_contexts = load_security_contexts(request)
@@ -67,4 +78,5 @@ def delete_security_context(request, key):
     save_security_contexts(request, security_contexts)
 
 def context_processor(request):
-    return {'security_context': get_security_context(request, address = request.environ['HTTP_HOST'])}
+    return {'security_context': get_security_context(request)}
+
