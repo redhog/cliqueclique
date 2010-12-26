@@ -6,7 +6,7 @@ import utils.smime
 
 register = django.template.Library()
 
-@register.inclusion_tag("cliqueclique_ui_displaydocument/tag/display_document.html", takes_context=True)
+@register.inclusion_tag("cliqueclique_ui/tag/display_document.html", takes_context=True)
 def display_document(context, document_id):
     info = {}
     if 'security_context' in context:

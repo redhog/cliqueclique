@@ -37,7 +37,7 @@ def post_document(request):
 @django.contrib.auth.decorators.login_required
 def display_document(request, document_id = None):
     return django.shortcuts.render_to_response(
-        'cliqueclique_ui_displaydocument/display.html',
+        'cliqueclique_ui/display.html',
         {'document_id': document_id,
          'request': request,
          'bookmarks': cliqueclique_subscription.models.DocumentSubscription.objects.filter(
