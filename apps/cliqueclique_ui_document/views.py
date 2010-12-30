@@ -15,7 +15,7 @@ import fcdjangoutils.jsonview
 import secure_id
 
 def obtain_secure_access(request, document_id):
-    info = {'request': request}
+    info = {}
 
     info['secure_document_id'] = secure_id.make_secure_id(request, document_id)
     info['document_document_id'] = document_id

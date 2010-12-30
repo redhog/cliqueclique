@@ -1,0 +1,16 @@
+NODES=5
+rm node.db contrib/rootdoc.exp
+python manage.py syncdb --noinput
+for ((N=0; N<NODES; N++)); do
+  NODE=$(python manage.py createnode test$N saltgurka)
+  echo "================================={Node $N: $NODE}======================================="
+  if [ -e "contrib/rootdoc.exp" ]; then
+    python manage.py importdocument --bookmark $NODE contrib/rootdoc.exp 
+  else
+    ROOTDOC=$(python manage.py postdocument --bookmark $NODE contrib/rootdoc)
+    echo "Root: $ROOTDOC"
+    python manage.py exportdocument $NODE $ROOTDOC contrib/rootdoc.exp 
+  fi
+done
+
+python manage.py runrouter

@@ -507,7 +507,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
                  msg = email.mime.multipart.MIMEMultipart()
                  msg.add_header('message_type', 'peer_suggestion')
                  msg.add_header('document_id', self.local_subscription.document.document_id)
-                 msg.add_header('node_cert', peer.public_key)
+                 msg.add_header('node_cert', peer_sub.peer.public_key)
                  msgs.append(msg)
 
         return msgs

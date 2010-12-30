@@ -126,7 +126,7 @@ class Peer(Node):
     def get_peer(cls, local, cert):
         is_new = False
         node_id = cls.node_id_from_public_key(cert)
-        peers = Peer.objects.filter(node_id = node_id).all()
+        peers = Peer.objects.filter(local=local, node_id = node_id).all()
         if peers:
             peer = peers[0]
         else:
@@ -191,3 +191,6 @@ class Peer(Node):
             
         else:
             raise Exception("Unknown message type %s" % (part['message_type'],))
+
+    def __unicode__(self):
+        return "%s %s [%s..] to %s" % (type(self).__name__, self.name, self.node_id[:10], self.local)

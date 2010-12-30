@@ -51,7 +51,11 @@ class Document(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnec
     @classmethod
     def on_pre_save(cls, sender, instance, **kwargs):
         # Generate id from content
-        instance.document_id = instance.document_id_from_content(instance.content)
+        if not instance.document_id:
+            instance.document_id = instance.document_id_from_content(instance.content)
+        else:
+            if not instance.document_id == instance.document_id_from_content(instance.content):
+                raise Exception("Document has id %s but should have %s" % (repr(instance.document_id), repr(instance.document_id_from_content(instance.content))))
 
         # Grep out any document pointers and store them separately for easy access
         mime = instance.content_as_mime

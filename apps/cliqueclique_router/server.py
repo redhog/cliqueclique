@@ -70,7 +70,7 @@ class Webserver(Thread):
                 error_text = ERRORS[e.args[0].args[0]]
             except (AttributeError, KeyError):
                 error_text = str(e)
-            sys.stderr.write(self.style.ERROR("Error: %s" % error_text) + '\n')
+            sys.stderr.write("Error: %s\n" % error_text)
             # Need to use an OS exit because sys.exit doesn't work in a thread
             os._exit(1)
 

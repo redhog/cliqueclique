@@ -10,6 +10,7 @@ pip install django
 pip install django-staticfiles
 pip install django-idmapper
 pip install django-registration
+pip install pydot
 
 (
  cd "$CLIQUEROOT/deps/lib/python"*"/site-packages/fcdjangoutils"

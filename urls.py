@@ -12,6 +12,7 @@ urlpatterns = patterns(
     (r'^admin/', include(admin.site.urls)),
     (r'^cliqueclique_ui_security_context/', include('cliqueclique_ui_security_context.urls')),
     (r'', include("staticfiles.urls")),
+    (r'', include('cliqueclique_ui_graph.urls')),
     (r'', include('cliqueclique_ui_document.urls')),
     (r'', include('cliqueclique_ui.urls')),
 )

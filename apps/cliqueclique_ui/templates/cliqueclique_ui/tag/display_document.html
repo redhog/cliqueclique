@@ -10,12 +10,19 @@
 {% with STATIC_URL|aadd:"fcdjangoutils/js/expand.js" as url %}{% widget_addjsfile url %}{% endwith %}
 
 <div class="action_icons">
+
+  <!--
   <a href="{% url cliqueclique_ui_security_context.views.load_in_new_security_context key=security_context.key document_id=document_id %}">
     <img src="{{ STATIC_URL }}cliqueclique_ui/img/silk_icons/icons/lock.png" alt="Lock">
   </a>
 
   <a href="{% url cliqueclique_ui_document.views.obtain_secure_access document_id=document_id %}">
     <img src="{{ STATIC_URL }}cliqueclique_ui/img/silk_icons/icons/lock_open.png" alt="Unlock">
+  </a>
+  -->
+
+  <a href="{% url cliqueclique_ui_graph.views.graph_document document_id=document_id %}">
+    <img src="{{ STATIC_URL }}cliqueclique_ui/img/silk_icons/icons/chart_organisation.png" alt="Graph">
   </a>
 
   <a href="{% url cliqueclique_ui_document.views.document_as_json document_id=document_id %}">

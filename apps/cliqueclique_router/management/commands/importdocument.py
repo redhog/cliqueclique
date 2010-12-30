@@ -36,7 +36,7 @@ class Command(BaseCommand):
         container_msg = msg.get_payload()[0]
         update_msg = container_msg.get_payload()[0]
 
-        print "Importing %s..." % (update_msg['document_id'],)
+        print "%s: Importing %s..." % (node, update_msg['document_id'],)
 
         node.receive(data)
 
