@@ -14,6 +14,8 @@ import email.mime.application
 import email.mime.text
 import email.mime.multipart
 
+import utils.smime
+
 import time
 import sys
 
@@ -278,12 +280,6 @@ Center distance: %(center_distance)s
         msg.attach(self.send(True))
         return self.node.sign(msg)
 
-    def receive_peer_suggestion(self, suggestion):
-
-       suggestion['document_id']
-       suggestion['node_id']
-
-
     def __unicode__(self):
         return "%s @ %s" % (self.document, self.node)        
 
@@ -504,10 +500,9 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
         if not self.has_enought_peers:
            for peer_sub in self.local_subscription.peer_subscriptions.all()[:self.center_distance + 1]:
               if self.peer.node_id != peer_sub.peer.node_id:
-                 msg = email.mime.multipart.MIMEMultipart()
+                 msg = email.mime.text.MIMEText(utils.smime.der2pem(peer_sub.peer.public_key))
                  msg.add_header('message_type', 'peer_suggestion')
                  msg.add_header('document_id', self.local_subscription.document.document_id)
-                 msg.add_header('node_cert', peer_sub.peer.public_key)
                  msgs.append(msg)
 
         return msgs

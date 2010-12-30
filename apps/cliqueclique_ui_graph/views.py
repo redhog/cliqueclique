@@ -41,7 +41,7 @@ class DocumentGraph(object):
     def add_subscription(self, sub):
         self.graph.add_node(
             pydot.Node('"%s"' % sub.node.node_id,
-                       label='%(node_id)s\\n%(center_distance)s->%(center_node_id)s' % sub.format_to_dict(),
+                       label='%(node_id)s\\n%(center_distance)s->%(center_node_id)s [%(has_enought_peers)s]' % sub.format_to_dict(),
                        color=self.center_nodes[sub.center_node_id]['color']))
 
         for peer_sub in sub.peer_subscriptions.all():

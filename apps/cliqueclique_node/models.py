@@ -73,7 +73,9 @@ class LocalNode(Node):
 
         for part in container_msg.get_payload():
             if part['message_type'] == 'peer_suggestion':
-                Peer.get_peer(self, part['node_cert'])[1].receive(part)
+                print "XXXXX", repr(part.get_payload())
+                print "XXXXX", repr(utils.smime.pem2der(part.get_payload()))
+                Peer.get_peer(self, utils.smime.pem2der(part.get_payload()))[1].receive(part)
             else:
                 sender_peer.receive(part)
 

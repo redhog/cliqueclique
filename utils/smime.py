@@ -35,6 +35,7 @@ def der2pem(der, type="CERTIFICATE"):
     return "-----BEGIN %s-----\n%s\n-----END %s-----" % (type, der2pem_linewrapre.sub('\\1\n', base64.encodestring(der).replace("\n", "")), type)
 
 def pem2der(pem):
+    pem = pem.replace('\r', '')
     return base64.decodestring(
         ("\n" + pem + "\n").split("\n-----BEGIN", 1)[1].split("-----\n", 1)[1].split("\n-----END")[0])
 

@@ -99,7 +99,7 @@ class Sender(Thread):
         while True:
             for (msg, address) in cliqueclique_node.models.LocalNode.send_any():
                 print "========{To %s}========" % (address,)
-                # msg2debug(msg)
+                msg2debug(msg)
 
                 self.sock.sendto(msg, 0, address)
                 time.sleep(1)
