@@ -14,7 +14,7 @@ pip install pydot
 
 (
  cd "$CLIQUEROOT/deps/lib/python"*"/site-packages/fcdjangoutils"
- git checkout git@github.com:freecode/fcdjangoutils.git
+ git checkout git://github.com/redhog/fcdjangoutils.git
 )
 
 wget http://mirror.i2p2.de/i2psource_0.8.1.tar.bz2
