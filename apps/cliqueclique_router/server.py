@@ -19,13 +19,18 @@ import utils.smime
 import utils.hash
 import os
 import sys
-
+import traceback
+                
 def msg2debug(msg):
     msg = utils.smime.message_from_anything(msg)
-    cert = msg.verify()[0]
-    container_msg = msg.get_payload()[0]
+    try:
+        cert = msg.verify()[0]
+        sender_node_id = cliqueclique_node.models.Node.node_id_from_public_key(cert)
+    except:
+        traceback.print_exc()
+        sender_node_id = "UNABLETOVERIFYCERT"
 
-    sender_node_id = cliqueclique_node.models.Node.node_id_from_public_key(cert)
+    container_msg = msg.get_payload()[0]
     receiver_node_id = container_msg['receiver_node_id']
 
     print "%s <- %s" % (receiver_node_id[:settings.CLIQUECLIQUE_HASH_PRINT_LENGTH], sender_node_id[:settings.CLIQUECLIQUE_HASH_PRINT_LENGTH])
@@ -87,8 +92,11 @@ class Receiver(Thread):
                 (msg, address) = self.sock.recvfrom(-1)
 
             print "========{From %s}========" % (utils.i2p.dest2b32(address),)
-            msg2debug(msg)
-            cliqueclique_node.models.LocalNode.receive_any(msg)
+            try:
+                msg2debug(msg)
+                cliqueclique_node.models.LocalNode.receive_any(msg)
+            except:
+                traceback.print_exc()
 
 class Sender(Thread):
     def __init__(self, sock, *arg, **kw):
