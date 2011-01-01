@@ -19,6 +19,7 @@ import i2p.socket
 import utils.i2p
 import utils.hash
 import time
+import sys
 
 class Node(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnectModel):
     class Meta:
@@ -73,8 +74,6 @@ class LocalNode(Node):
 
         for part in container_msg.get_payload():
             if part['message_type'] == 'peer_suggestion':
-                print "XXXXX", repr(part.get_payload())
-                print "XXXXX", repr(utils.smime.pem2der(part.get_payload()))
                 Peer.get_peer(self, utils.smime.pem2der(part.get_payload()))[1].receive(part)
             else:
                 sender_peer.receive(part)
@@ -139,8 +138,9 @@ class Peer(Node):
 
     @property
     def updates(self):
-        return self.subscriptions.filter(Q(~Q(serial=F("local_subscription__serial")),
-                                           local_resend_time__lte = time.time())
+        return self.subscriptions.filter(Q(Q( ~Q(local_serial=F("local_subscription__serial"))
+                                             |Q(has_enought_peers=False))
+                                           &Q(local_resend_time__lte = time.time()))
                                          |Q(peer_send=True))
 
     @property
@@ -153,7 +153,10 @@ class Peer(Node):
             return None
         update_msgs = []
         for sub in updates:
-            update_msgs.extend(sub.send())
+            sub_msgs = sub.send()
+            if not sub_msgs:
+                sys.stderr.write("This should not happend: update.send() returned empty list for %s\n" % (sub,))
+            update_msgs.extend(sub_msgs)
         if len(update_msgs) == 0:
             return None
 
@@ -190,7 +193,6 @@ class Peer(Node):
                 sub.save()
         elif part['message_type'] == 'peer_suggestion':
             is_new, sub = cliqueclique_subscription.models.PeerDocumentSubscription.get_peer_subscription(self, part['document_id'])
-            
         else:
             raise Exception("Unknown message type %s" % (part['message_type'],))
 
