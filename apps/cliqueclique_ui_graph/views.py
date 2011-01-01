@@ -45,7 +45,7 @@ class DocumentGraph(object):
         sub = sub.format_to_dict()
         def attr2label(attr):
             return ''.join(p[0] for p in attr.split('_'))
-        return '\n'.join("%s=%s" % (attr2label(attr), sub[attr]) for attr in attrs)
+        return '"%s"' % ('\\n'.join("%s=%s" % (attr2label(attr), sub[attr]) for attr in attrs),)
 
     def add_subscription(self, sub):
         self.graph.add_node(
