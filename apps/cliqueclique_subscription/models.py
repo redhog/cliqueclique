@@ -500,9 +500,10 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
     def send_peer_suggestion(self):
         msgs = []
         if not self.has_enought_peers:
-            # FIXME: Maybe some randomization here, so we don't end up
-            # sending the same few peer to all our peers
-            for peer_sub in self.local_subscription.peer_subscriptions.filter(~Q(peer__node_id=self.peer.node_id)).all()[:self.center_distance]:
+            # FIXME: This might not be very effective to do...
+            # See: http://code.djangoproject.com/ticket/5267
+            # Maybe just fetch them all and randomize in RAM?
+            for peer_sub in self.local_subscription.peer_subscriptions.filter(~Q(peer__node_id=self.peer.node_id)).order_by('?').all()[:self.center_distance]:
                 msg = email.mime.text.MIMEText(utils.smime.der2pem(peer_sub.peer.public_key))
                 msg.add_header('message_type', 'peer_suggestion')
                 msg.add_header('document_id', self.local_subscription.document.document_id)
