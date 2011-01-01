@@ -22,9 +22,12 @@ def color(objs):
     return objs
 
 class DocumentGraph(object):
-    def __init__(self, document_id):
+    def __init__(self, document_id, node_attrs, peer_attrs):
         self.graph = pydot.Dot("neato")
         self.graph.set_overlap("scale")
+
+        self.node_attrs = node_attrs
+        self.peer_attrs = peer_attrs
 
         self.center_nodes = {}
 
@@ -38,18 +41,33 @@ class DocumentGraph(object):
         for sub in subs:
             self.add_subscription(sub)
 
+    def node_label(self, attrs, sub):
+        sub = sub.format_to_dict()
+        def attr2label(attr):
+            return ''.join(p[0] for p in attr.split('_'))
+        return '\n'.join("%s=%s" % (attr2label(attr), sub[attr]) for attr in attrs)
+
     def add_subscription(self, sub):
         self.graph.add_node(
             pydot.Node('"%s"' % sub.node.node_id,
-                       label='%(node_id)s\\n%(center_distance)s->%(center_node_id)s [%(has_enought_peers)s]' % sub.format_to_dict(),
+                       label=self.node_label(self.node_attrs, sub),
                        color=self.center_nodes[sub.center_node_id]['color']))
 
         for peer_sub in sub.peer_subscriptions.all():
             self.graph.add_edge(
                 pydot.Edge('"%s"' % peer_sub.local_subscription.node.node_id,
-                           '"%s"' % peer_sub.peer.node_id))
+                           '"%s"' % peer_sub.peer.node_id,
+                           label=self.node_label(self.peer_attrs, peer_sub)))
 
-def graph_document(self, document_id):
-    graph = DocumentGraph(document_id)
+def graph_document(request, document_id):
+    def split(s):
+        if not s:
+            return []
+        return s.split(",")
+
+    node_attrs = split(request.GET.get('node', 'center_node_id'))
+    peer_attrs = split(request.GET.get('peer', ''))
+
+    graph = DocumentGraph(document_id, node_attrs, peer_attrs)
     x = graph.graph.create_png()
     return django.http.HttpResponse(x, mimetype="image/png")
