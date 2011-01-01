@@ -1,4 +1,6 @@
-NODES=5
+[ "$NODES" ] || NODES=5
+[ "$SHAPE" ] || SHAPE=LINE
+
 rm node.db contrib/rootdoc.exp
 python manage.py syncdb --noinput
 for ((N=0; N<NODES; N++)); do
@@ -9,9 +11,14 @@ for ((N=0; N<NODES; N++)); do
   else
     ROOTDOC=$(python manage.py postdocument --bookmark $NODE contrib/rootdoc)
     echo "Root: $ROOTDOC"
+    if [ "$SHAPE" != "LINE" ]; then
+      python manage.py exportdocument $NODE $ROOTDOC contrib/rootdoc.exp
+    fi
   fi
-  rm contrib/rootdoc.exp
-  python manage.py exportdocument $NODE $ROOTDOC contrib/rootdoc.exp
+  if [ "$SHAPE" == "LINE" ]; then
+    rm contrib/rootdoc.exp
+    python manage.py exportdocument $NODE $ROOTDOC contrib/rootdoc.exp
+  fi
 done
 
 python manage.py runrouter
