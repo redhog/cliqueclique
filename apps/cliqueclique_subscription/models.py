@@ -228,13 +228,14 @@ Center distance: %(center_distance)s
             peer_subscription.save()
 
     def elect_center_node(self):
-        sys.stderr.write("%s ELECTION: %s < %s\n" % (self.node.node_id[:5], self.center_node_is_subscribed, self.is_subscribed))
+        #sys.stderr.write("%s ELECTION: %s < %s\n" % (self.node.node_id[:5], self.center_node_is_subscribed, self.is_subscribed))
         if self.center_node_id == self.node.node_id:
             if self.center_node_is_subscribed != self.is_subscribed:
-                sys.stderr.write("%s %s %s\n" % (self.node.node_id[:5], "UPDATE CENTER NODE SUBSCRIPTION TO", self.is_subscribed))
+                pass
+                #sys.stderr.write("%s %s %s\n" % (self.node.node_id[:5], "UPDATE CENTER NODE SUBSCRIPTION TO", self.is_subscribed))
             self.center_node_is_subscribed = self.is_subscribed
         elif self.center_node_id is None or self.center_node_is_subscribed < self.is_subscribed:
-            sys.stderr.write("%s %s\n" % (self.node.node_id[:5], "CHANGE CENTER NODE TO SELFT"))
+            #sys.stderr.write("%s %s\n" % (self.node.node_id[:5], "CHANGE CENTER NODE TO SELFT"))
             self.center_node_is_subscribed = self.is_subscribed
             self.center_node_id = self.node.node_id
             self.center_distance = 0
@@ -292,7 +293,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
     local_subscription = django.db.models.ForeignKey(DocumentSubscription, related_name="peer_subscriptions")
     peer = django.db.models.ForeignKey(cliqueclique_node.models.Peer, related_name="subscriptions")
 
-    local_serial = django.db.models.IntegerField(default = 0)
+    local_serial = django.db.models.IntegerField(default = -1)
     local_resend_interval = django.db.models.FloatField(blank=True, null=True)
     local_resend_time = django.db.models.FloatField(default = 0)
     peer_send = django.db.models.BooleanField(default = True)
@@ -487,7 +488,6 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
         else:
             self.delete()
 
-        msgs = []
         msg = email.mime.multipart.MIMEMultipart()
         msg.add_header('message_type', 'subscription_ack')
         msg.add_header('document_id', self.local_subscription.document.document_id)
@@ -495,8 +495,10 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
         for attr in self.PROTOCOL_ATTRS:
             msg.add_header(attr, str(getattr(self, attr)))
         
-        msgs.append(msg)
+        return [msg]
 
+    def send_peer_suggestion(self):
+        msgs = []
         if not self.has_enought_peers:
            for peer_sub in self.local_subscription.peer_subscriptions.all()[:self.center_distance + 1]:
               if self.peer.node_id != peer_sub.peer.node_id:
@@ -504,11 +506,10 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
                  msg.add_header('message_type', 'peer_suggestion')
                  msg.add_header('document_id', self.local_subscription.document.document_id)
                  msgs.append(msg)
-
         return msgs
 
     def send(self, export = False):
-        return self.send_update(export) + self.send_ack()
+        return self.send_update(export) + self.send_ack() + self.send_peer_suggestion()
 
     def __unicode__(self):
         return "%s:s knowledge about %s" % (self.peer, self.local_subscription)
