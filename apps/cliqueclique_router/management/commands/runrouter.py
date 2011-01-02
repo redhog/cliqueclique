@@ -22,6 +22,26 @@ import utils.i2p
 import utils.smime
 import os
 import sys
+import threading
+
+class LocalSocket(object):
+    def __init__(self, dest):
+        self.dest = dest
+        self.buffer = []
+        self.lock = threading.Lock()
+
+    def sendto(self, data, x, address):
+        with self.lock:
+            self.buffer.append(data)
+
+    def recvfrom(self, x):
+        while True:
+            with self.lock:
+                if not self.buffer:
+                    continue
+                msg = self.buffer[0]
+                del self.buffer[0]
+                return (msg, self.dest)
 
 class Command(django.core.management.commands.runserver.Command):
     args = ''
@@ -45,12 +65,8 @@ class Command(django.core.management.commands.runserver.Command):
         django.utils.translation.activate(settings.LANGUAGE_CODE)
 
         if settings.CLIQUECLIQUE_LOCALHOST:
-            local_address = '/tmp/'+settings.CLIQUECLIQUE_I2P_SESSION_NAME
-            if os.path.exists(local_address):
-                os.unlink(local_address)
-            sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
-            sock.bind(local_address)
-            #sock.listen(1)
+            local_address = settings.CLIQUECLIQUE_I2P_SESSION_NAME
+            sock = LocalSocket(local_address)
         else:
             sock = i2p.socket.socket(settings.CLIQUECLIQUE_I2P_SESSION_NAME, i2p.socket.SOCK_DGRAM)
             local_address = utils.i2p.dest2b32(sock.dest)
