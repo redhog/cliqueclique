@@ -21,14 +21,16 @@ import os
 import sys
 import traceback
                 
-def msg2debug(msg):
-    msg = utils.smime.message_from_anything(msg)
+def msg2debug(origmsg):
+    msg = utils.smime.message_from_anything(origmsg)
     try:
         cert = msg.verify()[0]
         sender_node_id = cliqueclique_node.models.Node.node_id_from_public_key(cert)
     except:
+        print origmsg
         traceback.print_exc()
         sender_node_id = "UNABLETOVERIFYCERT"
+        sys.exit(1)
 
     container_msg = msg.get_payload()[0]
     receiver_node_id = container_msg['receiver_node_id']
