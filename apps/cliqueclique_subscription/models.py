@@ -141,7 +141,7 @@ Center distance: %(center_distance)s
     def has_enought_peers(self):
        # we allways wanna have at least two peers, even if we're next
        # to the center node, so > not >=.
-        return self.peer_nrs > self.center_distance
+        return self.peer_nrs > max(self.center_distance, settings.CLIQUECLIQUE_OPTIMAL_PEER_NRS)
 
     @property
     def is_wanted(self):
@@ -505,13 +505,8 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
 
         msgs = []
         if not self.has_enought_peers and not self.is_upstream():
-#            suggestion_nrs = max(self.center_distance/2, 1)
             peer_subs = self.local_subscription.peer_subscriptions.filter(~Q(peer__node_id=self.peer.node_id)).order_by('?').all()[0:1]
 
-#            if suggestion_nrs < len(peer_subs):
-#                peer_subs = get_offsetslice(peer_subs, self.peer.id, suggestion_nrs)
-
-            print "XXXXXXXXXXXXXX", self.center_distance, len(peer_subs)
             for peer_sub in peer_subs:
                 msg = email.mime.text.MIMEText(utils.smime.der2pem(peer_sub.peer.public_key))
                 msg.add_header('message_type', 'peer_suggestion')

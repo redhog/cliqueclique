@@ -98,6 +98,7 @@ class Receiver(Thread):
                 cliqueclique_node.models.LocalNode.receive_any(msg)
             except:
                 traceback.print_exc()
+                continue
             with signal.global_server_signal:
                 signal.global_server_signal.notifyAll()
 
@@ -108,12 +109,16 @@ class Sender(Thread):
     def run(self):
         print "Sender is running."
         while True:
-            for (msg, address) in cliqueclique_node.models.LocalNode.send_any():
-                msg2debug(msg, address)
-
-                self.sock.sendto(msg, 0, address)
-                with signal.global_server_signal:
-                    signal.global_server_signal.wait(1.0)
+            try:
+                for (msg, address) in cliqueclique_node.models.LocalNode.send_any():
+                    msg2debug(msg, address)
+                    
+                    self.sock.sendto(msg, 0, address)
+                    with signal.global_server_signal:
+                        signal.global_server_signal.wait(1.0)
+            except:
+                traceback.print_exc()
+                continue
             with signal.global_server_signal:
                 signal.global_server_signal.wait(1.0)
 
