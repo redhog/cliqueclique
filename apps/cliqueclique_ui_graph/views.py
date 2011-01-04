@@ -58,10 +58,15 @@ class DocumentGraph(object):
             info['label'] = self.node_label(self.peer_attrs, peer_sub)
 
             if info['label'] == '""':
-                if peer_sub.peer.node_id > peer_sub.local_subscription.node.node_id:
-                    continue
-                info['arrowhead'] = 'none'
-                info['arrowtail'] = 'none'
+                reverse = cliqueclique_subscription.models.PeerDocumentSubscription.objects.filter(
+                    local_subscription__document__document_id = peer_sub.local_subscription.document.document_id,
+                    peer__node_id = peer_sub.local_subscription.node.node_id,
+                    peer__local__node_id = peer_sub.peer.node_id).all()
+                if len(reverse):
+                    if peer_sub.peer.node_id > peer_sub.local_subscription.node.node_id:
+                        continue
+                    info['arrowhead'] = 'none'
+                    info['arrowtail'] = 'none'
 
             self.graph.add_edge(
                 pydot.Edge('"%s"' % peer_sub.local_subscription.node.node_id,
