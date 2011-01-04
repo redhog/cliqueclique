@@ -54,10 +54,19 @@ class DocumentGraph(object):
                        color=self.center_nodes[sub.center_node_id]['color']))
 
         for peer_sub in sub.peer_subscriptions.all():
+            info = {}
+            info['label'] = self.node_label(self.peer_attrs, peer_sub)
+
+            if info['label'] == '""':
+                if peer_sub.peer.node_id > peer_sub.local_subscription.node.node_id:
+                    continue
+                info['arrowhead'] = 'none'
+                info['arrowtail'] = 'none'
+
             self.graph.add_edge(
                 pydot.Edge('"%s"' % peer_sub.local_subscription.node.node_id,
                            '"%s"' % peer_sub.peer.node_id,
-                           label=self.node_label(self.peer_attrs, peer_sub)))
+                           **info))
 
 def graph_document(request, document_id):
     def split(s):
