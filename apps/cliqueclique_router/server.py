@@ -20,8 +20,9 @@ import utils.hash
 import os
 import sys
 import traceback
+import signal
                 
-def msg2debug(origmsg):
+def msg2debug(origmsg, src):
     msg = utils.smime.message_from_anything(origmsg)
     try:
         cert = msg.verify()[0]
@@ -36,12 +37,11 @@ def msg2debug(origmsg):
     receiver_node_id = container_msg['receiver_node_id']
 
     print "%s <- %s" % (receiver_node_id[:settings.CLIQUECLIQUE_HASH_PRINT_LENGTH], sender_node_id[:settings.CLIQUECLIQUE_HASH_PRINT_LENGTH])
-    for part in container_msg.get_payload():
-        print "  %s(%s)" % (part['message_type'], part['document_id'][:settings.CLIQUECLIQUE_HASH_PRINT_LENGTH])
-        for key, value in part.items():
-            if key.lower() not in ('content-type', 'mime-version', 'message_type', 'document_id'):
-                print "    %s = %s" % (key, value)
-
+    # for part in container_msg.get_payload():
+    #     print "  %s(%s)" % (part['message_type'], part['document_id'][:settings.CLIQUECLIQUE_HASH_PRINT_LENGTH])
+    #     for key, value in part.items():
+    #         if key.lower() not in ('content-type', 'mime-version', 'message_type', 'document_id'):
+    #             print "    %s = %s" % (key, value)
 
 class Thread(threading.Thread):
     def __init__(self, **kw):
@@ -93,12 +93,13 @@ class Receiver(Thread):
             else:
                 (msg, address) = self.sock.recvfrom(-1)
 
-            print "========{From %s}========" % (utils.i2p.dest2b32(address),)
             try:
-                msg2debug(msg)
+                msg2debug(msg, utils.i2p.dest2b32(address))
                 cliqueclique_node.models.LocalNode.receive_any(msg)
             except:
                 traceback.print_exc()
+            with signal.global_server_signal:
+                signal.global_server_signal.notifyAll()
 
 class Sender(Thread):
     def __init__(self, sock, *arg, **kw):
@@ -108,9 +109,13 @@ class Sender(Thread):
         print "Sender is running."
         while True:
             for (msg, address) in cliqueclique_node.models.LocalNode.send_any():
-                print "========{To %s}========" % (address,)
-                msg2debug(msg)
+                msg2debug(msg, address)
 
                 self.sock.sendto(msg, 0, address)
-                time.sleep(1)
-            time.sleep(1)
+                with signal.global_server_signal:
+                    signal.global_server_signal.wait(1.0)
+            with signal.global_server_signal:
+                signal.global_server_signal.wait(1.0)
+
+#                time.sleep(1)
+#            time.sleep(1)

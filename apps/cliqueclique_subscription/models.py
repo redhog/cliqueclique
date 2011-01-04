@@ -498,12 +498,21 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
         return [msg]
 
     def send_peer_suggestion(self):
+        def get_offsetslice(lst, offset, count):
+            lstlen = len(lst)
+            offset = offset % lstlen
+            return lst[offset:min(offset+count,lstlen)] + lst[:max(offset+count-lstlen, 0)]
+
         msgs = []
-        if not self.has_enought_peers:
-            # FIXME: This might not be very effective to do...
-            # See: http://code.djangoproject.com/ticket/5267
-            # Maybe just fetch them all and randomize in RAM?
-            for peer_sub in self.local_subscription.peer_subscriptions.filter(~Q(peer__node_id=self.peer.node_id)).order_by('?').all()[:self.center_distance]:
+        if not self.has_enought_peers and not self.is_upstream():
+#            suggestion_nrs = max(self.center_distance/2, 1)
+            peer_subs = self.local_subscription.peer_subscriptions.filter(~Q(peer__node_id=self.peer.node_id)).order_by('?').all()[0:1]
+
+#            if suggestion_nrs < len(peer_subs):
+#                peer_subs = get_offsetslice(peer_subs, self.peer.id, suggestion_nrs)
+
+            print "XXXXXXXXXXXXXX", self.center_distance, len(peer_subs)
+            for peer_sub in peer_subs:
                 msg = email.mime.text.MIMEText(utils.smime.der2pem(peer_sub.peer.public_key))
                 msg.add_header('message_type', 'peer_suggestion')
                 msg.add_header('document_id', self.local_subscription.document.document_id)

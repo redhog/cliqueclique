@@ -192,7 +192,9 @@ class Peer(Node):
                 sub.is_dirty = True # FIXME: needs_ack or dirty here?
                 sub.save()
         elif part['message_type'] == 'peer_suggestion':
-            is_new, sub = cliqueclique_subscription.models.PeerDocumentSubscription.get_peer_subscription(self, part['document_id'])
+            is_new, sub = cliqueclique_subscription.models.DocumentSubscription.get_subscription(self.local, part['document_id'])
+            if not sub.has_enought_peers:
+                is_new, sub = cliqueclique_subscription.models.PeerDocumentSubscription.get_peer_subscription(self, part['document_id'])
         else:
             raise Exception("Unknown message type %s" % (part['message_type'],))
 
