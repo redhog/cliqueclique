@@ -63,7 +63,7 @@ class LocalNode(Node):
         for peer in self.peers.all():
             msg = peer.send()
             if msg is not None:
-                yield (msg.as_string(), peer.address)
+                yield (msg, peer.address)
     
     def receive(self, msg):
         msg = utils.smime.message_from_anything(msg)
