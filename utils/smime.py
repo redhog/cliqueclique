@@ -203,7 +203,7 @@ class MIMESigned(MIMEM2):
         if len(payload) == 1:
             assert self.private_key
             assert self.cert
-            return [self.cert]
+            return [pem2der(self.cert)]
 
         assert len(payload) == 2
         
