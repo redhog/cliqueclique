@@ -200,6 +200,11 @@ class MIMESigned(MIMEM2):
         the signing certificates in DER encoded form."""
 
         payload = self.get_payload()
+        if len(payload) == 1:
+            assert self.private_key
+            assert self.cert
+            return [self.cert]
+
         assert len(payload) == 2
         
         p7, data_bio = M2Crypto.SMIME.smime_load_pkcs7_bio(M2Crypto.BIO.MemoryBuffer(self.as_string()))
