@@ -141,7 +141,7 @@ Center distance: %(center_distance)s
     def has_enought_peers(self):
        # we allways wanna have at least two peers, even if we're next
        # to the center node, so > not >=.
-        return self.peer_nrs > max(self.center_distance, settings.CLIQUECLIQUE_OPTIMAL_PEER_NRS)
+        return self.peer_nrs > max(int(settings.CLIQUECLIQUE_OPTIMAL_PEER_NRS - settings.CLIQUECLIQUE_OPTIMAL_PEER_NRS / (self.center_distance + 1.0)), 1)
 
     @property
     def is_wanted(self):
@@ -504,7 +504,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
             return lst[offset:min(offset+count,lstlen)] + lst[:max(offset+count-lstlen, 0)]
 
         msgs = []
-        if not self.has_enought_peers and not self.is_upstream():
+        if not self.has_enought_peers: # and not self.is_upstream():
             peer_subs = self.local_subscription.peer_subscriptions.filter(~Q(peer__node_id=self.peer.node_id)).order_by('?').all()[0:1]
 
             for peer_sub in peer_subs:
