@@ -49,7 +49,7 @@ class LocalNode(Node):
     def on_pre_save(cls, sender, instance, **kwargs):
         if not instance.address:
             if settings.CLIQUECLIQUE_LOCALHOST:
-                instance.address = '/tmp/'+settings.CLIQUECLIQUE_I2P_SESSION_NAME
+                instance.address = settings.CLIQUECLIQUE_I2P_SESSION_NAME
             else:
                 sock = i2p.socket.socket(settings.CLIQUECLIQUE_I2P_SESSION_NAME, i2p.socket.SOCK_DGRAM)
                 instance.address = utils.i2p.dest2b32(sock.dest)
