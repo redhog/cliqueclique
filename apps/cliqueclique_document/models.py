@@ -32,6 +32,8 @@ class Document(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnec
         else:
             if content is None:
                 raise Exception("Unable to create new document %s without any content" % (document_id,))
+            if type(content) not in (unicode, str):
+                content = content.as_string()
             doc = Document(content = content)
             doc.save()
             is_new = True

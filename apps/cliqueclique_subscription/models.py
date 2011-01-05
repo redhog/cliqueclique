@@ -141,7 +141,7 @@ Center distance: %(center_distance)s
     def has_enought_peers(self):
        # we allways wanna have at least two peers, even if we're next
        # to the center node, so > not >=.
-        return self.peer_nrs > max(int(settings.CLIQUECLIQUE_OPTIMAL_PEER_NRS - settings.CLIQUECLIQUE_OPTIMAL_PEER_NRS / (self.center_distance + 1.0)), 1)
+        return self.peer_nrs > min(self.center_distance + 1.0, max(int(settings.CLIQUECLIQUE_OPTIMAL_PEER_NRS - settings.CLIQUECLIQUE_OPTIMAL_PEER_NRS / (self.center_distance + 1.0)), 1))
 
     @property
     def is_wanted(self):

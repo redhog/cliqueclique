@@ -133,7 +133,10 @@ class Sender(Thread):
                 for (msg, address) in cliqueclique_node.models.LocalNode.send_any():
                     msg2debug(msg, address)
                     
-                    self.sock.sendto(msg.as_string(), 0, address)
+                    if not settings.CLIQUECLIQUE_LOCALHOST:
+                        msg = msg.as_string()
+
+                    self.sock.sendto(msg, 0, address)
                     with signal.global_server_signal:
                         signal.global_server_signal.wait(1.0)
             except:
