@@ -24,25 +24,6 @@ import os
 import sys
 import threading
 
-class LocalSocket(object):
-    def __init__(self, dest):
-        self.dest = dest
-        self.buffer = []
-        self.lock = threading.Lock()
-
-    def sendto(self, data, x, address):
-        with self.lock:
-            self.buffer.append(data)
-
-    def recvfrom(self, x):
-        while True:
-            with self.lock:
-                if not self.buffer:
-                    continue
-                msg = self.buffer[0]
-                del self.buffer[0]
-                return (msg, self.dest)
-
 class Command(django.core.management.commands.runserver.Command):
     args = ''
 
@@ -66,7 +47,7 @@ class Command(django.core.management.commands.runserver.Command):
 
         if settings.CLIQUECLIQUE_LOCALHOST:
             local_address = settings.CLIQUECLIQUE_I2P_SESSION_NAME
-            sock = LocalSocket(local_address)
+            sock = cliqueclique_router.server.LocalSocket(local_address)
         else:
             sock = i2p.socket.socket(settings.CLIQUECLIQUE_I2P_SESSION_NAME, i2p.socket.SOCK_DGRAM)
             local_address = utils.i2p.dest2b32(sock.dest)

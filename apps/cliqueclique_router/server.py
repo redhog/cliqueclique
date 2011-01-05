@@ -43,6 +43,26 @@ def msg2debug(origmsg, src):
     #         if key.lower() not in ('content-type', 'mime-version', 'message_type', 'document_id'):
     #             print "    %s = %s" % (key, value)
 
+
+class LocalSocket(object):
+    def __init__(self, dest):
+        self.dest = dest
+        self.buffer = []
+        self.lock = threading.Lock()
+
+    def sendto(self, data, x, address):
+        with self.lock:
+            self.buffer.append(data)
+
+    def recvfrom(self, x):
+        while True:
+            with self.lock:
+                if not self.buffer:
+                    continue
+                msg = self.buffer[0]
+                del self.buffer[0]
+                return (msg, self.dest)
+
 class Thread(threading.Thread):
     def __init__(self, **kw):
         threading.Thread. __init__(self)
