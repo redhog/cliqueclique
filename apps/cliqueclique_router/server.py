@@ -37,8 +37,8 @@ def msg2debug(origmsg, src):
     receiver_node_id = container_msg['receiver_node_id']
 
     print "%s <- %s" % (receiver_node_id[:settings.CLIQUECLIQUE_HASH_PRINT_LENGTH], sender_node_id[:settings.CLIQUECLIQUE_HASH_PRINT_LENGTH])
-    # for part in container_msg.get_payload():
-    #     print "  %s(%s)" % (part['message_type'], part['document_id'][:settings.CLIQUECLIQUE_HASH_PRINT_LENGTH])
+    for part in container_msg.get_payload():
+        print "  %s(%s)" % (part['message_type'], part['document_id'][:settings.CLIQUECLIQUE_HASH_PRINT_LENGTH])
     #     for key, value in part.items():
     #         if key.lower() not in ('content-type', 'mime-version', 'message_type', 'document_id'):
     #             print "    %s = %s" % (key, value)
