@@ -1,7 +1,7 @@
 [ "$NODES" ] || NODES=5
 [ "$SHAPE" ] || SHAPE=LINE
 
-rm node.db contrib/rootdoc.exp
+rm ~/.config/cliqueclique/node.db contrib/rootdoc.exp
 python manage.py syncdb --noinput
 for ((N=0; N<NODES; N++)); do
   NODE=$(python manage.py createnode test$N saltgurka)

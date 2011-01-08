@@ -1,6 +1,22 @@
-# Find all locally installed apps
 import os.path, sys
+
+def mkdirpath(path):
+    if os.path.isdir(path):
+        return True
+    elif os.path.exists(path):
+        raise Exception("%s is not a directory" % (path,))
+    parent, name = os.path.split(path)
+    mkdirpath(parent)
+    os.mkdir(path)
+
+
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+
+CONFIGDIR=os.path.expanduser("~/.config/cliqueclique")
+CONFIGFILE=os.path.join(CONFIGDIR, "settings.py")
+mkdirpath(CONFIGDIR)
+
+# Find all locally installed apps
 sys.path.append(os.path.join(PROJECT_ROOT, "apps"))
 LOCAL_APPS = filter(
     lambda x: os.path.isfile(os.path.join(PROJECT_ROOT, 'apps', x,'__init__.py')), 
@@ -24,7 +40,7 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'ENGINE': 'sqlite3', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'node.db',                      # Or path to database file if using sqlite3.
+        'NAME': os.path.join(CONFIGDIR, 'node.db'),                      # Or path to database file if using sqlite3.
         'USER': '',                      # Not used with sqlite3.
         'PASSWORD': '',                  # Not used with sqlite3.
         'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
@@ -139,15 +155,13 @@ STATICFILES_DIRS.extend(
 CLIQUECLIQUE_ADDRESS_LENGTH = 61
 CLIQUECLIQUE_HASH_LENGTH = 53 # Same as i2p b32 address length, just for fun :)
 
-CLIQUECLIQUE_LOCALHOST = True
-CLIQUECLIQUE_LOCALSIGN = False
-CLIQUECLIQUE_PROFILE = False
+if not os.path.exists(CONFIGFILE):
+    print "Copying config template to %s" % (CONFIGFILE,)
+    with open(os.path.join(PROJECT_ROOT, "local_settings.template.py")) as s:
+        with open(CONFIGFILE, "w") as d:
+            d.write(s.read())
+ 
+sys.stderr.write("Loading local settings from " + CONFIGFILE + "\n")
+with open(CONFIGFILE) as f:
+    exec f
 
-CLIQUECLIQUE_OPTIMAL_PEER_NRS = 5
-
-CLIQUECLIQUE_HASH_PRINT_LENGTH = 5
-CLIQUECLIQUE_KEY_SIZE = 1024
-
-CLIQUECLIQUE_I2P_SESSION_NAME = "cliqueclique"
-
-CLIQUECLIQUE_UI_SECURITY_CONTEXTS = ["localhost:%s" % (8000 + port,) for port in xrange(0, 1)]

@@ -1,4 +1,4 @@
-rm node.db contrib/rootdoc.exp
+rm ~/.config/cliqueclique/node.db contrib/rootdoc.exp
 python manage.py syncdb --noinput
 NODE1=$(python manage.py createnode test1 saltgurka)
 NODE2=$(python manage.py createnode test2 saltgurka)
