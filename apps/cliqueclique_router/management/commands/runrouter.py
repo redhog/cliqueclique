@@ -20,6 +20,7 @@ import django.core.management.commands.runserver
 import settings
 import utils.i2p
 import utils.smime
+import utils.thread
 import os
 import sys
 import threading
@@ -63,9 +64,19 @@ class Command(django.core.management.commands.runserver.Command):
         receiver = cliqueclique_router.server.Receiver(sock)
         receiver.start()
 
+        webservers = []
         for addr in settings.CLIQUECLIQUE_UI_SECURITY_CONTEXTS:
             webserver = cliqueclique_router.server.Webserver(*addr.split(":"))
             webserver.start()
+            webservers.append(webserver)
 
-        while True:
-            time.sleep(500)
+        try:
+            while True:
+                time.sleep(500)
+        except:
+            sender.exit()
+            receiver.exit()
+            for webserver in webservers:
+                webserver.exit()
+
+            

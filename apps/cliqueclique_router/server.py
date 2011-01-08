@@ -17,11 +17,12 @@ import settings
 import utils.i2p
 import utils.smime
 import utils.hash
+import utils.thread
 import os
 import sys
 import traceback
 import signal
-                
+
 def msg2debug(origmsg, src):
     msg = utils.smime.message_from_anything(origmsg)
     try:
@@ -63,14 +64,8 @@ class LocalSocket(object):
                 del self.buffer[0]
                 return (msg, self.dest)
 
-class Thread(threading.Thread):
-    def __init__(self, **kw):
-        threading.Thread. __init__(self)
-        self.daemon = True
-        for key, value in kw.iteritems():
-            setattr(self, key, value)
 
-class Webserver(Thread):
+class Webserver(utils.thread.Thread):
     local = threading.local()
 
     admin_media_path = ''
@@ -78,9 +73,9 @@ class Webserver(Thread):
     addr = '127.0.0.1'
 
     def __init__(self, addr, port, *arg, **kw):
-        Thread.__init__(self, addr=addr, port=port, *arg, **kw)
+        utils.thread.Thread.__init__(self, addr=addr, port=port, *arg, **kw)
 
-    def run(self):
+    def main_run(self):
         print "Webserver is running at http://%s:%s/" % (self.addr, self.port)
 
         try:
@@ -101,11 +96,11 @@ class Webserver(Thread):
             # Need to use an OS exit because sys.exit doesn't work in a thread
             os._exit(1)
 
-class Receiver(Thread):
+class Receiver(utils.thread.Thread):
     def __init__(self, sock, *arg, **kw):
-        Thread.__init__(self, sock=sock, *arg, **kw)
+        utils.thread.Thread.__init__(self, sock=sock, *arg, **kw)
 
-    def run(self):
+    def main_run(self):
         print "Receiver is running."
         while True:
             if settings.CLIQUECLIQUE_LOCALHOST:
@@ -116,29 +111,33 @@ class Receiver(Thread):
             try:
                 msg2debug(msg, utils.i2p.dest2b32(address))
                 cliqueclique_node.models.LocalNode.receive_any(msg)
+            except SystemExit:
+                raise
             except:
                 traceback.print_exc()
                 continue
             with signal.global_server_signal:
                 signal.global_server_signal.notifyAll()
 
-class Sender(Thread):
+class Sender(utils.thread.Thread):
     def __init__(self, sock, *arg, **kw):
-        Thread.__init__(self, sock = sock, *arg, **kw)
+        utils.thread.Thread.__init__(self, sock = sock, *arg, **kw)
 
-    def run(self):
+    def main_run(self):
         print "Sender is running."
         while True:
             try:
                 for (msg, address) in cliqueclique_node.models.LocalNode.send_any():
                     msg2debug(msg, address)
                     
-                    if not settings.CLIQUECLIQUE_LOCALHOST:
+                    if not settings.CLIQUECLIQUE_LOCALHOST or settings.CLIQUECLIQUE_LOCALSIGN:
                         msg = msg.as_string()
 
                     self.sock.sendto(msg, 0, address)
                     with signal.global_server_signal:
                         signal.global_server_signal.wait(1.0)
+            except SystemExit:
+                raise
             except:
                 traceback.print_exc()
                 continue
@@ -147,3 +146,4 @@ class Sender(Thread):
 
 #                time.sleep(1)
 #            time.sleep(1)
+
