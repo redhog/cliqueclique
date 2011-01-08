@@ -193,7 +193,7 @@ class Peer(Node):
                 sub.save()
         elif part['message_type'] == 'peer_suggestion':
             is_new, sub = cliqueclique_subscription.models.DocumentSubscription.get_subscription(self.local, part['document_id'])
-            if not sub.has_enought_peers:
+            if sub.peer_nrs <= settings.CLIQUECLIQUE_OPTIMAL_PEER_NRS:
                 is_new, sub = cliqueclique_subscription.models.PeerDocumentSubscription.get_peer_subscription(self, part['document_id'])
         else:
             raise Exception("Unknown message type %s" % (part['message_type'],))
