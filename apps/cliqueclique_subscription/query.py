@@ -17,6 +17,9 @@ class Context(object):
     def __str__(self):
         return str(self.compile())
 
+    def new(self, start = None, joins = [], end = None):
+        return Context(start or self.start, self.joins + joins, end or self.end)
+
 class AnyContext(Context):
     def __init__(self):
         self.start = self.end = sql.Alias(sql.Table('cliqueclique_subscription_documentsubscription'))
@@ -40,7 +43,7 @@ class Pipe(Query):
         next_context = context
         for sub in self.subs:
             next_context = sub.compile(next_context)
-        return Context(context.start, next_context.joins, context.end)
+        return next_context.new(start=context.start, end=context.end)
 
     def __repr__(self):
         return " ".join(repr(sub) for sub in self.subs)
@@ -64,7 +67,7 @@ class And(Query):
     def compile(self, context):
         for sub in self.subs:
             next_context = sub.compile(context)
-            context = Context(context.start, next_context.joins, context.end)
+            context = next_context.new(start=context.start, end=context.end)
         return context
 
     def __repr__(self):
@@ -76,6 +79,7 @@ class Child(Query):
     next_col = 'to_documentsubscription_id'
 
     def compile(self, context):
+        assert context.end.get_original_name() == 'cliqueclique_subscription_documentsubscription'
         join = sql.Alias(sql.Table('cliqueclique_subscription_documentsubscription_parents'))
         next = sql.Alias(sql.Table('cliqueclique_subscription_documentsubscription'))
         joins = [sql.On(join,
@@ -84,7 +88,7 @@ class Child(Query):
                  sql.On(next,
                         on=sql.Comp(sql.Column(join, self.next_col),
                                     sql.Column(next, 'id')))]
-        return Context(context.start, context.joins + joins, next)
+        return context.new(joins=joins, end=next)
 
     def __repr__(self):
         return self.symbol
@@ -98,37 +102,40 @@ class Owner(Query):
         self.owner = owner
 
     def compile(self, context):
+        assert context.end.get_original_name() == 'cliqueclique_subscription_documentsubscription'
         sub = sql.Alias(sql.Table('cliqueclique_subscription_documentsubscription'))
         joins = [sql.On(sub,
                         on=sql.And(sql.Comp(sql.Column(context.end, 'id'),
                                             sql.Column(sub, 'id')),
                                    sql.Comp(sql.Column(sub, 'node_id'),
                                             sql.Const(self.owner))))]
-        return Context(context.start, context.joins + joins, sub)
+        return context.start.new(joins=joins, end=sub)
 
     def __repr__(self):
         return ":"
 
 class Parts(Query):
     def compile(self, context):
+        assert context.end.get_original_name() == 'cliqueclique_subscription_documentsubscription'
         part = sql.Alias(sql.Table('cliqueclique_document_documentpart'))
         joins = [sql.On(part,
                         on=sql.And(sql.Comp(sql.Column(context.end, 'document_id'),
                                             sql.Column(part, 'document_id')),
                                    sql.Comp(sql.Column(part, 'parent_id'),
                                             sql.Const(None))))]
-        return Context(context.start, context.joins + joins, part)
+        return context.new(joins=joins, end=part)
 
     def __repr__(self):
         return ":"
 
 class Part(Query):
     def compile(self, context):
+        assert context.end.get_original_name() == 'cliqueclique_document_documentpart'
         part = sql.Alias(sql.Table('cliqueclique_document_documentpart'))
         joins = [sql.On(part,
                         on=sql.And(sql.Comp(sql.Column(context.end, 'id'),
                                             sql.Column(part, 'parent_id'))))]
-        return Context(context.start, context.joins + joins, part)
+        return context.new(joins=joins, end=part)
 
     def __repr__(self):
         return "::"
@@ -139,6 +146,7 @@ class Property(Query):
         self.value = value
     
     def compile(self, context):
+        assert context.end.get_original_name() == 'cliqueclique_document_documentpart'
         prop = sql.Alias(sql.Table('cliqueclique_document_documentproperty'))
         joins = [sql.On(prop,
                         on=sql.And(sql.Comp(sql.Column(context.end, 'id'),
@@ -147,8 +155,7 @@ class Property(Query):
                                             sql.Const(self.key)),
                                    sql.Comp(sql.Column(prop, 'value'),
                                             sql.Const(self.value))))]
-        return Context(context.start, context.joins + joins, context.end)
-
+        return context.new(joins=joins)
 
     def __repr__(self):
         return "%s=%s" % (self.key, self.value)

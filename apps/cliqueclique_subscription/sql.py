@@ -120,6 +120,9 @@ class Table(Statement):
         Statement.__init__(self)
         self.name = name
 
+    def get_original_name(self):
+        return self.name
+
     def get_name(self):
         return self.name
 
@@ -143,6 +146,9 @@ class Column(Statement):
 class Alias(Statement):
     def __init__(self, primary):
         Statement.__init__(self, primary=primary)
+
+    def get_original_name(self):
+        return self.parts['primary'].get_original_name()
 
     def get_name(self):
         return 'a%s' % (id(self),)
