@@ -48,7 +48,10 @@ class Query(object):
     @classmethod
     def _any_from_expr(cls, expr):
         if isinstance(expr, (list, tuple)):
-            return cls.expr_registry[expr[0]]._from_expr(expr[1:])
+            if isinstance(expr[0], (list, tuple)):
+                return cls.expr_registry["&"]._from_expr(expr)
+            else:
+                return cls.expr_registry[expr[0]]._from_expr(expr[1:])
         else:
             return cls.expr_registry[expr]._from_expr()
 
@@ -83,30 +86,6 @@ class Pipe(Query):
         return [self.symbol] + [sub._to_expr() for sub in self.subs]
 
     def _compile(self, context):
-        next_context = context
-        for sub in self.subs:
-            next_context = sub._compile(next_context)
-        return next_context.new(start=context.start, end=context.end)
-
-    def __repr__(self):
-        return " ".join(repr(sub) for sub in self.subs)
-
-class Follow(Query):
-    symbol = "Follow"
-
-    def __new__(cls, *subs):
-        self = super(Follow, cls).__new__(cls)
-        self.subs = subs
-        return self
-
-    @classmethod
-    def _from_expr(cls, expr):
-        return cls(*[Query._any_from_expr(e) for e in expr])
-
-    def _to_expr(self):
-        return [self.symbol] + [sub._to_expr() for sub in self.subs]
-
-    def _compile(self, context):
         for sub in self.subs:
             context = sub._compile(context)
         return context
@@ -124,7 +103,10 @@ class And(Query):
         return cls(*[Query._any_from_expr(e) for e in expr])
 
     def _to_expr(self):
-        return [self.symbol] + [sub._to_expr() for sub in self.subs]
+        res = [sub._to_expr() for sub in self.subs]
+        if isinstance(res[0], (str, unicode)):
+            res = [self.symbol] + res
+        return res
 
     def _compile(self, context):
         for sub in self.subs:
@@ -175,6 +157,30 @@ class Owner(Query):
                                             sql.Column(sub, 'id')),
                                    sql.Comp(sql.Column(sub, 'node_id'),
                                             sql.Const(self.owner))))]
+        return context.start.new(joins=joins, end=sub)
+
+class Id(Query):
+    symbol = "id"
+    def __new__(cls, id):
+        self = super(Id, cls).__new__(cls)
+        self.id = id
+        return self
+
+    @classmethod
+    def _from_expr(cls, expr):
+        return cls(*expr)
+
+    def _to_expr(self):
+        return [self.symbol, self.id]
+
+    def _compile(self, context):
+        assert context.end.get_original_name() == 'cliqueclique_subscription_documentsubscription'
+        sub = sql.Alias(sql.Table('cliqueclique_subscription_documentsubscription'))
+        joins = [sql.On(sub,
+                        on=sql.And(sql.Comp(sql.Column(context.end, 'id'),
+                                            sql.Column(sub, 'id')),
+                                   sql.Comp(sql.Column(sub, 'document_id'),
+                                            sql.Const(self.id))))]
         return context.start.new(joins=joins, end=sub)
 
 class Parts(Query):
