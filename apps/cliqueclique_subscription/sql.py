@@ -172,7 +172,14 @@ class Const(Statement):
         self.value = value
 
     def compile(self, ind, tab, l):
-        return CompiledStatement("%s", [self.value])
+        if self.value is None:
+            return CompiledStatement("null", [])
+        elif self.value is True: 
+            return CompiledStatement("true", [])
+        elif self.value is False:
+            return CompiledStatement("false", [])
+        else:
+            return CompiledStatement("%s", [self.value])
 
 class Comp(Statement):
     def __init__(self, val1, val2, comp='='):

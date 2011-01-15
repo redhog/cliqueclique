@@ -52,17 +52,20 @@ class Query(object):
         else:
             return cls.expr_registry[expr]._from_expr()
 
-    def _to_expr(cls):
+    def _to_expr(self):
         return self.symbol
 
-    def compile(self, context = AnyContext()):
+    def _compile(self, context):
         return context
+
+    def compile(self):
+        return self._compile(AnyContext()).compile()
 
     def __repr__(self):
         return simplejson.dumps(self._to_expr())
 
     def __str__(self):
-        return str(self.compile())
+        return simplejson.dumps(self._to_expr())
 
 class Pipe(Query):
     symbol = "|"
@@ -76,13 +79,13 @@ class Pipe(Query):
     def _from_expr(cls, expr):
         return cls(*[Query._any_from_expr(e) for e in expr])
 
-    def _to_expr(cls):
+    def _to_expr(self):
         return [self.symbol] + [sub._to_expr() for sub in self.subs]
 
-    def compile(self, context = AnyContext()):
+    def _compile(self, context):
         next_context = context
         for sub in self.subs:
-            next_context = sub.compile(next_context)
+            next_context = sub._compile(next_context)
         return next_context.new(start=context.start, end=context.end)
 
     def __repr__(self):
@@ -100,16 +103,13 @@ class Follow(Query):
     def _from_expr(cls, expr):
         return cls(*[Query._any_from_expr(e) for e in expr])
 
-    def _to_expr(cls):
+    def _to_expr(self):
         return [self.symbol] + [sub._to_expr() for sub in self.subs]
 
-    def compile(self, context = AnyContext()):
+    def _compile(self, context):
         for sub in self.subs:
-            context = sub.compile(context)
+            context = sub._compile(context)
         return context
-
-    def __repr__(self):
-        return " ".join(repr(sub) for sub in self.subs)
 
 class And(Query):
     symbol = "&"
@@ -123,24 +123,21 @@ class And(Query):
     def _from_expr(cls, expr):
         return cls(*[Query._any_from_expr(e) for e in expr])
 
-    def _to_expr(cls):
+    def _to_expr(self):
         return [self.symbol] + [sub._to_expr() for sub in self.subs]
 
-    def compile(self, context = AnyContext()):
+    def _compile(self, context):
         for sub in self.subs:
-            next_context = sub.compile(context)
+            next_context = sub._compile(context)
             context = next_context.new(start=context.start, end=context.end)
         return context
-
-    def __repr__(self):
-        return " & ".join(repr(sub) for sub in self.subs)
 
 class Child(Query):
     symbol = '>'
     prev_col = 'from_documentsubscription_id'
     next_col = 'to_documentsubscription_id'
 
-    def compile(self, context = AnyContext()):
+    def _compile(self, context):
         assert context.end.get_original_name() == 'cliqueclique_subscription_documentsubscription'
         join = sql.Alias(sql.Table('cliqueclique_subscription_documentsubscription_parents'))
         next = sql.Alias(sql.Table('cliqueclique_subscription_documentsubscription'))
@@ -151,9 +148,6 @@ class Child(Query):
                         on=sql.Comp(sql.Column(join, self.next_col),
                                     sql.Column(next, 'id')))]
         return context.new(joins=joins, end=next)
-
-    def __repr__(self):
-        return self.symbol
 
 class Parent(Child):
     prev_col = 'to_documentsubscription_id'
@@ -170,10 +164,10 @@ class Owner(Query):
     def _from_expr(cls, expr):
         return cls(*expr)
 
-    def _to_expr(cls):
+    def _to_expr(self):
         return [self.symbol, self.owner]
 
-    def compile(self, context = AnyContext()):
+    def _compile(self, context):
         assert context.end.get_original_name() == 'cliqueclique_subscription_documentsubscription'
         sub = sql.Alias(sql.Table('cliqueclique_subscription_documentsubscription'))
         joins = [sql.On(sub,
@@ -183,19 +177,17 @@ class Owner(Query):
                                             sql.Const(self.owner))))]
         return context.start.new(joins=joins, end=sub)
 
-    def __repr__(self):
-        return ":"
-
 class Parts(Query):
     symbol = ":"
-    def compile(self, context = AnyContext()):
+    def _compile(self, context):
         assert context.end.get_original_name() == 'cliqueclique_subscription_documentsubscription'
         part = sql.Alias(sql.Table('cliqueclique_document_documentpart'))
         joins = [sql.On(part,
                         on=sql.And(sql.Comp(sql.Column(context.end, 'document_id'),
                                             sql.Column(part, 'document_id')),
                                    sql.Comp(sql.Column(part, 'parent_id'),
-                                            sql.Const(None))))]
+                                            sql.Const(None),
+                                            'is')))]
         return context.new(joins=joins, end=part)
 
     def __repr__(self):
@@ -203,16 +195,13 @@ class Parts(Query):
 
 class Part(Query):
     symbol = "::"
-    def compile(self, context = AnyContext()):
+    def _compile(self, context):
         assert context.end.get_original_name() == 'cliqueclique_document_documentpart'
         part = sql.Alias(sql.Table('cliqueclique_document_documentpart'))
         joins = [sql.On(part,
                         on=sql.And(sql.Comp(sql.Column(context.end, 'id'),
                                             sql.Column(part, 'parent_id'))))]
         return context.new(joins=joins, end=part)
-
-    def __repr__(self):
-        return "::"
 
 class Property(Query):
     symbol="="
@@ -226,10 +215,10 @@ class Property(Query):
     def _from_expr(cls, expr):
         return cls(*expr)
     
-    def _to_expr(cls):
+    def _to_expr(self):
         return [self.symbol, self.key, self.value]
 
-    def compile(self, context = AnyContext()):
+    def _compile(self, context):
         assert context.end.get_original_name() == 'cliqueclique_document_documentpart'
         prop = sql.Alias(sql.Table('cliqueclique_document_documentproperty'))
         joins = [sql.On(prop,
@@ -240,6 +229,3 @@ class Property(Query):
                                    sql.Comp(sql.Column(prop, 'value'),
                                             sql.Const(self.value))))]
         return context.new(joins=joins)
-
-    def __repr__(self):
-        return "%s=%s" % (self.key, self.value)
