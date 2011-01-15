@@ -51,7 +51,7 @@ class Query(object):
         else:
             return cls.expr_registry[expr]._from_expr()
 
-    def compile(self, context):
+    def compile(self, context = AnyContext()):
         return context
 
     def __repr__(self):
@@ -72,7 +72,7 @@ class Pipe(Query):
     def _from_expr(cls, expr):
         return cls(*[Query._any_from_expr(e) for e in expr])
 
-    def compile(self, context):
+    def compile(self, context = AnyContext()):
         next_context = context
         for sub in self.subs:
             next_context = sub.compile(next_context)
@@ -93,7 +93,7 @@ class Follow(Query):
     def _from_expr(cls, expr):
         return cls(*[Query._any_from_expr(e) for e in expr])
 
-    def compile(self, context):
+    def compile(self, context = AnyContext()):
         for sub in self.subs:
             context = sub.compile(context)
         return context
@@ -113,7 +113,7 @@ class And(Query):
     def _from_expr(cls, expr):
         return cls(*[Query._any_from_expr(e) for e in expr])
 
-    def compile(self, context):
+    def compile(self, context = AnyContext()):
         for sub in self.subs:
             next_context = sub.compile(context)
             context = next_context.new(start=context.start, end=context.end)
@@ -127,7 +127,7 @@ class Child(Query):
     prev_col = 'from_documentsubscription_id'
     next_col = 'to_documentsubscription_id'
 
-    def compile(self, context):
+    def compile(self, context = AnyContext()):
         assert context.end.get_original_name() == 'cliqueclique_subscription_documentsubscription'
         join = sql.Alias(sql.Table('cliqueclique_subscription_documentsubscription_parents'))
         next = sql.Alias(sql.Table('cliqueclique_subscription_documentsubscription'))
@@ -157,7 +157,7 @@ class Owner(Query):
     def _from_expr(cls, expr):
         return cls(*expr)
 
-    def compile(self, context):
+    def compile(self, context = AnyContext()):
         assert context.end.get_original_name() == 'cliqueclique_subscription_documentsubscription'
         sub = sql.Alias(sql.Table('cliqueclique_subscription_documentsubscription'))
         joins = [sql.On(sub,
@@ -172,7 +172,7 @@ class Owner(Query):
 
 class Parts(Query):
     symbol = ":"
-    def compile(self, context):
+    def compile(self, context = AnyContext()):
         assert context.end.get_original_name() == 'cliqueclique_subscription_documentsubscription'
         part = sql.Alias(sql.Table('cliqueclique_document_documentpart'))
         joins = [sql.On(part,
@@ -187,7 +187,7 @@ class Parts(Query):
 
 class Part(Query):
     symbol = "::"
-    def compile(self, context):
+    def compile(self, context = AnyContext()):
         assert context.end.get_original_name() == 'cliqueclique_document_documentpart'
         part = sql.Alias(sql.Table('cliqueclique_document_documentpart'))
         joins = [sql.On(part,
@@ -210,7 +210,7 @@ class Property(Query):
     def _from_expr(cls, expr):
         return cls(*expr)
     
-    def compile(self, context):
+    def compile(self, context = AnyContext()):
         assert context.end.get_original_name() == 'cliqueclique_document_documentpart'
         prop = sql.Alias(sql.Table('cliqueclique_document_documentproperty'))
         joins = [sql.On(prop,

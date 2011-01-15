@@ -1,3 +1,8 @@
 from query import *
 
-print repr(Query('["Follow", ["|", ":", "::", ["&", ["=", "subject", "Root document"], ["=", "foo", "bar"]]]]').compile())
+query = Query('["Follow", ["|", ":", "::", ["&", ["=", "subject", "Root document"], ["=", "foo", "bar"]]]]')
+context = query.compile()
+statement = context.compile()
+sql = statement.compile()
+print "SQL:", sql.sql
+print "VARS:", sql.vars

@@ -39,7 +39,7 @@ class Statement(object):
                     in self.parts.iteritems()
                     if part is not None)
 
-    def compile(self, ind, tab, ln):
+    def compile(self, ind='', tab='  ', ln='\n'):
         raise NotImplementedError
 
     def __repr__(self):
@@ -59,7 +59,7 @@ class List(Statement):
                 for part
                 in self.parts]
 
-    def compile(self, ind, tab, ln):
+    def compile(self, ind='', tab='  ', ln='\n'):
         vars = []
         sqls = []
         for part in self.parts:
@@ -94,7 +94,7 @@ class On(Statement):
     def __init__(self, table, on=None):
         Statement.__init__(self, table=table, on=on)
 
-    def compile(self, ind, tab, ln):
+    def compile(self, ind='', tab='  ', ln='\n'):
         parts = self.compile_parts(ind, tab, ln)
         return CompiledStatement(
             ("%(table)s on %(on)s") % sql_from_compiled_statements(parts),
@@ -104,7 +104,7 @@ class Select(Statement):
     def __init__(self, columns, froms=None, wheres=None):
         Statement.__init__(self, columns=columns, froms=froms, wheres=wheres)
 
-    def compile(self, ind, tab, ln):
+    def compile(self, ind='', tab='  ', ln='\n'):
         parts = self.compile_parts(ind, tab, ln)
         template = ln+ind+"select %(columns)s"
         if 'froms' in parts:
@@ -140,7 +140,7 @@ class Column(Statement):
             'table': self.table.get_name(),
             'name': self.name}
 
-    def compile(self, ind, tab, ln):        
+    def compile(self, ind='', tab='  ', ln='\n'):        
         return CompiledStatement(self.get_name(), [])
 
 class Alias(Statement):
@@ -179,7 +179,7 @@ class Comp(Statement):
         Statement.__init__(self, val1=val1, val2=val2)
         self.comp = comp
 
-    def compile(self, ind, tab, ln):
+    def compile(self, ind='', tab='  ', ln='\n'):
         parts = self.compile_parts(ind, tab, ln)
         sql = sql_from_compiled_statements(parts)
         sql['comp'] = self.comp
