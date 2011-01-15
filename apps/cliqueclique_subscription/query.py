@@ -1,4 +1,5 @@
 import sql
+import simplejson
 
 class Context(object):
     def __init__(self, start, joins, end):
@@ -26,6 +27,30 @@ class AnyContext(Context):
         self.joins = [self.end]
 
 class Query(object):
+    class __metaclass__(type):
+        def __init__(self, *arg, **kw):
+            type.__init__(self, *arg, **kw)
+            if self.__name__ != 'Query':
+                Query.expr_registry[self.symbol] = self
+    expr_registry = {}
+
+    def __new__(cls, *arg, **kw):
+        if cls is Query:
+            return cls._any_from_expr(simplejson.loads(*arg, **kw))
+        else:
+            return object.__new__(cls)
+
+    @classmethod
+    def _from_expr(cls):
+        return cls()
+
+    @classmethod
+    def _any_from_expr(cls, expr):
+        if isinstance(expr, (list, tuple)):
+            return cls.expr_registry[expr[0]]._from_expr(expr[1:])
+        else:
+            return cls.expr_registry[expr]._from_expr()
+
     def compile(self, context):
         return context
 
@@ -36,8 +61,16 @@ class Query(object):
         return str(self.compile(AnyContext()))
 
 class Pipe(Query):
-    def __init__(self, *subs):
+    symbol = "|"
+
+    def __new__(cls, *subs):
+        self = super(Pipe, cls).__new__(cls)
         self.subs = subs
+        return self
+
+    @classmethod
+    def _from_expr(cls, expr):
+        return cls(*[Query._any_from_expr(e) for e in expr])
 
     def compile(self, context):
         next_context = context
@@ -48,9 +81,17 @@ class Pipe(Query):
     def __repr__(self):
         return " ".join(repr(sub) for sub in self.subs)
 
-class Expression(Query):
-    def __init__(self, *subs):
+class Follow(Query):
+    symbol = "Follow"
+
+    def __new__(cls, *subs):
+        self = super(Follow, cls).__new__(cls)
         self.subs = subs
+        return self
+
+    @classmethod
+    def _from_expr(cls, expr):
+        return cls(*[Query._any_from_expr(e) for e in expr])
 
     def compile(self, context):
         for sub in self.subs:
@@ -61,8 +102,16 @@ class Expression(Query):
         return " ".join(repr(sub) for sub in self.subs)
 
 class And(Query):
-    def __init__(self, *subs):
+    symbol = "&"
+
+    def __new__(cls, *subs):
+        self = super(And, cls).__new__(cls)
         self.subs = subs
+        return self
+
+    @classmethod
+    def _from_expr(cls, expr):
+        return cls(*[Query._any_from_expr(e) for e in expr])
 
     def compile(self, context):
         for sub in self.subs:
@@ -98,8 +147,15 @@ class Parent(Child):
     next_col = 'from_documentsubscription_id'
 
 class Owner(Query):
-    def __init__(self, owner):
+    symbol = "owner"
+    def __new__(cls, owner):
+        self = super(Owner, cls).__new__(cls)
         self.owner = owner
+        return self
+
+    @classmethod
+    def _from_expr(cls, expr):
+        return cls(*expr)
 
     def compile(self, context):
         assert context.end.get_original_name() == 'cliqueclique_subscription_documentsubscription'
@@ -115,6 +171,7 @@ class Owner(Query):
         return ":"
 
 class Parts(Query):
+    symbol = ":"
     def compile(self, context):
         assert context.end.get_original_name() == 'cliqueclique_subscription_documentsubscription'
         part = sql.Alias(sql.Table('cliqueclique_document_documentpart'))
@@ -129,6 +186,7 @@ class Parts(Query):
         return ":"
 
 class Part(Query):
+    symbol = "::"
     def compile(self, context):
         assert context.end.get_original_name() == 'cliqueclique_document_documentpart'
         part = sql.Alias(sql.Table('cliqueclique_document_documentpart'))
@@ -141,9 +199,16 @@ class Part(Query):
         return "::"
 
 class Property(Query):
-    def __init__(self, key, value):
+    symbol="="
+    def __new__(cls, key, value):
+        self = super(Property, cls).__new__(cls)
         self.key = key
         self.value = value
+        return self
+
+    @classmethod
+    def _from_expr(cls, expr):
+        return cls(*expr)
     
     def compile(self, context):
         assert context.end.get_original_name() == 'cliqueclique_document_documentpart'
