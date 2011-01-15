@@ -1,3 +1,3 @@
 from query import *
 
-print Query('["Follow", ["|", ":", "::", ["&", ["=", "subject", "Root document"], ["=", "foo", "bar"]]]]')
+print repr(Query('["Follow", ["|", ":", "::", ["&", ["=", "subject", "Root document"], ["=", "foo", "bar"]]]]').compile())
