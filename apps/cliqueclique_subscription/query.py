@@ -27,6 +27,7 @@ class AnyContext(Context):
         self.joins = [self.end]
 
 class Query(object):
+    symbol = 'query'
     class __metaclass__(type):
         def __init__(self, *arg, **kw):
             type.__init__(self, *arg, **kw)
@@ -51,14 +52,17 @@ class Query(object):
         else:
             return cls.expr_registry[expr]._from_expr()
 
+    def _to_expr(cls):
+        return self.symbol
+
     def compile(self, context = AnyContext()):
         return context
 
     def __repr__(self):
-        return repr(self.compile(AnyContext()))
+        return simplejson.dumps(self._to_expr())
 
     def __str__(self):
-        return str(self.compile(AnyContext()))
+        return str(self.compile())
 
 class Pipe(Query):
     symbol = "|"
@@ -71,6 +75,9 @@ class Pipe(Query):
     @classmethod
     def _from_expr(cls, expr):
         return cls(*[Query._any_from_expr(e) for e in expr])
+
+    def _to_expr(cls):
+        return [self.symbol] + [sub._to_expr() for sub in self.subs]
 
     def compile(self, context = AnyContext()):
         next_context = context
@@ -93,6 +100,9 @@ class Follow(Query):
     def _from_expr(cls, expr):
         return cls(*[Query._any_from_expr(e) for e in expr])
 
+    def _to_expr(cls):
+        return [self.symbol] + [sub._to_expr() for sub in self.subs]
+
     def compile(self, context = AnyContext()):
         for sub in self.subs:
             context = sub.compile(context)
@@ -112,6 +122,9 @@ class And(Query):
     @classmethod
     def _from_expr(cls, expr):
         return cls(*[Query._any_from_expr(e) for e in expr])
+
+    def _to_expr(cls):
+        return [self.symbol] + [sub._to_expr() for sub in self.subs]
 
     def compile(self, context = AnyContext()):
         for sub in self.subs:
@@ -156,6 +169,9 @@ class Owner(Query):
     @classmethod
     def _from_expr(cls, expr):
         return cls(*expr)
+
+    def _to_expr(cls):
+        return [self.symbol, self.owner]
 
     def compile(self, context = AnyContext()):
         assert context.end.get_original_name() == 'cliqueclique_subscription_documentsubscription'
@@ -210,6 +226,9 @@ class Property(Query):
     def _from_expr(cls, expr):
         return cls(*expr)
     
+    def _to_expr(cls):
+        return [self.symbol, self.key, self.value]
+
     def compile(self, context = AnyContext()):
         assert context.end.get_original_name() == 'cliqueclique_document_documentpart'
         prop = sql.Alias(sql.Table('cliqueclique_document_documentproperty'))
