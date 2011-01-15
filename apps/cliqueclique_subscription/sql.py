@@ -33,20 +33,24 @@ class Statement(object):
     def __init__(self, **parts):
         self.parts = parts
 
-    def compile_parts(self, ind, tab, ln):
-        return dict((name, part.compile(ind+tab, tab, ln))
+    def _compile_parts(self, ind, tab, ln):
+        return dict((name, part._compile(ind+tab, tab, ln))
                     for name, part
                     in self.parts.iteritems()
                     if part is not None)
 
-    def compile(self, ind='', tab='  ', ln='\n'):
+    def _compile(self, ind, tab, ln):
+        print type(self)
         raise NotImplementedError
 
+    def compile(self):
+        return self._compile('', '  ', '\n')
+
     def __repr__(self):
-        return repr(self.compile('', '  ', '\n'))
+        return repr(self._compile('', '  ', '\n'))
 
     def __str__(self):
-        return str(self.compile('', '  ', '\n'))
+        return str(self._compile('', '  ', '\n'))
 
 class List(Statement):
     ln = False
@@ -54,16 +58,16 @@ class List(Statement):
     def __init__(self, *parts):
         self.parts = parts
 
-    def compile_parts(self, ind, tab, ln):
-        return [part.compile(ind+tab, tab, ln)
+    def _compile_parts(self, ind, tab, ln):
+        return [part._compile(ind+tab, tab, ln)
                 for part
                 in self.parts]
 
-    def compile(self, ind='', tab='  ', ln='\n'):
+    def _compile(self, ind, tab, ln):
         vars = []
         sqls = []
         for part in self.parts:
-            compiled_part = part.compile(ind, tab, ln)
+            compiled_part = part._compile(ind, tab, ln)
             template = "%s"
             if isinstance(part, List):
                 template = "(%s)"
@@ -75,7 +79,7 @@ class List(Statement):
         return CompiledStatement(sep.join(sqls), vars)
 
     def __str__(self):
-        return self.compile()
+        return self._compile()
 
 class And(List):
     sep = " and "
@@ -94,8 +98,8 @@ class On(Statement):
     def __init__(self, table, on=None):
         Statement.__init__(self, table=table, on=on)
 
-    def compile(self, ind='', tab='  ', ln='\n'):
-        parts = self.compile_parts(ind, tab, ln)
+    def _compile(self, ind, tab, ln):
+        parts = self._compile_parts(ind, tab, ln)
         return CompiledStatement(
             ("%(table)s on %(on)s") % sql_from_compiled_statements(parts),
             join_vars(['table', 'on'], vars_from_compiled_statements(parts)))
@@ -104,8 +108,8 @@ class Select(Statement):
     def __init__(self, columns, froms=None, wheres=None):
         Statement.__init__(self, columns=columns, froms=froms, wheres=wheres)
 
-    def compile(self, ind='', tab='  ', ln='\n'):
-        parts = self.compile_parts(ind, tab, ln)
+    def _compile(self, ind, tab, ln):
+        parts = self._compile_parts(ind, tab, ln)
         template = ln+ind+"select %(columns)s"
         if 'froms' in parts:
             template += ln+ind+"from %(froms)s"
@@ -126,7 +130,7 @@ class Table(Statement):
     def get_name(self):
         return self.name
 
-    def compile(self, ind, tab, l):
+    def _compile(self, ind, tab, ln):
         return CompiledStatement(self.name, [])
 
 class Column(Statement):
@@ -140,7 +144,7 @@ class Column(Statement):
             'table': self.table.get_name(),
             'name': self.name}
 
-    def compile(self, ind='', tab='  ', ln='\n'):        
+    def _compile(self, ind, tab, ln):        
         return CompiledStatement(self.get_name(), [])
 
 class Alias(Statement):
@@ -153,8 +157,8 @@ class Alias(Statement):
     def get_name(self):
         return 'a%s' % (id(self),)
 
-    def compile(self, ind, tab, l):
-        parts = self.compile_parts(ind, tab, l)
+    def _compile(self, ind, tab, ln):
+        parts = self._compile_parts(ind, tab, ln)
         sql = sql_from_compiled_statements(parts)
         sql['name'] = self.get_name()
 
@@ -171,7 +175,7 @@ class Const(Statement):
         Statement.__init__(self)
         self.value = value
 
-    def compile(self, ind, tab, l):
+    def _compile(self, ind, tab, ln):
         if self.value is None:
             return CompiledStatement("null", [])
         elif self.value is True: 
@@ -186,8 +190,8 @@ class Comp(Statement):
         Statement.__init__(self, val1=val1, val2=val2)
         self.comp = comp
 
-    def compile(self, ind='', tab='  ', ln='\n'):
-        parts = self.compile_parts(ind, tab, ln)
+    def _compile(self, ind, tab, ln):
+        parts = self._compile_parts(ind, tab, ln)
         sql = sql_from_compiled_statements(parts)
         sql['comp'] = self.comp
         return CompiledStatement(
