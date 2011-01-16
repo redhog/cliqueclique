@@ -202,13 +202,9 @@ Center distance: %(center_distance)s
                 if peer_subscription.is_subscribed:
                     self.ensure_peer_subscription(peer_subscription.peer)
 
-    def update_peer_nrs(self, peer_subscription):
-       if peer_subscription is None:
-          self.peer_nrs -= 1
-          self.save()
-       elif peer_subscription.id is None:
-          self.peer_nrs += 1
-          self.save()
+    def update_peer_nrs(self, diff):
+        self.peer_nrs += diff
+        self.save()
 
     def update_center_from_upstream_peer(self, peer_subscription):
         if peer_subscription.is_upstream():
@@ -433,16 +429,21 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
     @classmethod
     def on_pre_save(cls, sender, instance, **kwargs):
         self = instance
+        self.was_new = self.id is None
+        
         self.update_child_subscriptions()
-
-        self.local_subscription.update_peer_nrs(self)
         self.local_subscription.update_center_from_upstream_peer(self)
         self.local_subscription.update_subscription_from_downstream_peer(self)
 
     @classmethod
+    def on_post_save(cls, sender, instance, **kwargs):
+        if instance.was_new:
+            instance.local_subscription.update_peer_nrs(1)
+
+    @classmethod
     def on_post_delete(cls, sender, instance, **kwargs):
         self = instance
-        self.local_subscription.update_peer_nrs(None)
+        self.local_subscription.update_peer_nrs(-1)
 
         sys.stderr.write("DELETING PEER SUBSCRIPTION\n")
         if not instance.local_subscription.is_wanted:
