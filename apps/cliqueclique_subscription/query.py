@@ -48,7 +48,7 @@ class Query(object):
     @classmethod
     def _any_from_expr(cls, expr):
         if isinstance(expr, (list, tuple)):
-            if isinstance(expr[0], (list, tuple)):
+            if not expr or isinstance(expr[0], (list, tuple)):
                 return cls.expr_registry["&"]._from_expr(expr)
             else:
                 return cls.expr_registry[expr[0]]._from_expr(expr[1:])
@@ -104,7 +104,7 @@ class And(Query):
 
     def _to_expr(self):
         res = [sub._to_expr() for sub in self.subs]
-        if isinstance(res[0], (str, unicode)):
+        if res and isinstance(res[0], (str, unicode)):
             res = [self.symbol] + res
         return res
 
@@ -151,13 +151,13 @@ class Owner(Query):
 
     def _compile(self, context):
         assert context.end.get_original_name() == 'cliqueclique_subscription_documentsubscription'
-        sub = sql.Alias(sql.Table('cliqueclique_subscription_documentsubscription'))
-        joins = [sql.On(sub,
-                        on=sql.And(sql.Comp(sql.Column(context.end, 'id'),
-                                            sql.Column(sub, 'id')),
-                                   sql.Comp(sql.Column(sub, 'node_id'),
+        node = sql.Alias(sql.Table('cliqueclique_node_localnode'))
+        joins = [sql.On(node,
+                        on=sql.And(sql.Comp(sql.Column(context.end, 'node_id'),
+                                            sql.Column(node, 'id')),
+                                   sql.Comp(sql.Column(node, 'node_id'),
                                             sql.Const(self.owner))))]
-        return context.start.new(joins=joins, end=sub)
+        return context.new(joins=joins, end=node)
 
 class Id(Query):
     symbol = "id"
@@ -175,13 +175,13 @@ class Id(Query):
 
     def _compile(self, context):
         assert context.end.get_original_name() == 'cliqueclique_subscription_documentsubscription'
-        sub = sql.Alias(sql.Table('cliqueclique_subscription_documentsubscription'))
-        joins = [sql.On(sub,
-                        on=sql.And(sql.Comp(sql.Column(context.end, 'id'),
-                                            sql.Column(sub, 'id')),
-                                   sql.Comp(sql.Column(sub, 'document_id'),
+        doc = sql.Alias(sql.Table('cliqueclique_document_document'))
+        joins = [sql.On(doc,
+                        on=sql.And(sql.Comp(sql.Column(context.end, 'document_id'),
+                                            sql.Column(doc, 'id')),
+                                   sql.Comp(sql.Column(doc, 'document_id'),
                                             sql.Const(self.id))))]
-        return context.start.new(joins=joins, end=sub)
+        return context.new(joins=joins, end=doc)
 
 class Parts(Query):
     symbol = ":"

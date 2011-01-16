@@ -13,6 +13,9 @@ import utils.djangosmime
 import django.contrib.auth.decorators
 import fcdjangoutils.jsonview
 import secure_id
+import sys
+import traceback
+import jogging
 
 def obtain_secure_access(request, document_id):
     info = {}
@@ -77,24 +80,47 @@ def set_document_flags(request, document_id):
     return django.shortcuts.redirect("cliqueclique_ui.views.display_document", document_id=sub.document.document_id)
 
 @django.contrib.auth.decorators.login_required
-def document_as_mime(request, document_id):
-    doc = cliqueclique_subscription.models.DocumentSubscription.objects.get(
-        node = request.user.node,
-        document__document_id=document_id)
-    return django.http.HttpResponse(doc.export().as_string(), mimetype="text/plain")
+def document(request, format, document_id = None, single = False):
+    try:
+        docs = list(cliqueclique_subscription.models.DocumentSubscription.get_by_query(
+                q = request.GET.get('query', None),
+                node_id = request.user.node.node_id,
+                document_id = document_id))
 
-@fcdjangoutils.jsonview.json_view
-@django.contrib.auth.decorators.login_required
-@secure_id.security_aware_view
-def document_as_json(request, is_secure, document_id = None):
-    sub = cliqueclique_subscription.models.DocumentSubscription.objects.get(
-        node = request.user.node,
-        document__document_id = document_id
-        )
-    return {
-        'document_id': document_id,
-        'parents': [parent.document.document_id for parent in sub.parents.all()],
-        'children': [secure_id.make_secure_id(request, child.document.document_id, is_secure)
-                     for child in sub.children.all()],
-        'content': sub.document.as_mime
-        }
+        if format == 'mime':
+            if len(docs) == 0:
+                docs = email.mime.multipart.MIMEMultipart()
+            elif len(docs) == 1:
+                docs = docs[0].export()
+            else:
+                msg = email.mime.multipart.MIMEMultipart()
+                for doc in docs:
+                    msg.attach(doc.send(True))
+                docs = docs[0].node.sign(msg)
+            docs = docs.as_string()
+            mimetype="text/plain"
+        elif format == 'json':
+            
+            res = {}
+            for doc in docs:
+                res[doc.document.document_id] = {'document_id': doc.document.document_id,
+                                                 'parents': [parent.document.document_id for parent in doc.parents.all()],
+                                                 'children': [secure_id.make_secure_id(request, child.document.document_id, is_secure)
+                                                              for child in doc.children.all()],
+                                                 'content': doc.document.as_mime
+                                                 }
+            docs = django.utils.simplejson.dumps(res, default=fcdjangoutils.jsonview.jsonify_models)
+            mimetype="text/plain"
+    except django.core.servers.basehttp.WSGIServerException:
+        raise
+    except Exception, e:
+        etype = sys.modules[type(e).__module__].__name__ + "." + type(e).__name__
+        jogging.logging.error("%s: %s" % (str(e), etype))
+        if format != 'json':
+            raise
+        doc = {'error': {'type': etype,
+                         'description': str(e),
+                         'traceback': traceback.format_exc()}}
+        doc = django.utils.simplejson.dumps(doc, default=fcdjangoutils.jsonview.jsonify_models)
+        mimetype="text/plain"
+    return django.http.HttpResponse(docs, mimetype="text/plain")

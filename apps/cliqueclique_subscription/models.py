@@ -19,6 +19,8 @@ import utils.smime
 import time
 import sys
 
+import query
+
 def format_change(n, o, trunk = False):
     nn = n
     oo = o
@@ -285,6 +287,26 @@ Center distance: %(center_distance)s
 
     def __unicode__(self):
         return "%s @ %s" % (self.document, self.node)        
+
+    @classmethod
+    def get_by_query(cls, q=None, node_id = None, document_id=None):
+        ands = []
+        if q is not None:
+            ands.append(query.Query(q))
+        if node_id is not None:
+            ands.append(query.Owner(node_id))
+        if document_id is not None:
+            ands.append(query.Id(document_id))
+        if len(ands) == 1:
+            q = ands[0]
+        else:
+            q = query.And(*ands)
+        print "XXXX", q
+        stmt = q.compile()
+        sql = stmt.compile()
+        print sql
+        return cls.objects.raw(sql.sql, sql.vars)
+
 
 class PeerDocumentSubscription(BaseDocumentSubscription):
     # This is what a peer knows about us, as well as what we know about them
