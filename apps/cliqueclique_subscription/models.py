@@ -287,16 +287,21 @@ Center distance: %(center_distance)s
     @classmethod
     def get_by_query(cls, q=None, node_id = None, document_id=None):
         ands = []
-        if q is not None:
-            ands.append(query.Query(q))
         if node_id is not None:
             ands.append(query.Owner(node_id))
         if document_id is not None:
             ands.append(query.Id(document_id))
-        if len(ands) == 1:
-            q = ands[0]
-        else:
-            q = query.And(*ands)
+
+        if ands:
+            ands = query.And(*ands)
+        if q:
+            q = query.Query(q)
+
+        if q and ands:
+            q = query.Pipe(ands, q)
+        elif ands:
+            q = ands
+
         print "XXXX", q
         stmt = q.compile()
         sql = stmt.compile()

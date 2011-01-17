@@ -82,6 +82,7 @@ def set_document_flags(request, document_id):
 @django.contrib.auth.decorators.login_required
 def document(request, format, document_id = None, single = False):
     try:
+        print repr(request.GET.get('query', None))
         docs = list(cliqueclique_subscription.models.DocumentSubscription.get_by_query(
                 q = request.GET.get('query', None),
                 node_id = request.user.node.node_id,
@@ -100,7 +101,7 @@ def document(request, format, document_id = None, single = False):
             docs = docs.as_string()
             mimetype="text/plain"
         elif format == 'json':
-            
+            is_secure = False
             res = {}
             for doc in docs:
                 res[doc.document.document_id] = {'document_id': doc.document.document_id,
@@ -116,11 +117,12 @@ def document(request, format, document_id = None, single = False):
     except Exception, e:
         etype = sys.modules[type(e).__module__].__name__ + "." + type(e).__name__
         jogging.logging.error("%s: %s" % (str(e), etype))
+        raise
         if format != 'json':
             raise
-        doc = {'error': {'type': etype,
+        docs = {'error': {'type': etype,
                          'description': str(e),
                          'traceback': traceback.format_exc()}}
-        doc = django.utils.simplejson.dumps(doc, default=fcdjangoutils.jsonview.jsonify_models)
+        docs = django.utils.simplejson.dumps(docs, default=fcdjangoutils.jsonview.jsonify_models)
         mimetype="text/plain"
     return django.http.HttpResponse(docs, mimetype="text/plain")

@@ -21,6 +21,14 @@ class Context(object):
     def new(self, start = None, joins = [], end = None):
         return Context(start or self.start, self.joins + joins, end or self.end)
 
+    def assert_start(self, name):
+        if self.start.get_original_name() != name:
+            raise AssertionError("Context expected to start with %s but it starts with %s" % (name, self.start.get_original_name()))
+
+    def assert_end(self, name):
+        if self.end.get_original_name() != name:
+            raise AssertionError("Context expected to end in %s but it ends in %s" % (name, self.end.get_original_name()))
+
 class AnyContext(Context):
     def __init__(self):
         self.start = self.end = sql.Alias(sql.Table('cliqueclique_subscription_documentsubscription'))
@@ -42,7 +50,8 @@ class Query(object):
             return object.__new__(cls)
 
     @classmethod
-    def _from_expr(cls):
+    def _from_expr(cls, expr):
+        assert len(expr) == 0
         return cls()
 
     @classmethod
@@ -53,7 +62,7 @@ class Query(object):
             else:
                 return cls.expr_registry[expr[0]]._from_expr(expr[1:])
         else:
-            return cls.expr_registry[expr]._from_expr()
+            return cls.expr_registry[expr]._from_expr([])
 
     def _to_expr(self):
         return self.symbol
@@ -120,7 +129,7 @@ class Child(Query):
     next_col = 'to_documentsubscription_id'
 
     def _compile(self, context):
-        assert context.end.get_original_name() == 'cliqueclique_subscription_documentsubscription'
+        context.assert_end('cliqueclique_subscription_documentsubscription')
         join = sql.Alias(sql.Table('cliqueclique_subscription_documentsubscription_parents'))
         next = sql.Alias(sql.Table('cliqueclique_subscription_documentsubscription'))
         joins = [sql.On(join,
@@ -150,7 +159,7 @@ class Owner(Query):
         return [self.symbol, self.owner]
 
     def _compile(self, context):
-        assert context.end.get_original_name() == 'cliqueclique_subscription_documentsubscription'
+        context.assert_end('cliqueclique_subscription_documentsubscription')
         node = sql.Alias(sql.Table('cliqueclique_node_localnode'))
         joins = [sql.On(node,
                         on=sql.And(sql.Comp(sql.Column(context.end, 'node_id'),
@@ -174,7 +183,7 @@ class Id(Query):
         return [self.symbol, self.id]
 
     def _compile(self, context):
-        assert context.end.get_original_name() == 'cliqueclique_subscription_documentsubscription'
+        context.assert_end('cliqueclique_subscription_documentsubscription')
         doc = sql.Alias(sql.Table('cliqueclique_document_document'))
         joins = [sql.On(doc,
                         on=sql.And(sql.Comp(sql.Column(context.end, 'document_id'),
@@ -186,7 +195,7 @@ class Id(Query):
 class Parts(Query):
     symbol = ":"
     def _compile(self, context):
-        assert context.end.get_original_name() == 'cliqueclique_subscription_documentsubscription'
+        context.assert_end('cliqueclique_subscription_documentsubscription')
         part = sql.Alias(sql.Table('cliqueclique_document_documentpart'))
         joins = [sql.On(part,
                         on=sql.And(sql.Comp(sql.Column(context.end, 'document_id'),
@@ -202,7 +211,7 @@ class Parts(Query):
 class Part(Query):
     symbol = "::"
     def _compile(self, context):
-        assert context.end.get_original_name() == 'cliqueclique_document_documentpart'
+        context.assert_end('cliqueclique_document_documentpart')
         part = sql.Alias(sql.Table('cliqueclique_document_documentpart'))
         joins = [sql.On(part,
                         on=sql.And(sql.Comp(sql.Column(context.end, 'id'),
@@ -225,7 +234,7 @@ class Property(Query):
         return [self.symbol, self.key, self.value]
 
     def _compile(self, context):
-        assert context.end.get_original_name() == 'cliqueclique_document_documentpart'
+        context.assert_end('cliqueclique_document_documentpart')
         prop = sql.Alias(sql.Table('cliqueclique_document_documentproperty'))
         joins = [sql.On(prop,
                         on=sql.And(sql.Comp(sql.Column(context.end, 'id'),
