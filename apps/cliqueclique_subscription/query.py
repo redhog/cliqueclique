@@ -146,6 +146,10 @@ class OrPipe(ListQuery):
         start_ors = [sql.Comp(sql.Column(old_start, 'id'),
                               sql.Column(start, 'id'))
                      for start in starts]
+        if ends:
+            for end in ends[1:]:
+                if ends[0].get_original_name() != end.get_original_name():
+                    raise AssertionError("OrPipe arguments must all end in the same table (%s != %s)" % (ends[0].get_original_name(), end.get_original_name()))
         end_ors = [sql.Comp(sql.Column(new_end, 'id'),
                             sql.Column(end, 'id'))
                    for end in ends]
@@ -280,18 +284,17 @@ class Property(Query):
                                             sql.Const(self.value))))]
         return context.new(joins=joins)
 
-# class Parts(Query):
-#     symbol = "->:"
+class Link(Query):
+    symbol = "->:"
 
-#     def _compile(self, context):
-#         context.assert_end('cliqueclique_subscription_documentsubscription')
+    def _compile(self, context):
+        context.assert_end('cliqueclique_subscription_documentsubscription')
 
-#         return Or(
-#             Pipe(Parts(), Part(), And(Property("", ""),
-                    
+        return OrPipe(
+            Pipe(Parts(), Part()),
+            Pipe(Parts(), Part(), Part(), Property("link_property_set", "child")),
+            Pipe(Child(), Parts(), Part(), Part(), Property("link_property_set", "parent"))).compile(context)
 
-#                 )).compile(context)
 
-
-#     def __repr__(self):
-#         return ":"
+    def __repr__(self):
+        return ":"
