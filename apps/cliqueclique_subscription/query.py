@@ -1,6 +1,13 @@
 import sql
 import simplejson
 
+PartTable = sql.Table('cliqueclique_document_documentpart')
+SubscriptionTable = sql.Table('cliqueclique_subscription_documentsubscription')
+ParentsTable = sql.Table('cliqueclique_subscription_documentsubscription_parents')
+NodeTable = sql.Table('cliqueclique_node_localnode')
+DocumentTable = sql.Table('cliqueclique_document_document')
+PropertyTable = sql.Table('cliqueclique_document_documentproperty')
+
 class Context(object):
     def __init__(self, start, joins, end):
         self.start = start
@@ -31,7 +38,7 @@ class Context(object):
 
 class AnyContext(Context):
     def __init__(self):
-        self.start = self.end = sql.Alias(sql.Table('cliqueclique_subscription_documentsubscription'))
+        self.start = self.end = sql.Alias(SubscriptionTable)
         self.joins = [self.end]
 
 class Query(object):
@@ -79,11 +86,9 @@ class Query(object):
     def __str__(self):
         return simplejson.dumps(self._to_expr())
 
-class Pipe(Query):
-    symbol = "|"
-
+class ListQuery(Query):
     def __new__(cls, *subs):
-        self = super(Pipe, cls).__new__(cls)
+        self = super(ListQuery, cls).__new__(cls)
         self.subs = subs
         return self
 
@@ -94,22 +99,16 @@ class Pipe(Query):
     def _to_expr(self):
         return [self.symbol] + [sub._to_expr() for sub in self.subs]
 
+class Pipe(ListQuery):
+    symbol = "/"
+
     def _compile(self, context):
         for sub in self.subs:
             context = sub._compile(context)
         return context
 
-class And(Query):
+class And(ListQuery):
     symbol = "&"
-
-    def __new__(cls, *subs):
-        self = super(And, cls).__new__(cls)
-        self.subs = subs
-        return self
-
-    @classmethod
-    def _from_expr(cls, expr):
-        return cls(*[Query._any_from_expr(e) for e in expr])
 
     def _to_expr(self):
         res = [sub._to_expr() for sub in self.subs]
@@ -123,6 +122,42 @@ class And(Query):
             context = next_context.new(start=context.start, end=context.end)
         return context
 
+class OrPipe(ListQuery):
+    symbol = "|/"
+
+    def _compile(self, context):
+        ends = []
+        starts = []
+        for sub in self.subs:
+            new_start = sql.Alias(context.end)
+            new_context = sub._compile(context.new(end = new_start))
+            context = new_context.new(start=context.start, end=context.end)
+            if new_context.end is not new_start:
+                starts.append(new_start)
+                ends.append(new_context.end)
+        if len(starts) < 2 and len(ends) < 2:
+            if ends:
+                return context.new(end=ends[0])
+            return context
+
+        old_start = context.end
+        new_end = sql.Alias(ends[0])
+
+        start_ors = [sql.Comp(sql.Column(old_start, 'id'),
+                              sql.Column(start, 'id'))
+                     for start in starts]
+        end_ors = [sql.Comp(sql.Column(new_end, 'id'),
+                            sql.Column(end, 'id'))
+                   for end in ends]
+        joins = [sql.On(new_end, sql.And(sql.Or(*start_ors), sql.Or(*end_ors)))]
+        return context.new(joins = joins, end=new_end)
+
+class Or(OrPipe):
+    symbol = "|"
+    def _compile(self, context):
+        new_context = OrPipe._compile(self, context)
+        return new_context.new(end = context.end)
+
 class Child(Query):
     symbol = '>'
     prev_col = 'from_documentsubscription_id'
@@ -130,8 +165,8 @@ class Child(Query):
 
     def _compile(self, context):
         context.assert_end('cliqueclique_subscription_documentsubscription')
-        join = sql.Alias(sql.Table('cliqueclique_subscription_documentsubscription_parents'))
-        next = sql.Alias(sql.Table('cliqueclique_subscription_documentsubscription'))
+        join = sql.Alias(ParentsTable)
+        next = sql.Alias(SubscriptionTable)
         joins = [sql.On(join,
                         on=sql.Comp(sql.Column(context.end, 'id'),
                                     sql.Column(join, self.prev_col))),
@@ -160,7 +195,7 @@ class Owner(Query):
 
     def _compile(self, context):
         context.assert_end('cliqueclique_subscription_documentsubscription')
-        node = sql.Alias(sql.Table('cliqueclique_node_localnode'))
+        node = sql.Alias(NodeTable)
         joins = [sql.On(node,
                         on=sql.And(sql.Comp(sql.Column(context.end, 'node_id'),
                                             sql.Column(node, 'id')),
@@ -184,7 +219,7 @@ class Id(Query):
 
     def _compile(self, context):
         context.assert_end('cliqueclique_subscription_documentsubscription')
-        doc = sql.Alias(sql.Table('cliqueclique_document_document'))
+        doc = sql.Alias(DocumentTable)
         joins = [sql.On(doc,
                         on=sql.And(sql.Comp(sql.Column(context.end, 'document_id'),
                                             sql.Column(doc, 'id')),
@@ -196,7 +231,7 @@ class Parts(Query):
     symbol = ":"
     def _compile(self, context):
         context.assert_end('cliqueclique_subscription_documentsubscription')
-        part = sql.Alias(sql.Table('cliqueclique_document_documentpart'))
+        part = sql.Alias(PartTable)
         joins = [sql.On(part,
                         on=sql.And(sql.Comp(sql.Column(context.end, 'document_id'),
                                             sql.Column(part, 'document_id')),
@@ -212,7 +247,7 @@ class Part(Query):
     symbol = "::"
     def _compile(self, context):
         context.assert_end('cliqueclique_document_documentpart')
-        part = sql.Alias(sql.Table('cliqueclique_document_documentpart'))
+        part = sql.Alias(PartTable)
         joins = [sql.On(part,
                         on=sql.And(sql.Comp(sql.Column(context.end, 'id'),
                                             sql.Column(part, 'parent_id'))))]
@@ -235,7 +270,7 @@ class Property(Query):
 
     def _compile(self, context):
         context.assert_end('cliqueclique_document_documentpart')
-        prop = sql.Alias(sql.Table('cliqueclique_document_documentproperty'))
+        prop = sql.Alias(PropertyTable)
         joins = [sql.On(prop,
                         on=sql.And(sql.Comp(sql.Column(context.end, 'id'),
                                             sql.Column(prop, 'part_id')),
@@ -244,3 +279,19 @@ class Property(Query):
                                    sql.Comp(sql.Column(prop, 'value'),
                                             sql.Const(self.value))))]
         return context.new(joins=joins)
+
+# class Parts(Query):
+#     symbol = "->:"
+
+#     def _compile(self, context):
+#         context.assert_end('cliqueclique_subscription_documentsubscription')
+
+#         return Or(
+#             Pipe(Parts(), Part(), And(Property("", ""),
+                    
+
+#                 )).compile(context)
+
+
+#     def __repr__(self):
+#         return ":"

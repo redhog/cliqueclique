@@ -127,6 +127,9 @@ class Table(Statement):
     def get_original_name(self):
         return self.name
 
+    def get_primary(self):
+        return self
+
     def get_name(self):
         return self.name
 
@@ -139,6 +142,12 @@ class Column(Statement):
         self.table = table
         self.name = name
 
+    def get_original_name(self):
+        return self.name
+
+    def get_primary(self):
+        return self
+
     def get_name(self):
         return "%(table)s.%(name)s" % {
             'table': self.table.get_name(),
@@ -149,10 +158,13 @@ class Column(Statement):
 
 class Alias(Statement):
     def __init__(self, primary):
-        Statement.__init__(self, primary=primary)
+        Statement.__init__(self, primary=primary.get_primary())
 
     def get_original_name(self):
-        return self.parts['primary'].get_original_name()
+        return self.get_primary().get_original_name()
+
+    def get_primary(self):
+        return self.parts['primary']
 
     def get_name(self):
         return 'a%s' % (id(self),)

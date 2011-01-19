@@ -1,6 +1,6 @@
 from query import *
-s = '["|", ["&", ":", ["|", ":", "::", [["=", "subject", "Root document"], ["=", "foo", "bar"]]]]]'
-s = "[]"
+s = '["/", ":", "::", ["|", ["=", "subject", "Root document"], ["=", "foo", "bar"]]]'
+s = '["/", ["|", ":", ":"], ":"]'
 print s
 query = Query(s)
 print repr(query)
