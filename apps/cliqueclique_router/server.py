@@ -49,15 +49,17 @@ class LocalSocket(object):
     def __init__(self, dest):
         self.dest = dest
         self.buffer = []
-        self.lock = threading.Lock()
+        self.lock = threading.Condition()
 
     def sendto(self, data, x, address):
         with self.lock:
             self.buffer.append(data)
+            self.lock.notifyAll()
 
     def recvfrom(self, x):
         while True:
-            with self.lock:
+            with signal.global_server_signal:
+                signal.global_server_signal.wait(1.0)
                 if not self.buffer:
                     continue
                 msg = self.buffer[0]
@@ -142,7 +144,7 @@ class Sender(utils.thread.Thread):
                 traceback.print_exc()
                 continue
             with signal.global_server_signal:
-                signal.global_server_signal.wait(1.0)
+                signal.global_server_signal.wait(5.0)
 
 #                time.sleep(1)
 #            time.sleep(1)
