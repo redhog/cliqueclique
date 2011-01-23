@@ -22,10 +22,6 @@ LOCAL_APPS = filter(
     lambda x: os.path.isfile(os.path.join(PROJECT_ROOT, 'apps', x,'__init__.py')), 
     os.listdir(os.path.join(PROJECT_ROOT, 'apps')))
 
-virtualenv = os.path.join(PROJECT_ROOT, "deps/bin/activate_this.py")
-if os.path.exists(virtualenv):
-    execfile(virtualenv, dict(__file__=virtualenv))
-
 # Django settings for cliqueclique project.
 
 DEBUG = True
