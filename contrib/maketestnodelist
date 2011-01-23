@@ -1,3 +1,5 @@
+#! /bin/bash
+
 [ "$NODES" ] || NODES=5
 [ "$SHAPE" ] || SHAPE=LINE
 

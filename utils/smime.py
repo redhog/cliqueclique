@@ -59,7 +59,7 @@ def make_self_signed_cert(name, address, bits=1024):
     cert.set_not_before(start)
     end = M2Crypto.ASN1.ASN1_UTCTIME()
     # This seems to be MAX possible date in X509, after that it wraps around!?
-    end.set_time(60 * 60 * 24 * 365 * 80)
+    end.set_time(60 * 60 * 24 * 365 * 60)
     cert.set_not_after(end)
 
     cert.set_pubkey(pk)

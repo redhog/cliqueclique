@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+import os.path
+
+PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+
+virtualenv = os.path.join(PROJECT_ROOT, "deps/bin/activate_this.py")
+if os.path.exists(virtualenv):
+    execfile(virtualenv, dict(__file__=virtualenv))
+
 from django.core.management import execute_manager
 try:
     import settings # Assumed to be in the same directory.
