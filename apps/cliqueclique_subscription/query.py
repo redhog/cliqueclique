@@ -130,7 +130,7 @@ class OrPipe(ListQuery):
         starts = []
         for sub in self.subs:
             new_start = sql.Alias(context.end)
-            new_context = sub._compile(context.new(end = new_start))
+            new_context = sub._compile(context.new(joins=[new_start], end = new_start))
             context = new_context.new(start=context.start, end=context.end)
             if new_context.end is not new_start:
                 starts.append(new_start)
@@ -180,6 +180,7 @@ class Child(Query):
         return context.new(joins=joins, end=next)
 
 class Parent(Child):
+    symbol = '<'
     prev_col = 'to_documentsubscription_id'
     next_col = 'from_documentsubscription_id'
 
@@ -284,17 +285,20 @@ class Property(Query):
                                             sql.Const(self.value))))]
         return context.new(joins=joins)
 
-class Link(Query):
-    symbol = "->:"
+class Link(ListQuery):
+    symbol = "->"
 
     def _compile(self, context):
         context.assert_end('cliqueclique_subscription_documentsubscription')
 
+        # Parts structure:
+        # Signed->Multipart->Content
         return OrPipe(
-            Pipe(Parts(), Part()),
-            Pipe(Parts(), Part(), Part(), Property("link_property_set", "child")),
-            Pipe(Child(), Parts(), Part(), Part(), Property("link_property_set", "parent"))).compile(context)
+#            Pipe(Child(), And(Pipe(Parts(), Part(), Part(), Property("part_type", "parent_link"), Property("link_direction", "natural"), *self.subs))),
+#            Pipe(Child(), And(Pipe(Parts(), Part(), Part(), Property("part_type", "child_link"), Property("link_direction", "reversed"), *self.subs))),
 
+#            Pipe(Child(), And(Pipe(Parts(), Part(), Part(), Property("part_type", "link"), Property("link_direction", "natural"), *self.subs)), Child()),
+            Pipe(Parent(), And(Pipe(Parts(), Part(), Part(), Property("part_type", "link"), Property("link_direction", "reversed"), *self.subs)), Parent()))._compile(context)
 
     def __repr__(self):
         return ":"
