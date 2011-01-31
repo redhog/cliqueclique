@@ -10,7 +10,7 @@ def post(node, content='', parent=None, child=None, content_headers={}, child_he
     msg = email.mime.multipart.MIMEMultipart()
 
     doc = email.mime.text.MIMEText(content)
-    doc.add_header('part_type', 'content')
+    doc.add_header('part_type', 'link')
     for key, value in content_headers.iteritems():
         doc.add_header(key, value)
     msg.attach(doc)
@@ -36,7 +36,7 @@ def post(node, content='', parent=None, child=None, content_headers={}, child_he
     signed = utils.smime.MIMESigned()
     signed.set_private_key(utils.smime.der2pem(node.private_key, "PRIVATE KEY"))
     signed.set_cert(utils.smime.der2pem(node.public_key))
-    signed.attach(doc)
+    signed.attach(msg)
 
     doc = cliqueclique_document.models.Document(content=signed.as_string())
     doc.save()
@@ -48,17 +48,33 @@ def post(node, content='', parent=None, child=None, content_headers={}, child_he
     sub.save()
     return sub
 
+
 node = cliqueclique_node.models.LocalNode.objects.all()[0]
 
-sub1 = post(node, "sub1")
-root = post(node, "root", child=sub1, child_headers={'kafoo': 'root:sub1'})
-sub2 = post(node, "sub2", parent=root, parent_headers={'kafoo': 'root:sub2'})
-sub3 = post(node, "sub3")
-link1 = post(node, "link1", parent=root, child=sub3, content_headers={'kafoo':'root:sub3'})
+#sub1 = post(node, "sub1")
+#root = post(node, "root", child=sub1, child_headers={'kafoo': 'root:sub1', 'link_direction':'natural'})
+#sub2 = post(node, "sub2", parent=root, parent_headers={'kafoo': 'root:sub2', 'link_direction':'natural'})
+#sub3 = post(node, "sub3")
+#link1 = post(node, "link1", parent=root, child=sub3, content_headers={'kafoo':'root:sub3', 'link_direction':'natural'})
 
 q = '["|/", ["->", ["=", "kafoo", "root:sub1"]]]'
 q = '["->"]'
 
-#print cliqueclique_subscription.query.Query(q).compile().compile()
+# print "YYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
+# print sub1.document.content
+# print
+# print
+# print repr(sub2.document.parts.get())
 
-print list(cliqueclique_subscription.models.DocumentSubscription.get_by_query(q)) #, node.node_id, root.document.document_id))
+print cliqueclique_subscription.query.Query(q).compile().compile()
+
+for sub in cliqueclique_subscription.models.DocumentSubscription.get_by_query(q): #, node.node_id, root.document.document_id))
+    content = None
+    for part in sub.document.content_as_mime.get_payload():
+        if part['part_type'] == 'link':
+            content = part
+            break
+    if content:
+        print "Content: " + content.get_payload()
+    else:
+        print "No content in: " + sub.document.document_id

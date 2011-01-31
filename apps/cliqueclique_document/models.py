@@ -9,6 +9,7 @@ import email.mime.message
 import email.mime.application
 import email.mime.text
 import email.mime.multipart
+import utils.smime
 import hashlib
 import utils
 
@@ -114,6 +115,14 @@ class DocumentPart(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoCo
     parent = django.db.models.ForeignKey('DocumentPart', related_name="parts", null=True)
     idx = django.db.models.IntegerField() # Index in get_payload() list.
 
+    def repr(self, ind=''):
+        properties = ind + ('\n'+ ind).join(repr(p) for p in self.properties.all()) + '\n'
+        parts = '\n'.join(part.repr(ind+'  ') for part in self.parts.order_by('idx').all())
+        return ind + 'Part: %s\n'%self.idx + properties + '\n' + parts
+
+    def __repr__(self):
+        return self.repr()
+
 class DocumentProperty(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnectModel):
     part = django.db.models.ForeignKey(DocumentPart, related_name="properties")
     key = django.db.models.TextField()
@@ -121,3 +130,60 @@ class DocumentProperty(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAu
 
     class Meta:
         unique_together = (("part", "key",),)
+
+    def __repr__(self):
+        return "%s=%s" % (self.key, repr(self.value))
+
+
+class NewDocument(Document):
+    class Meta(object):
+        abstract = True
+
+    def __init__(self, node, *arg, **kw):
+        Document.__init__(self, *arg, **kw)
+        self.signed = utils.smime.MIMESigned()
+        self.signed.set_private_key(utils.smime.der2pem(node.private_key, "PRIVATE KEY"))
+        self.signed.set_cert(utils.smime.der2pem(node.public_key))
+
+        self.container = email.mime.multipart.MIMEMultipart()
+        self.signed.attach(self.container)
+        self.parts = {}
+
+    @classmethod
+    def on_pre_save(cls, sender, instance, **kwargs):
+        self.content = self.signed.as_string()
+        Document.on_pre_save(sender, instance, **kwargs)
+
+    def set_part(self, type_name='content', part = None):
+        if type_name in self.parts:
+            self.container.get_payload().remove(self.parts[type_name])
+        if part is None:
+            part = email.mime.multipart.MIMEMultipart()
+        part.set_header('part_type', type_name)
+        self.parts[type_name] = part
+        self.container.attach(part)
+        return part
+
+    def _set_link(self, document_id, direction = "child", reversed = False):
+        assert direction in ("parent", "child")
+
+        self.container.set_header(direction + '_document_id', document_id)
+
+        part = self.set_part(direction + "_link")
+        part.add_header("link_direction", ["natural", "reversed"][reversed])
+        return part
+
+    def set_parent(self, document_id, reversed = False):
+        return self._set_link(document_id, "parent", reversed)
+
+    def set_child(self, document_id, reversed = False):
+        return self._set_link(document_id, "child", reversed)
+
+class NewLink(NewDocument):
+    class Meta(object):
+        abstract = True
+
+    def set_link(self, reversed = False):
+        part = self.set_part("link")
+        part.add_header("link_direction", ["natural", "reversed"][reversed])
+        return part
