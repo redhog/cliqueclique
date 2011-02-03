@@ -6,8 +6,10 @@ import utils.smime
 import email.mime.multipart
 import email.mime.text
 
-def post(node, content='', parent=None, child=None, content_headers={}, child_headers={}, parent_headers={}):
+def post(node, content='', parent=None, child=None, content_headers={}, child_headers={}, parent_headers={}, headers={}):
     msg = email.mime.multipart.MIMEMultipart()
+    for key, value in headers.iteritems():
+        msg.add_header(key, value)
 
     doc = email.mime.text.MIMEText(content)
     doc.add_header('part_type', 'link')
@@ -51,11 +53,11 @@ def post(node, content='', parent=None, child=None, content_headers={}, child_he
 
 node = cliqueclique_node.models.LocalNode.objects.all()[0]
 
-#sub1 = post(node, "sub1")
-#root = post(node, "root", child=sub1, child_headers={'kafoo': 'root:sub1', 'link_direction':'natural'})
-#sub2 = post(node, "sub2", parent=root, parent_headers={'kafoo': 'root:sub2', 'link_direction':'natural'})
-#sub3 = post(node, "sub3")
-#link1 = post(node, "link1", parent=root, child=sub3, content_headers={'kafoo':'root:sub3', 'link_direction':'natural'})
+# sub1 = post(node, "sub1", headers={'name': 'sub1'})
+# root = post(node, "root", child=sub1, child_headers={'kafoo': 'root:sub1', 'link_direction':'natural'}, headers={'name': 'root'})
+# sub2 = post(node, "sub2", parent=root, parent_headers={'kafoo': 'root:sub2', 'link_direction':'natural'}, headers={'name': 'sub2'})
+# sub3 = post(node, "sub3", headers={'name': 'sub3'})
+# link1 = post(node, "link1", parent=root, child=sub3, content_headers={'kafoo':'root:sub3', 'link_direction':'natural'}, headers={'name': 'link1'})
 
 q = '["|/", ["->", ["=", "kafoo", "root:sub1"]]]'
 q = '["->"]'
@@ -66,15 +68,21 @@ q = '["->"]'
 # print
 # print repr(sub2.document.parts.get())
 
-print cliqueclique_subscription.query.Query(q).compile().compile()
+#print cliqueclique_subscription.query.Query(q).compile().compile()
+
 
 for sub in cliqueclique_subscription.models.DocumentSubscription.get_by_query(q): #, node.node_id, root.document.document_id))
-    content = None
-    for part in sub.document.content_as_mime.get_payload():
-        if part['part_type'] == 'link':
-            content = part
-            break
-    if content:
-        print "Content: " + content.get_payload()
-    else:
-        print "No content in: " + sub.document.document_id
+    print sub.document.content_as_mime['name']
+#    print sub.document.content_as_mime.as_string()
+#    print
+#    print
+
+    # content = None
+    # for part in sub.document.content_as_mime.get_payload():
+    #     if part['part_type'] == 'link':
+    #         content = part
+    #         break
+    # if content:
+    #     print "Content: " + content.get_payload()
+    # else:
+    #     print "No content in: " + sub.document.document_id

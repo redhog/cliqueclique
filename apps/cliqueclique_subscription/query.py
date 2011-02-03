@@ -9,15 +9,17 @@ DocumentTable = sql.Table('cliqueclique_document_document')
 PropertyTable = sql.Table('cliqueclique_document_documentproperty')
 
 class Context(object):
-    def __init__(self, start, joins, end):
+    def __init__(self, start, joins, end, wheres = []):
         self.start = start
         self.joins = joins
         self.end = end
+        self.wheres = wheres
 
-    def compile(self):
+    def compile(self, id_only = False):
         return sql.Select(
-            columns = sql.Column(self.end, '*'),
-            froms = sql.Join(*self.joins))
+            columns = sql.Column(self.end, ['*', 'id'][id_only]),
+            froms = sql.Join(*self.joins),
+            wheres = self.wheres and sql.And(*self.wheres) or None)
 
     def __repr__(self):
         return "%s..%s (%s)" % (self.start.get_name(), self.end.get_name(), str(self.joins))
@@ -25,8 +27,8 @@ class Context(object):
     def __str__(self):
         return str(self.compile())
 
-    def new(self, start = None, joins = [], end = None):
-        return Context(start or self.start, self.joins + joins, end or self.end)
+    def new(self, start = None, joins = [], end = None, wheres = []):
+        return Context(start or self.start, self.joins + joins, end or self.end, self.wheres + wheres)
 
     def assert_start(self, name):
         if self.start.get_original_name() != name:
@@ -38,8 +40,8 @@ class Context(object):
 
 class AnyContext(Context):
     def __init__(self):
-        self.start = self.end = sql.Alias(SubscriptionTable)
-        self.joins = [self.end]
+        tbl = sql.Alias(SubscriptionTable)
+        Context.__init__(self, tbl, [tbl], tbl)
 
 class Query(object):
     symbol = 'query'
@@ -126,31 +128,28 @@ class OrPipe(ListQuery):
     symbol = "|/"
 
     def _compile(self, context):
-        ends = []
-        starts = []
+        subselects = []
         for sub in self.subs:
             new_start = sql.Alias(context.end)
-            new_context = sub._compile(context.new(joins=[new_start], end = new_start))
-            context = new_context.new(start=context.start, end=context.end)
-            if new_context.end is not new_start:
-                starts.append(new_start)
-                ends.append(new_context.end)
+            new_start_context = Context(new_start, [new_start], new_start)
+            subselects.append(sub._compile(new_start_context).new(wheres = [sql.Comp(sql.Column(context.end, 'id'),
+                                                                                     sql.Column(new_start, 'id'))]))
 
-        old_start = context.end
-        new_end = sql.Alias(ends[0])
+        end = None
+        for subselect in subselects:
+            if end:
+                subselect.assert_end(end.get_original_name())
+            else:
+                end = subselect.end
+        
+        end = sql.Alias(end)
 
-        start_ors = [sql.Comp(sql.Column(old_start, 'id'),
-                              sql.Column(start, 'id'))
-                     for start in starts]
-        if ends:
-            for end in ends[1:]:
-                if ends[0].get_original_name() != end.get_original_name():
-                    raise AssertionError("OrPipe arguments must all end in the same table (%s != %s)" % (ends[0].get_original_name(), end.get_original_name()))
-        end_ors = [sql.Comp(sql.Column(new_end, 'id'),
-                            sql.Column(end, 'id'))
-                   for end in ends]
-        joins = [sql.On(new_end, sql.And(sql.Or(*start_ors), sql.Or(*end_ors)))]
-        return context.new(joins = joins, end=new_end)
+        return context.new(joins=[sql.On(end,
+                                         on = sql.Or(*[sql.Comp(sql.Column(end, 'id'),
+                                                                subselect.compile(id_only=True),
+                                                                'in')
+                                                       for subselect in subselects]))],
+                           end = end)
 
 class Or(OrPipe):
     symbol = "|"
@@ -291,11 +290,14 @@ class Link(ListQuery):
         # Signed->Multipart->Content
 
         return OrPipe(
+            Pipe(And(Pipe(Parts(), Part(), Part(), Property("part_type", "parent_link"), Property("link_direction", "reversed"), *self.subs)), Child()),
+            Pipe(And(Pipe(Parts(), Part(), Part(), Property("part_type", "child_link"), Property("link_direction", "natural"), *self.subs)), Child()),
+
             Pipe(Child(), And(Pipe(Parts(), Part(), Part(), Property("part_type", "parent_link"), Property("link_direction", "natural"), *self.subs))),
             Pipe(Child(), And(Pipe(Parts(), Part(), Part(), Property("part_type", "child_link"), Property("link_direction", "reversed"), *self.subs))),
 
-            #Pipe(Child(), And(Pipe(Parts(), Part(), Part(), Property("part_type", "link"), Property("link_direction", "natural"), *self.subs)), Child()),
-            #Pipe(Parent(), And(Pipe(Parts(), Part(), Part(), Property("part_type", "link"), Property("link_direction", "reversed"), *self.subs)), Parent())
+            Pipe(Child(), And(Pipe(Parts(), Part(), Part(), Property("part_type", "link"), Property("link_direction", "natural"), *self.subs)), Child()),
+            Pipe(Parent(), And(Pipe(Parts(), Part(), Part(), Property("part_type", "link"), Property("link_direction", "reversed"), *self.subs)), Parent())
             )._compile(context)
 
     def __repr__(self):

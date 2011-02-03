@@ -206,6 +206,10 @@ class Comp(Statement):
         parts = self._compile_parts(ind, tab, ln)
         sql = sql_from_compiled_statements(parts)
         sql['comp'] = self.comp
+
+        if isinstance(self.parts['val2'], Select):
+            sql['val2'] = "(" + sql['val2'] + ")"
+
         return CompiledStatement(
             ln+ind+"%(val1)s %(comp)s %(val2)s" % sql,
             join_vars(['val1', 'val2'], vars_from_compiled_statements(parts)))
