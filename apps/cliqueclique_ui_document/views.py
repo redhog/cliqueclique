@@ -48,15 +48,58 @@ def obtain_secure_access(request, document_id):
         info,
         context_instance=django.template.RequestContext(request))
 
+def json_view_or_redirect(fn):
+    def json_view_or_redirect(request, *arg, **kw):
+        redirect = None
+        if 'redirect' in request.GET:
+            redirect = request.GET['redirect']
+        elif 'redirect' in request.POST:
+            redirect = request.POST['redirect']
+
+        if redirect:
+            res = fn(request, *arg, **kw)
+            return django.shortcuts.redirect(redirect % res)
+        else:
+            return fcdjangoutils.jsonview.json_view(fn)(request, *arg, **kw)
+    return json_view_or_redirect
+
+@json_view_or_redirect
 @django.contrib.auth.decorators.login_required
 def import_document(request):
-    msg = request.FILES['file'].read()
-    request.user.node.receive(msg)
-    msg = utils.smime.message_from_anything(msg)
-    container_msg = msg.get_payload()[0]
-    update_msg = container_msg.get_payload()[0]
-    return django.shortcuts.redirect("cliqueclique_ui.views.display_document", document_id=update_msg['document_id'])
+    if 'document' in request.GET:
+        doc = request.GET['document']
+    elif 'document' in request.POST:
+        doc = request.POST['document']
+    elif 'document' in request.FILES:
+        doc = request.FILES['document']
 
+    request.user.node.receive(doc)
+    doc = utils.smime.message_from_anything(doc)
+    container_doc = doc.get_payload()[0]
+    update_doc = container_doc.get_payload()[0]    
+
+    return {'document_id': update_doc['document_id']}
+
+@json_view_or_redirect
+@django.contrib.auth.decorators.login_required
+def post(request):
+    if 'document' in request.GET:
+        doc = request.GET['document']
+    elif 'document' in request.POST:
+        doc = request.POST['document']
+    elif 'document' in request.FILES:
+        doc = request.FILES['document']
+
+    node = request.user.node
+
+    doc = fcdjangoutils.jsonview.from_json(
+        doc,
+        public_key=utils.smime.der2pem(node.public_key),
+        private_key=utils.smime.der2pem(node.private_key, "PRIVATE KEY"))
+
+    return {'document_id': doc.document_id}
+
+@json_view_or_redirect
 @django.contrib.auth.decorators.login_required
 def set_document_flags(request, document_id):
     sub = cliqueclique_subscription.models.DocumentSubscription.objects.get(
@@ -77,7 +120,7 @@ def set_document_flags(request, document_id):
             value = False
         setattr(sub, attr, value)
     sub.save()
-    return django.shortcuts.redirect("cliqueclique_ui.views.display_document", document_id=sub.document.document_id)
+    return {'document_id': sub.document.document_id}
 
 @django.contrib.auth.decorators.login_required
 def document(request, format, document_id = None, single = False):
@@ -110,19 +153,19 @@ def document(request, format, document_id = None, single = False):
                                                               for child in doc.children.all()],
                                                  'content': doc.document.as_mime
                                                  }
-            docs = django.utils.simplejson.dumps(res, default=fcdjangoutils.jsonview.jsonify_models)
+            docs = django.utils.simplejson.dumps(res, default=fcdjangoutils.jsonview.JsonEncodeRegistry().jsonify)
             mimetype="text/plain"
     except django.core.servers.basehttp.WSGIServerException:
         raise
     except Exception, e:
         etype = sys.modules[type(e).__module__].__name__ + "." + type(e).__name__
         jogging.logging.error("%s: %s" % (str(e), etype))
-        raise
         if format != 'json':
             raise
         docs = {'error': {'type': etype,
                          'description': str(e),
                          'traceback': traceback.format_exc()}}
-        docs = django.utils.simplejson.dumps(docs, default=fcdjangoutils.jsonview.jsonify_models)
+        docs = django.utils.simplejson.dumps(docs, default=fcdjangoutils.jsonview.JsonEncodeRegistry().jsonify)
         mimetype="text/plain"
     return django.http.HttpResponse(docs, mimetype="text/plain")
+

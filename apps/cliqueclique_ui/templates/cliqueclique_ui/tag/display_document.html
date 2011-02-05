@@ -41,7 +41,7 @@
     {% endif %}
   </a>
 
-  <a href="{% url cliqueclique_ui_document.views.set_document_flags document_id=document_id %}?read=toggle">
+  <a href="{% url cliqueclique_ui_document.views.set_document_flags document_id=document_id %}?read=toggle&redirect={% url cliqueclique_ui.views.display_document document_id="%(document_id)s" %}">
     {% if document_subscription.read %}
       <img src="{{ STATIC_URL }}cliqueclique_ui/img/silk_icons/icons/eye.png" alt="Read">
     {% else %}
@@ -49,7 +49,7 @@
     {% endif %}
   </a>
 
-  <a href="{% url cliqueclique_ui_document.views.set_document_flags document_id=document_id %}?bookmarked=toggle">
+  <a href="{% url cliqueclique_ui_document.views.set_document_flags document_id=document_id %}?bookmarked=toggle&redirect={% url cliqueclique_ui.views.display_document document_id="%(document_id)s" %}">
     {% if document_subscription.bookmarked %}
       <img src="{{ STATIC_URL }}cliqueclique_ui/img/silk_companion/icons/star_gold.png" alt="Bookmarked">
     {% else %}

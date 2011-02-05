@@ -3,6 +3,7 @@ import idmapper.models
 import django.contrib.auth.models
 from django.db.models import Q, F
 import fcdjangoutils.signalautoconnectmodel
+import fcdjangoutils.jsonview
 import settings
 import email
 import email.mime.message
@@ -135,55 +136,27 @@ class DocumentProperty(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAu
         return "%s=%s" % (self.key, repr(self.value))
 
 
-class NewDocument(Document):
-    class Meta(object):
-        abstract = True
 
-    def __init__(self, node, *arg, **kw):
-        Document.__init__(self, *arg, **kw)
-        self.signed = utils.smime.MIMESigned()
-        self.signed.set_private_key(utils.smime.der2pem(node.private_key, "PRIVATE KEY"))
-        self.signed.set_cert(utils.smime.der2pem(node.public_key))
+@fcdjangoutils.jsonview.JsonEncodeRegistry.register(Document)
+def conv(self, obj):
+    return {'__cliqueclique_document_models_Document__': True,
+            'document_id': obj.document_id,
+            'parent_document_id': obj.parent_document_id,
+            'child_document_id': obj.child_document_id,
+            'content': obj.as_mime}
 
-        self.container = email.mime.multipart.MIMEMultipart()
-        self.signed.attach(self.container)
-        self.parts = {}
+@fcdjangoutils.jsonview.JsonDecodeRegistry.register('__cliqueclique_document_models_Document__')
+def conv(self, obj):
+    if 'document_id' in obj:
+        return Document.objects.get(document_id = obj['document_id'])
+    else:
+        content = obj['content']
+        if hasattr(content, "as_string"):
+            content = content.as_string()
+        res = Document(content = content)
+        res.save()
+    return res
 
-    @classmethod
-    def on_pre_save(cls, sender, instance, **kwargs):
-        self.content = self.signed.as_string()
-        Document.on_pre_save(sender, instance, **kwargs)
-
-    def set_part(self, type_name='content', part = None):
-        if type_name in self.parts:
-            self.container.get_payload().remove(self.parts[type_name])
-        if part is None:
-            part = email.mime.multipart.MIMEMultipart()
-        part.set_header('part_type', type_name)
-        self.parts[type_name] = part
-        self.container.attach(part)
-        return part
-
-    def _set_link(self, document_id, direction = "child", reversed = False):
-        assert direction in ("parent", "child")
-
-        self.container.set_header(direction + '_document_id', document_id)
-
-        part = self.set_part(direction + "_link")
-        part.add_header("link_direction", ["natural", "reversed"][reversed])
-        return part
-
-    def set_parent(self, document_id, reversed = False):
-        return self._set_link(document_id, "parent", reversed)
-
-    def set_child(self, document_id, reversed = False):
-        return self._set_link(document_id, "child", reversed)
-
-class NewLink(NewDocument):
-    class Meta(object):
-        abstract = True
-
-    def set_link(self, reversed = False):
-        part = self.set_part("link")
-        part.add_header("link_direction", ["natural", "reversed"][reversed])
-        return part
+@fcdjangoutils.jsonview.JsonDecodeRegistry.register('__cliqueclique_document_models_DocumentId__')
+def conv(self, obj):
+    return obj['document'].document_id
