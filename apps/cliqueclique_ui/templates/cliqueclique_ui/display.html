@@ -9,9 +9,13 @@
     <link rel="stylesheet" href="{{ STATIC_URL }}cliqueclique_ui/css/global.css" />
     %WidgetTagMiddleware.head.css%
     %WidgetTagMiddleware.head.javascript%
-    <script>
+    <script src="{{ STATIC_URL }}fcdjangoutils/js/obj.js"></script>
+    <script src="{{ STATIC_URL }}cliqueclique_ui/js/jsTree/jquery.jstree.js"></script>
+    <script src="{{ STATIC_URL }}cliqueclique_ui/js/document.js"></script>
+    <script src="{{ STATIC_URL }}cliqueclique_ui/js/document_tree.js"></script>
+    <!-- script>
       security_context = {{ security_context|safe }};
-    </script>
+    </script -->
   </head>
   <body>
     <div class="menubar">
@@ -32,6 +36,14 @@
           </ul>
 	{% endblock %}
       </div>
+
+      <div id="bookmarktree"></div>
+      <script>
+	$(function () {
+	  $("#bookmarktree").documentTree({originalQuery: '"bookmarked"'});
+	});
+      </script>
+
     </div>
     <div class="document_area">
       {% if document_id %}

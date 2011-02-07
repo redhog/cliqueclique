@@ -227,6 +227,24 @@ class Id(Query):
                                             sql.Const(self.id))))]
         return context.new(joins=joins, end=doc)
 
+class IsRead(Query):
+    symbol = "read"
+    def _compile(self, context):
+        context.assert_end('cliqueclique_subscription_documentsubscription')
+        return context.new(wheres = [sql.Column(context.end, 'read')])
+
+class IsBookmarked(Query):
+    symbol = "bookmarked"
+    def _compile(self, context):
+        context.assert_end('cliqueclique_subscription_documentsubscription')
+        return context.new(wheres = [sql.Column(context.end, 'bookmarked')])
+
+class IsSubscribed(Query):
+    symbol = "subscribed"
+    def _compile(self, context):
+        context.assert_end('cliqueclique_subscription_documentsubscription')
+        return context.new(wheres = [sql.Column(context.end, 'local_is_subscribed')])
+
 class Parts(Query):
     symbol = ":"
     def _compile(self, context):

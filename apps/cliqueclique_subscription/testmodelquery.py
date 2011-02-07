@@ -59,8 +59,9 @@ node = cliqueclique_node.models.LocalNode.objects.all()[0]
 # sub3 = post(node, "sub3", headers={'name': 'sub3'})
 # link1 = post(node, "link1", parent=root, child=sub3, content_headers={'kafoo':'root:sub3', 'link_direction':'natural'}, headers={'name': 'link1'})
 
-q = '["|/", ["->", ["=", "kafoo", "root:sub1"]]]'
+#q = '["|/", ["->", ["=", "kafoo", "root:sub1"]]]'
 q = '["->"]'
+q = '["subscribed"]'
 
 # print "YYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
 # print sub1.document.content
@@ -68,7 +69,7 @@ q = '["->"]'
 # print
 # print repr(sub2.document.parts.get())
 
-#print cliqueclique_subscription.query.Query(q).compile().compile()
+print cliqueclique_subscription.query.Query(q).compile().compile()
 
 
 for sub in cliqueclique_subscription.models.DocumentSubscription.get_by_query(q): #, node.node_id, root.document.document_id))
