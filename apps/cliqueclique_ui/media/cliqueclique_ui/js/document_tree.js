@@ -18,7 +18,8 @@ $.fn.documentTree = function (popts) {
   opts.json_data.ajax.success = function (documents) {
     var res = [];
     for (document_id in documents) {
-      res.push({data: document_id, attr: { id: document_id }, state: "closed"});
+      var doc = Document.instantiate(documents[document_id]);
+      res.push({data: {title:doc.getSubject(), attr:{href:document_id}}, attr: { id: document_id }, state: "closed"});
     }
     return res;
   };

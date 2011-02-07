@@ -39,8 +39,5 @@ def display_document(request, document_id = None):
     return django.shortcuts.render_to_response(
         'cliqueclique_ui/display.html',
         {'document_id': document_id,
-         'request': request,
-         'bookmarks': cliqueclique_subscription.models.DocumentSubscription.objects.filter(
-                node = request.user.node,
-                bookmarked=True).all()},
+         'request': request},
         context_instance=django.template.RequestContext(request))

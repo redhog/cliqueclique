@@ -29,20 +29,15 @@
       <div class="bookmarks">
 	{% block bookmarks %}
 	  <h1>Bookmarks</h1>
-          <ul>
-  	    {% for bookmark in bookmarks %}
-	      <li><a href="{% url cliqueclique_ui.views.display_document document_id=bookmark.document.document_id %}">{{ bookmark.document.as_mime.subject}}</a></li>
-	    {% endfor %}
-          </ul>
+
+	  <div id="bookmarktree"></div>
+	  <script>
+	    $(function () {
+	      $("#bookmarktree").documentTree({originalQuery: '"bookmarked"'});
+	    });
+	  </script>
 	{% endblock %}
       </div>
-
-      <div id="bookmarktree"></div>
-      <script>
-	$(function () {
-	  $("#bookmarktree").documentTree({originalQuery: '"bookmarked"'});
-	});
-      </script>
 
     </div>
     <div class="document_area">
