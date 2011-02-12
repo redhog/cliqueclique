@@ -6,19 +6,43 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>CliqueClique</title>
     <link rel="stylesheet" href="{{ STATIC_URL }}cliqueclique_ui/js/ui/dijit/themes/claro/claro.css" />
+    <style>
+      html { height: 100%; }
+      body { height: 100%; margin: 0; padding: 0; }
+    </style>
+
     <script src="{{ STATIC_URL }}cliqueclique_ui/js/ui/dojo/dojo.js"></script>
 
     <script>
       dojo.require("cliqueclique.document.tree");
+      dojo.require("dijit.layout.BorderContainer");
+      dojo.require("dijit.layout.ContentPane");
+      dojo.require("dijit.layout.AccordionContainer");
+      dojo.require("dijit.layout.TabContainer");
+
+
       dojo.addOnLoad(function() {
-        new dijit.Tree({showRoot: false, model: cliqueclique.document.tree.DocumentTreeModel()}, "the-tree");
+
+        ui = new dijit.layout.BorderContainer({ id:'brdr' ,design:'sidebar', style:'border: 0px; height: 100%; width: 100%;' }, "ui");
+        ui.startup();
+
+        var leftPane = new dijit.layout.AccordionContainer({region: 'left', splitter: true, minSize: 200});
+        ui.addChild(leftPane);
+      
+        var tree = new dijit.Tree({showRoot: false, model: cliqueclique.document.tree.DocumentTreeModel(), style: "width: 200px;", title: 'Bookmarks'});
+        leftPane.addChild(tree);
+
+        ui.addChild(new dijit.layout.ContentPane({region: 'center', 'content': ''}));
+
+        ui.resize();
+
       });
     </script>
 
   </head>
   <body class="claro">
 
-    <div id="the-tree"></div>
+    <div id="ui"></div>
 
   </body>
 </html>
