@@ -3,6 +3,14 @@ dojo.provide("cliqueclique.document.tree");
 dojo.require("dijit.Tree");
 dojo.require("cliqueclique.document");
 
+
+dojo.declare("cliqueclique.document.tree.RootDocumentClass", [cliqueclique.document.Document], {
+  constructor: function () { },
+  getSubject: function () { return 'The roo'; },
+  getDocumentId: function () { return null; },
+});
+cliqueclique.document.tree.RootDocument = new cliqueclique.document.tree.RootDocumentClass();
+
 dojo.declare("cliqueclique.document.tree.DocumentTreeModel", [], {
   root_query: 'bookmarked',
   child_query: ">",
@@ -10,11 +18,11 @@ dojo.declare("cliqueclique.document.tree.DocumentTreeModel", [], {
   fetchItemByIdentity: function (keywordArgs) {},
   getChildren: function (parentItem, onComplete) {
     var url, query;
-    if (parentItem.isRoot) {
+    if (parentItem.getDocumentId() == null) {
       url = "/find/json";
       query = this.root_query;
     } else {
-      url = "/find/json/" + parentItem.document_id;
+      url = "/find/json/" + parentItem.getDocumentId();
       query = this.child_query;
     }
 
@@ -25,30 +33,15 @@ dojo.declare("cliqueclique.document.tree.DocumentTreeModel", [], {
       load: function (documents) {
 	var res = [];
 	for (document_id in documents) {
-	  res.push(documents[document_id]);
+	  res.push(new cliqueclique.document.Document(documents[document_id]));
 	}
 	onComplete(res);
       }
     });
   },
-  getIdentity: function (item) {
-    if (item.isRoot)
-      return null;
-    else
-      return item.document_id;
-  },
-  getLabel: function (item) {
-    if (item.isRoot)
-      return 'The root';
-    else if (   typeof(item.content) != "undefined"
-	     && typeof(item.content.parts) != "undefined"
-	     && item.content.parts.length > 0
-	     && typeof(item.content.parts[0].header) != "undefined")
-      return item.content.parts[0].header.subject;
-    else
-      return item.document_id.substring(0, 5);
-  },
-  getRoot: function (onItem) { onItem({isRoot: true}); },
+  getIdentity: function (item) { return item.getDocumentId(); },
+  getLabel: function (item) { return item.getSubject(); },
+  getRoot: function (onItem) { onItem(cliqueclique.document.tree.RootDocument); },
   isItem: function (something) { return true; },
   mayHaveChildren: function (item) { return true; },
   newItem: function (args, parent, insertIndex) {},
