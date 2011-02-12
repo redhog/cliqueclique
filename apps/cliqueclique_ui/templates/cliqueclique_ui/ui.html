@@ -1,0 +1,24 @@
+{% load i18n %}
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="{% if LANGUAGE_BIDI %}rtl{% else %}ltr{% endif %}" xml:lang="{{ LANGUAGE_CODE }}" lang="{{ LANGUAGE_CODE }}">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>CliqueClique</title>
+    <link rel="stylesheet" href="{{ STATIC_URL }}cliqueclique_ui/js/ui/dijit/themes/claro/claro.css" />
+    <script src="{{ STATIC_URL }}cliqueclique_ui/js/ui/dojo/dojo.js"></script>
+
+    <script>
+      dojo.require("cliqueclique.document.tree");
+      dojo.addOnLoad(function() {
+        new dijit.Tree({showRoot: false, model: cliqueclique.document.tree.DocumentTreeModel()}, "the-tree");
+      });
+    </script>
+
+  </head>
+  <body class="claro">
+
+    <div id="the-tree"></div>
+
+  </body>
+</html>

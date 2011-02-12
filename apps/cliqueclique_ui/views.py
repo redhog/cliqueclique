@@ -41,3 +41,9 @@ def display_document(request, document_id = None):
         {'document_id': document_id,
          'request': request},
         context_instance=django.template.RequestContext(request))
+
+@django.contrib.auth.decorators.login_required
+def ui(request):
+    return django.shortcuts.render_to_response(
+        'cliqueclique_ui/ui.html',
+        context_instance=django.template.RequestContext(request))
