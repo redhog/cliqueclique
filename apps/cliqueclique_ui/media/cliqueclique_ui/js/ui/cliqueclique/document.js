@@ -15,5 +15,22 @@ dojo.declare("cliqueclique.document.Document", [], {
   },
   getDocumentId: function () {
     return this.json_data.document_id;
+  },
+  getDocumentLink: function (contextNode) {
+    return function () {
+      console.log("XXXX");
+    };
   }
 });
+
+/*
+dojo.declare("cliqueclique.document.DocumentLink", [dijit.layout.ContentPane], {
+  constructor: function (document) {
+    this.document = document;
+    this.content = "<a href='' onclick=''"
+  },
+
+
+
+});
+*/

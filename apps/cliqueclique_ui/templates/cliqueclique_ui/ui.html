@@ -15,10 +15,12 @@
 
     <script>
       dojo.require("cliqueclique.document.tree");
+      dojo.require("cliqueclique.nodeinfo");
       dojo.require("dijit.layout.BorderContainer");
       dojo.require("dijit.layout.ContentPane");
       dojo.require("dijit.layout.AccordionContainer");
       dojo.require("dijit.layout.TabContainer");
+      dojo.require("dojox.layout.TableContainer");
 
 
       dojo.addOnLoad(function() {
@@ -32,7 +34,20 @@
         var tree = new dijit.Tree({showRoot: false, model: cliqueclique.document.tree.DocumentTreeModel(), style: "width: 200px;", title: 'Bookmarks'});
         leftPane.addChild(tree);
 
-        ui.addChild(new dijit.layout.ContentPane({region: 'center', 'content': ''}));
+
+
+        var table = new dojox.layout.TableContainer({region: 'center', customClass: "labelsAndValues", cols:1, labelWidth: "150"});
+        table.addChild(new dijit.layout.ContentPane({label:'Foo', content:'Bar'}));
+        ui.addChild(table);
+
+        table.addChild(new dijit.layout.ContentPane({label:'Fie', content:'Naja'}));
+        table.addChild(new dijit.layout.ContentPane({label:'Hehe', content:'Muae'}));
+        table.addChild(new dijit.layout.ContentPane({label:'Snafu', content:'xyzzy'}));
+        table.layout();
+
+        tree.connect(tree, 'onClick', function (item, node, evt) {
+          console.log(item);
+        });
 
         ui.resize();
 
