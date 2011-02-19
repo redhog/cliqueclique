@@ -15,6 +15,7 @@
 
     <script>
       dojo.require("cliqueclique.document.tree");
+      dojo.require("cliqueclique.document");
       dojo.require("cliqueclique.nodeinfo");
       dojo.require("dijit.layout.BorderContainer");
       dojo.require("dijit.layout.ContentPane");
@@ -34,19 +35,12 @@
         var tree = new dijit.Tree({showRoot: false, model: cliqueclique.document.tree.DocumentTreeModel(), style: "width: 200px;", title: 'Bookmarks'});
         leftPane.addChild(tree);
 
-
-
-        var table = new dojox.layout.TableContainer({region: 'center', customClass: "labelsAndValues", cols:1, labelWidth: "150"});
-        table.addChild(new dijit.layout.ContentPane({label:'Foo', content:'Bar'}));
-        ui.addChild(table);
-
-        table.addChild(new dijit.layout.ContentPane({label:'Fie', content:'Naja'}));
-        table.addChild(new dijit.layout.ContentPane({label:'Hehe', content:'Muae'}));
-        table.addChild(new dijit.layout.ContentPane({label:'Snafu', content:'xyzzy'}));
-        table.layout();
+        docView = cliqueclique.document.DocumentView({region: 'center'});
+        ui.addChild(docView);
+        ui.registerData("documentLink", function (document) { return docView.setDocument(document); }, true, "cliqueclique.document.DocumentLink");
 
         tree.connect(tree, 'onClick', function (item, node, evt) {
-          console.log(item);
+          item.getDocumentLink(tree)();
         });
 
         ui.resize();

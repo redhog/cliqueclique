@@ -1,5 +1,8 @@
 dojo.provide("cliqueclique.document");
 
+dojo.require("dijit.layout.ContentPane");
+
+
 dojo.declare("cliqueclique.document.Document", [], {
   constructor: function (json_data) {
     this.json_data = json_data;
@@ -16,9 +19,20 @@ dojo.declare("cliqueclique.document.Document", [], {
   getDocumentId: function () {
     return this.json_data.document_id;
   },
-  getDocumentLink: function (contextNode) {
+  getDocumentLink: function (widget) {
+    var document = this;
     return function () {
-      console.log("XXXX");
+      var link = widget.getDataDefault("documentLink", "cliqueclique.document.DocumentLink");
+      if (link) return link(document);
+      // Do something intelligent here
+    };
+  },
+  getDocumentMenu: function (widget) {
+    var document = this;
+    return function () {
+      var menu = widget.getData("documentMenu", "cliqueclique.document.DocumentLink");
+      // menu is list of dict {name:someMenuName, link:function(document)}
+      // create menu here 
     };
   }
 });
@@ -34,3 +48,11 @@ dojo.declare("cliqueclique.document.DocumentLink", [dijit.layout.ContentPane], {
 
 });
 */
+
+dojo.declare("cliqueclique.document.DocumentView", [dijit.layout.ContentPane], {
+  getDocument: function () { return this.document; },
+  setDocument: function (document) {
+    this.doc = document;
+    this.attr("content", this.doc.getSubject());
+  }
+});
