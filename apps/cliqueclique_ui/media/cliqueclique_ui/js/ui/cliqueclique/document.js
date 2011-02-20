@@ -2,6 +2,8 @@ dojo.provide("cliqueclique.document");
 
 dojo.require("dijit.layout.ContentPane");
 
+dojo.require('dijit.Menu');
+dojo.require('dijit.MenuItem');
 
 dojo.declare("cliqueclique.document.Document", [], {
   constructor: function (json_data) {
@@ -23,16 +25,8 @@ dojo.declare("cliqueclique.document.Document", [], {
     var document = this;
     return function () {
       var link = widget.getDataDefault("documentLink", "cliqueclique.document.DocumentLink");
-      if (link) return link(document);
+      if (link) return link.load(document);
       // Do something intelligent here
-    };
-  },
-  getDocumentMenu: function (widget) {
-    var document = this;
-    return function () {
-      var menu = widget.getData("documentMenu", "cliqueclique.document.DocumentLink");
-      // menu is list of dict {name:someMenuName, link:function(document)}
-      // create menu here 
     };
   }
 });
@@ -54,5 +48,30 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit.layout.ContentPane], {
   setDocument: function (document) {
     this.doc = document;
     this.attr("content", this.doc.getSubject());
+  }
+});
+
+
+dojo.declare("cliqueclique.document.DocumentMenu", [dijit.Menu], {
+  _openMyself: function (e) {
+    var menu = this;
+
+    dojo.forEach(menu.getChildren(), function(child, i){
+      menu.removeChild(child);
+      child.destroyRecursive();
+    });
+
+    var click = function () { console.log(arguments); };
+
+    var tn = dijit.getEnclosingWidget(e.target);
+    dojo.forEach(tn.getData("documentLink", "cliqueclique.document.DocumentLink"), function (item, i) {
+      var item = new dijit.MenuItem(item);
+      menu.addChild(item);
+      item.connect(item, 'onClick', function (e) { item.load(tn.item); });
+    });
+
+    console.debug(tn.item.getSubject());
+
+    return this.inherited(arguments);
   }
 });

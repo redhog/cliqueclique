@@ -23,7 +23,6 @@
       dojo.require("dijit.layout.TabContainer");
       dojo.require("dojox.layout.TableContainer");
 
-
       dojo.addOnLoad(function() {
 
         ui = new dijit.layout.BorderContainer({ id:'brdr' ,design:'sidebar', style:'border: 0px; height: 100%; width: 100%;' }, "ui");
@@ -37,11 +36,15 @@
 
         docView = cliqueclique.document.DocumentView({region: 'center'});
         ui.addChild(docView);
-        ui.registerData("documentLink", function (document) { return docView.setDocument(document); }, true, "cliqueclique.document.DocumentLink");
+        ui.registerData("documentLink", {label: 'Display', load:function (document) { return docView.setDocument(document); }}, true, "cliqueclique.document.DocumentLink");
 
         tree.connect(tree, 'onClick', function (item, node, evt) {
           item.getDocumentLink(tree)();
         });
+
+        menu = new cliqueclique.document.DocumentMenu({});
+        menu.startup();
+        menu.bindDomNode(tree.domNode);
 
         ui.resize();
 
