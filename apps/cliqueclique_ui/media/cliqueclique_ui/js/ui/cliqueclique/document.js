@@ -31,23 +31,36 @@ dojo.declare("cliqueclique.document.Document", [], {
   }
 });
 
-/*
-dojo.declare("cliqueclique.document.DocumentLink", [dijit.layout.ContentPane], {
-  constructor: function (document) {
-    this.document = document;
-    this.content = "<a href='' onclick=''"
+dojo.declare("cliqueclique.document._AbstractDocumentView", [], {
+  _getDocumentAttr: function () { return this.item; },
+  _setDocumentAttr: function (document) {
+    this.item = document;
+    dojo.html.set(this.text, this.item.getSubject());
   },
-
-
-
 });
-*/
 
-dojo.declare("cliqueclique.document.DocumentView", [dijit.layout.ContentPane], {
-  getDocument: function () { return this.document; },
-  setDocument: function (document) {
-    this.doc = document;
-    this.attr("content", this.doc.getSubject());
+dojo.declare("cliqueclique.document.DocumentLink", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
+  templateString: "<span><a href='javascript: void(0);' dojoAttachPoint='text' dojoAttachEvent='onclick:onClick'></a> </span>",
+
+  postCreate: function () {
+    var res = this.inherited(arguments);
+    var menu = new cliqueclique.document.DocumentMenu({});
+    menu.startup();
+    menu.bindDomNode(this.text);
+
+    dojo.connect(this.text, 'onClick', this, this.onClick);
+    return res;
+  },
+  onClick: function (e) {
+    this.item.getDocumentLink(this)();
+  }
+});
+
+
+dojo.declare("cliqueclique.document.DocumentView", [dijit.layout.ContentPane, cliqueclique.document._AbstractDocumentView], {
+  _setDocumentAttr: function (document) {
+    this.inherited(arguments);
+    this.attr("content", this.item.getSubject());
   }
 });
 
@@ -74,4 +87,10 @@ dojo.declare("cliqueclique.document.DocumentMenu", [dijit.Menu], {
 
     return this.inherited(arguments);
   }
+});
+
+
+dojo.declare("cliqueclique.document.DocumentEditor", [dijit._Widget, dijit._Templated], {
+  widgetsInTemplate: true,
+  templateString: "<div>hello world</div>"
 });
