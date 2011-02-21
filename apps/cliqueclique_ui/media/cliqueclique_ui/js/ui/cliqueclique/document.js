@@ -33,10 +33,7 @@ dojo.declare("cliqueclique.document.Document", [], {
 
 dojo.declare("cliqueclique.document._AbstractDocumentView", [], {
   _getDocumentAttr: function () { return this.item; },
-  _setDocumentAttr: function (document) {
-    this.item = document;
-    dojo.html.set(this.text, this.item.getSubject());
-  },
+  _setDocumentAttr: function (document) { this.item = document; }
 });
 
 dojo.declare("cliqueclique.document.DocumentLink", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
@@ -53,6 +50,10 @@ dojo.declare("cliqueclique.document.DocumentLink", [dijit._Widget, dijit._Templa
   },
   onClick: function (e) {
     this.item.getDocumentLink(this)();
+  },
+  _setDocumentAttr: function (document) {
+    this.inherited(arguments);
+    dojo.html.set(this.text, this.item.getSubject());
   }
 });
 
