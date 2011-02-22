@@ -16,6 +16,7 @@
     <script>
       dojo.require("cliqueclique.document.tree");
       dojo.require("cliqueclique.document.selector");
+      dojo.require("cliqueclique.document.editor");
       dojo.require("cliqueclique.document");
       dojo.require("cliqueclique.nodeinfo");
       dojo.require("dijit.layout.BorderContainer");
@@ -50,7 +51,7 @@
         ui.addChild(docView);
         ui.registerData("documentLink", {label: 'Display', load:function (document) { return docView.attr("document", document); }}, true, "cliqueclique.document.DocumentLink");
 
-        selector = new cliqueclique.document.selector.DocumentSelector({region: 'top'}, "test");
+        selector = new cliqueclique.document.editor.DocumentEditor({region: 'bottom'});
 	ui.addChild(selector);
 
 
@@ -62,7 +63,6 @@
   </head>
   <body class="claro">
 
-    <div id="test"></div>
     <div id="ui"></div>
 
   </body>

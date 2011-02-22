@@ -89,9 +89,3 @@ dojo.declare("cliqueclique.document.DocumentMenu", [dijit.Menu], {
     return this.inherited(arguments);
   }
 });
-
-
-dojo.declare("cliqueclique.document.DocumentEditor", [dijit._Widget, dijit._Templated], {
-  widgetsInTemplate: true,
-  templateString: "<div>hello world</div>"
-});
