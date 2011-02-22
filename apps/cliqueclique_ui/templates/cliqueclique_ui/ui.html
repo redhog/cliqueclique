@@ -27,6 +27,8 @@
 
       dojo.require("dijit._base.popup");
       dojo.require("dojo.html");
+      dojo.require("cliqueclique.general.OptionalTabContainer");
+
 
       dojo.addOnLoad(function() {
 
@@ -51,9 +53,18 @@
         ui.addChild(docView);
         ui.registerData("documentLink", {label: 'Display', load:function (document) { return docView.attr("document", document); }}, true, "cliqueclique.document.DocumentLink");
 
-        selector = new cliqueclique.document.editor.DocumentEditor({region: 'bottom'});
-	ui.addChild(selector);
+        tabCon = cliqueclique.general.OptionalTabContainer({region:'bottom', splitter: true, style:'height: 30%;'});        
+        ui.addChild(tabCon);
+        tabCon.updateVisibility();
 
+        ui.registerData("documentLink",
+                        {label: 'Comment',
+                         load:function (document) {
+                           var docEdit = new cliqueclique.document.editor.DocumentEditor({closable:true, title: 'Kafoo'});
+                           tabCon.addChild(docEdit);
+                         }},
+                        true,
+                        "cliqueclique.document.DocumentLink");
 
         ui.resize();
 
