@@ -14,60 +14,11 @@
     <script src="{{ STATIC_URL }}cliqueclique_ui/js/ui/dojo/dojo.js"></script>
 
     <script>
-      dojo.require("cliqueclique.document.tree");
-      dojo.require("cliqueclique.document.selector");
-      dojo.require("cliqueclique.document.editor");
-      dojo.require("cliqueclique.document");
-      dojo.require("cliqueclique.nodeinfo");
-      dojo.require("dijit.layout.BorderContainer");
-      dojo.require("dijit.layout.ContentPane");
-      dojo.require("dijit.layout.AccordionContainer");
-      dojo.require("dijit.layout.TabContainer");
-      dojo.require("dojox.layout.TableContainer");
-
-      dojo.require("dijit._base.popup");
-      dojo.require("dojo.html");
-      dojo.require("cliqueclique.general.OptionalTabContainer");
-
-
+      dojo.require("cliqueclique.ui");
       dojo.addOnLoad(function() {
-
-        ui = new dijit.layout.BorderContainer({ id:'brdr' ,design:'sidebar', style:'border: 0px; height: 100%; width: 100%;' }, "ui");
+        ui = cliqueclique.ui.Ui({}, "ui");
         ui.startup();
-
-        var leftPane = new dijit.layout.AccordionContainer({region: 'left', splitter: true, minSize: 200});
-        ui.addChild(leftPane);
-      
-
-        var tree = new dijit.Tree({showRoot: false, model: cliqueclique.document.tree.DocumentTreeModel(), style: "width: 200px;", title: 'Bookmarks'});
-        leftPane.addChild(tree);
-
-        tree.connect(tree, 'onClick', function (item, node, evt) { item.getDocumentLink(tree)(); });
-
-        menu = new cliqueclique.document.DocumentMenu({});
-        menu.startup();
-        menu.bindDomNode(tree.domNode);
-
-
-        docView = cliqueclique.document.DocumentView({region: 'center'});
-        ui.addChild(docView);
-        ui.registerData("documentLink", {label: 'Display', load:function (document) { return docView.attr("document", document); }}, true, "cliqueclique.document.DocumentLink");
-
-        tabCon = cliqueclique.general.OptionalTabContainer({region:'bottom', splitter: true, style:'height: 30%;'});        
-        ui.addChild(tabCon);
-        tabCon.updateVisibility();
-
-        ui.registerData("documentLink",
-                        {label: 'Comment',
-                         load:function (document) {
-                           var docEdit = new cliqueclique.document.editor.DocumentEditor({closable:true, title: 'Kafoo'});
-                           tabCon.addChild(docEdit);
-                         }},
-                        true,
-                        "cliqueclique.document.DocumentLink");
-
         ui.resize();
-
       });
     </script>
 
