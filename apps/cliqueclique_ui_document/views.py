@@ -12,41 +12,9 @@ import utils.smime
 import utils.djangosmime
 import django.contrib.auth.decorators
 import fcdjangoutils.jsonview
-import secure_id
 import sys
 import traceback
 import jogging
-
-def obtain_secure_access(request, document_id):
-    info = {}
-
-    info['secure_document_id'] = secure_id.make_secure_id(request, document_id)
-    info['document_document_id'] = document_id
-    mime = cliqueclique_document.models.Document.objects.get(document_id = document_id).as_mime
-    if isinstance(mime, utils.smime.MIMESigned):
-        cert = mime.verify()[0]
-        data = utils.smime.cert_get_data(cert)
-        info['document_author_name'] = data['name']
-        info['document_author_node_id'] = cliqueclique_node.models.Node.node_id_from_public_key(cert)
-        info['document_author_address'] = data['address']
-        mime = mime.get_payload()[0]
-    info['document_subject'] = mime.get('subject', None)
-
-    info['security_context_document_id'] = cliqueclique_ui_security_context.security_context.get_security_context(request)['owner_document_id']
-    mime = cliqueclique_document.models.Document.objects.get(document_id =  info['security_context_document_id']).as_mime
-    if isinstance(mime, utils.smime.MIMESigned):
-        cert = mime.verify()[0]
-        data = utils.smime.cert_get_data(cert)
-        info['security_context_author_name'] = data['name']
-        info['security_context_author_node_id'] = cliqueclique_node.models.Node.node_id_from_public_key(cert)
-        info['security_context_author_address'] = data['address']
-        mime = mime.get_payload()[0]
-    info['security_context_subject'] = mime.get('subject', None)
-
-    return django.shortcuts.render_to_response(
-        'cliqueclique_ui_document/obtain_secure_access.html',
-        info,
-        context_instance=django.template.RequestContext(request))
 
 def json_view_or_redirect(fn):
     def json_view_or_redirect(request, *arg, **kw):
@@ -92,12 +60,24 @@ def post(request):
 
     node = request.user.node
 
-    doc = fcdjangoutils.jsonview.from_json(
-        doc,
-        public_key=utils.smime.der2pem(node.public_key),
-        private_key=utils.smime.der2pem(node.private_key, "PRIVATE KEY"))
+    doc = cliqueclique_document.models.Document(
+        content = fcdjangoutils.jsonview.from_json(
+            doc,
+            public_key=utils.smime.der2pem(node.public_key),
+            private_key=utils.smime.der2pem(node.private_key, "PRIVATE KEY")).as_string())
+    doc.save()
 
-    return {'document_id': doc.document_id}
+    sub = cliqueclique_subscription.models.DocumentSubscription(
+        node = node,
+        document = doc)
+    sub.save()
+
+    for parent in sub.parents.all():
+        if not parent.local_is_subscribed:
+            parent.local_is_subscribed = True
+            parent.save()
+
+    return sub
 
 @json_view_or_redirect
 @django.contrib.auth.decorators.login_required
@@ -144,15 +124,9 @@ def document(request, format, document_id = None, single = False):
             docs = docs.as_string()
             mimetype="text/plain"
         elif format == 'json':
-            is_secure = False
             res = {}
             for doc in docs:
-                res[doc.document.document_id] = {'document_id': doc.document.document_id,
-                                                 'parents': [parent.document.document_id for parent in doc.parents.all()],
-                                                 'children': [secure_id.make_secure_id(request, child.document.document_id, is_secure)
-                                                              for child in doc.children.all()],
-                                                 'content': doc.document.as_mime
-                                                 }
+                res[doc.document.document_id] = doc
             docs = django.utils.simplejson.dumps(res, default=fcdjangoutils.jsonview.JsonEncodeRegistry().jsonify)
             mimetype="text/plain"
     except django.core.servers.basehttp.WSGIServerException:

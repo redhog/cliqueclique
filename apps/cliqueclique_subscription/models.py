@@ -549,3 +549,36 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
 
     def __unicode__(self):
         return "%s:s knowledge about %s" % (self.peer, self.local_subscription)
+
+@fcdjangoutils.jsonview.JsonEncodeRegistry.register(DocumentSubscription)
+def conv(self, obj):
+    return {'__cliqueclique_subscription_models_DocumentSubscription__': True,
+
+            "center_node_is_subscribed": obj.center_node_is_subscribed,
+            "center_node_id": obj.center_node_id,
+            "center_distance": obj.center_distance,
+            "serial": obj.serial,
+
+            "node": obj.node.node_id,
+            "document": obj.document,
+
+            "read": obj.read,
+            "bookmarked": obj.bookmarked,
+            "local_is_subscribed": obj.local_is_subscribed,
+
+            "parents": [parent.document.document_id for parent in obj.parents.all()],
+            "children": [child.document.document_id for child in obj.children.all()],
+
+            "peer_nrs": obj.peer_nrs,
+            "wanters": obj.wanters,
+            "subscribed_parents": obj.subscribed_parents,
+
+            "subscribers": obj.subscribers,
+
+            "old_has_enought_peers": obj.old_has_enought_peers,
+            "old_is_wanted": obj.old_is_wanted,
+            "old_is_subscribed": obj.old_is_subscribed,
+            "old_center_node_is_subscribed": obj.old_center_node_is_subscribed,
+            "old_center_node_id": obj.old_center_node_id,
+            "old_center_distance": obj.old_center_distance
+            }

@@ -10,16 +10,16 @@ dojo.declare("cliqueclique.document.Document", [], {
     this.json_data = json_data;
   },
   getSubject: function () {
-    if (   typeof(this.json_data.content) != "undefined"
-	&& typeof(this.json_data.content.parts) != "undefined"
-	&& this.json_data.content.parts.length > 0
-	&& typeof(this.json_data.content.parts[0].header) != "undefined")
-      return this.json_data.content.parts[0].header.subject;
+    if (   typeof(this.json_data.document.content) != "undefined"
+	&& typeof(this.json_data.document.content.parts) != "undefined"
+	&& this.json_data.document.content.parts.length > 0
+	&& typeof(this.json_data.document.content.parts[0].header) != "undefined")
+      return this.json_data.document.content.parts[0].header.subject;
     else
-      return this.json_data.document_id.substring(0, 5);
+      return this.json_data.document.document_id.substring(0, 5);
   },
   getDocumentId: function () {
-    return this.json_data.document_id;
+    return this.json_data.document.document_id;
   },
   getDocumentLink: function (widget) {
     var document = this;
