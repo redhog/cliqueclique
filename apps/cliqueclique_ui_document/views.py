@@ -58,8 +58,6 @@ def post(request):
     elif 'document' in request.FILES:
         doc = request.FILES['document']
 
-    print "XYZZY", doc
-
     node = request.user.node
 
     doc = cliqueclique_document.models.Document(

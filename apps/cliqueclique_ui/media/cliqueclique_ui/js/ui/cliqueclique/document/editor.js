@@ -47,7 +47,7 @@ dojo.declare("cliqueclique.document.editor.DocumentEditor", [dijit._Widget, diji
 		    "parts": [{"__email_message_Message__": true,
 	                       "body": this.content.attr("value"),
 			       "header": {"part_type": "content",
-	                                  "subject": this.subject.value,
+	                                  "subject": this.subject.attr("value"),
 					  "Content-Type": "text/plain; charset=\"utf-8\""}}],
 	            "header": header}]},
        function (document, error) {
