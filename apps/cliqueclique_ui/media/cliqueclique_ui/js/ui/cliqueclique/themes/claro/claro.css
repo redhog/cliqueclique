@@ -1,0 +1,15 @@
+.claro .cliquecliqueDocumentEditor .metadata th {
+  text-align: right;
+}
+
+.claro .cliquecliqueDocumentEditor .sendButton {
+  float: right;
+}
+
+.claro .cliquecliqueDocumentEditor .sendButton .dijitButtonNode {
+  padding: 6pt;
+}
+
+.claro .cliquecliqueDocumentEditor .dijitEditor {
+  margin: 2pt;
+}
