@@ -46,7 +46,8 @@ dojo.declare("cliqueclique.ui.Ui", [dijit.layout.BorderContainer], {
     ui.registerData("documentLink",
 		    {label: 'Comment',
 		     load:function (document) {
-		       var docEdit = new cliqueclique.document.editor.DocumentEditor({closable:true, title: 'Kafoo'});
+		      var docEdit = new cliqueclique.document.editor.DocumentEditor({closable:true, title: 'New comment', style: 'height:100%; overflow: auto;'});
+		       docEdit.commentToAdd(document);
 		       ui.tabCon.addChild(docEdit);
 		     }},
                      true,

@@ -32,7 +32,22 @@ dojo.declare("cliqueclique.document.selector.DocumentSelector", [dijit._Widget, 
     this.inherited(arguments);
   },
   onSelect: function (item, node, evt) {
-    var link = cliqueclique.document.selector._SeclectedDocument({document: item});
+    this.addLink(item);
+  },
+   _getLinksAttr: function () {
+    return dojo.map(this.selection.children, function (childNode) {
+      return dijit.byNode(childNode).attr("document")
+    });
+  },
+  addLink: function (document) {
+    var link = cliqueclique.document.selector._SeclectedDocument({document: document});
     dojo.place(link.domNode, this.selection, 'last');
+  },
+  removeLink: function (document) {
+    dojo.each(this.selection.children, function (childNode) {
+      var child = dijit.byNode(childNode);
+      if (child.attr("document") == document)
+        child.destroyRecursive();
+    });
   }
 });
