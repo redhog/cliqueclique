@@ -9,14 +9,56 @@ dojo.declare("cliqueclique.document.Document", [], {
   constructor: function (json_data) {
     this.json_data = json_data;
   },
+  getContent: function () {
+    try {
+      return this.json_data.document.content.parts[0];
+    } catch(err) {
+      return undefined;
+    }
+  },
+  getParts: function () {
+    var content = this.getContent();
+    var parts = {};
+    try {
+      dojo.forEach(content.parts, function (part) {
+        parts[part.header['part_type']] = part;
+      });
+    } catch(err) {
+      return undefined;
+    }
+    return parts;
+  },
   getSubject: function () {
-    if (   typeof(this.json_data.document.content) != "undefined"
-	&& typeof(this.json_data.document.content.parts) != "undefined"
-	&& this.json_data.document.content.parts.length > 0
-	&& typeof(this.json_data.document.content.parts[0].header) != "undefined")
-      return this.json_data.document.content.parts[0].header.subject;
-    else
-      return this.json_data.document.document_id.substring(0, 5);
+    var parts = this.getParts();
+    try {
+      return parts.content.header.subject;
+    } catch(err) {
+      try {
+	return this.json_data.document.content.parts[0].header.subject;
+      } catch(err) {
+        try {
+          return this.json_data.document.document_id.substring(0, 5);
+        } catch(err) {
+	  return undefined;
+        }
+      }
+    }
+  },
+  getBody: function () {
+    var parts = this.getParts();
+    try {
+      return parts.content.body;
+    } catch(err) {
+      try {
+	return this.json_data.document.content.parts[0].body;
+      } catch(err) {
+        try {
+          return this.json_data.document.content.body;
+        } catch(err) {
+	  return undefined;
+        }
+      }
+    }
   },
   getDocumentId: function () {
     return this.json_data.document.document_id;
@@ -28,8 +70,27 @@ dojo.declare("cliqueclique.document.Document", [], {
       if (link) return link.load(document);
       // Do something intelligent here
     };
-  }
+  },
 });
+
+cliqueclique.document.Document.post = function (json_data__document, callback) {
+  if (callback == undefined)
+    callback = function () {};
+  dojo.xhrGet({
+    url: "/post",
+    handleAs: "json",
+    content: { document: dojo.toJson(json_data__document) },
+    load: function(data) {
+      if (data.error != undefined)
+        callback(null, data.error);
+      else
+        callback(cliqueclique.document.Document(data));
+    },
+    error: function(error) {
+      callback(null, error);
+    }
+  });
+}
 
 dojo.declare("cliqueclique.document._AbstractDocumentView", [], {
   _getDocumentAttr: function () { return this.item; },
@@ -57,14 +118,23 @@ dojo.declare("cliqueclique.document.DocumentLink", [dijit._Widget, dijit._Templa
   }
 });
 
+dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
+ templateString: "<div><h1 dojoAttachPoint='title'></h1><p dojoAttachPoint='body'></p></div>",
 
-dojo.declare("cliqueclique.document.DocumentView", [dijit.layout.ContentPane, cliqueclique.document._AbstractDocumentView], {
+  postCreate: function () {
+    var res = this.inherited(arguments);
+    var menu = new cliqueclique.document.DocumentMenu({});
+    menu.startup();
+    menu.bindDomNode(this.title);
+
+    return res;
+  },
   _setDocumentAttr: function (document) {
     this.inherited(arguments);
-    this.attr("content", this.item.getSubject());
+    dojo.html.set(this.title, this.item.getSubject());
+    dojo.html.set(this.body, this.item.getBody());
   }
 });
-
 
 dojo.declare("cliqueclique.document.DocumentMenu", [dijit.Menu], {
   _openMyself: function (e) {

@@ -28,20 +28,36 @@ dojo.declare("cliqueclique.document.editor.DocumentEditor", [dijit._Widget, diji
 
    },
    send: function () {
-     console.log("hej");
-   },
-   post: function () {
-     var res = {"__smime_MIMESigned__": true,
-		"header": {},
-		"parts": [{"__email_mime_multipart_MIMEMultipart__": true,
-			   "parts": [{"__email_message_Message__": true,
-				      "body": "",
-				      "header": {"part_type": "content",
-						 "Content-Type": "text/plain; charset=\"us-ascii\""}}],
-			   "header": {"child_document_id": "22c49a3f440cefffee5b0183fdbdea365d39a4eebc65d1c4029e4",
-				      "parent_document_id": "74f0b3f760a9a2345302d3af0be756fb2a3a7569e9ebd60f8e1b2",
-				      "name": "link1"}}]}
+     var editor = this;
 
+     var commentTo = this.commentTo.attr("links");
+     var commentIn = this.commentIn.attr("links");
+
+     var header = {};
+     if (commentTo.length > 0)
+       header.child_document_id = commentTo[0].getDocumentId();
+     if (commentIn.length > 0)
+       header.parent_document_id = commentIn[0].getDocumentId();
+
+     cliqueclique.document.Document.post(
+       {
+         "__smime_MIMESigned__": true,
+	 "header": {},
+	 "parts": [{"__email_mime_multipart_MIMEMultipart__": true,
+		    "parts": [{"__email_message_Message__": true,
+	                       "body": this.content.attr("value"),
+			       "header": {"part_type": "content",
+	                                  "subject": this.subject.value,
+					  "Content-Type": "text/plain; charset=\"utf-8\""}}],
+	            "header": header}]},
+       function (document, error) {
+	 if (document == null) {
+	   console.log(error);
+	   return;
+	 }
+ 	 console.log(document);
+         document.getDocumentLink(editor)();
+       });
    },
    commentToAdd: function (document) {
      this.commentTo.addLink(document);

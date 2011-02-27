@@ -29,7 +29,7 @@ dojo.declare("cliqueclique.ui.Ui", [dijit.layout.BorderContainer], {
 
     ui.tree = new dijit.Tree({showRoot: false, model: cliqueclique.document.tree.DocumentTreeModel(), style: "width: 200px;", title: 'Bookmarks'});
     ui.leftPane.addChild(ui.tree);
-    ui.tree.connect(ui.tree, 'onClick', function (item, node, evt) { item.getDocumentLink(tree)(); });
+    ui.tree.connect(ui.tree, 'onClick', function (item, node, evt) { item.getDocumentLink(ui.tree)(); });
 
     ui.menu = new cliqueclique.document.DocumentMenu({});
     ui.menu.startup();
@@ -50,7 +50,7 @@ dojo.declare("cliqueclique.ui.Ui", [dijit.layout.BorderContainer], {
 		       docEdit.commentToAdd(document);
 		       ui.tabCon.addChild(docEdit);
 		     }},
-                     true,
+                     false,
                      "cliqueclique.document.DocumentLink");
   }
 });
