@@ -35,9 +35,9 @@ dojo.declare("cliqueclique.document.editor.DocumentEditor", [dijit._Widget, diji
 
      var header = {};
      if (commentTo.length > 0)
-       header.child_document_id = commentTo[0].getDocumentId();
+       header.parent_document_id = commentTo[0].getDocumentId();
      if (commentIn.length > 0)
-       header.parent_document_id = commentIn[0].getDocumentId();
+       header.child_document_id = commentIn[0].getDocumentId();
 
      cliqueclique.document.Document.post(
        {
