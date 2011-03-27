@@ -12,31 +12,27 @@ dojo.declare("cliqueclique.document.tree.RootDocumentClass", [cliqueclique.docum
 cliqueclique.document.tree.RootDocument = new cliqueclique.document.tree.RootDocumentClass();
 
 dojo.declare("cliqueclique.document.tree.DocumentTreeModel", [], {
-  root_query: 'bookmarked',
-  child_query: ">",
-
+  root_query: ['bookmarked'],
+  child_query: [">"],
+  constructor: function (store) {
+    this.inherited(arguments);    
+    this.store = store;
+  },
   fetchItemByIdentity: function (keywordArgs) {},
   getChildren: function (parentItem, onComplete) {
-    var url, query;
+    var query = null;
     if (parentItem.getDocumentId() == null) {
-      url = "/find/json";
       query = this.root_query;
     } else {
-      url = "/find/json/" + parentItem.getDocumentId();
-      query = this.child_query;
+      query = ["/", ["id", parentItem.getDocumentId()]].concat(this.child_query);
     }
-
-    dojo.xhrGet({
-      url: url,
-      handleAs: "json",
-      content: { query: dojo.toJson(query) },
-      load: function (documents) {
-	var res = [];
-	for (document_id in documents) {
-	  res.push(new cliqueclique.document.Document(documents[document_id]));
-	}
-	onComplete(res);
-      }
+    var documents = [];
+    return this.store.fetch({
+      query: query,
+      onItem: function (item) {
+        documents.push(item);
+      },
+      onComplete: function () { onComplete(documents); }
     });
   },
   getIdentity: function (item) { return item.getDocumentId(); },
