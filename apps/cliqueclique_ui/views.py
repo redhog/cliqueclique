@@ -11,38 +11,6 @@ import django.contrib.auth.decorators
 import fcdjangoutils.jsonview
 
 @django.contrib.auth.decorators.login_required
-def post_document(request):
-    doc = email.mime.text.MIMEText(request.POST['body'])
-    for hdr in ('subject', 'parent_document_id'):
-        if hdr in request.POST:
-            doc.add_header(hdr, request.POST[hdr])
-
-    signed = utils.smime.MIMESigned()
-    signed.set_private_key(utils.smime.der2pem(request.user.node.private_key, "PRIVATE KEY"))
-    signed.set_cert(utils.smime.der2pem(request.user.node.public_key))
-    signed.attach(doc)
-
-    doc = cliqueclique_document.models.Document(content=signed.as_string())
-    doc.save()
-    sub = cliqueclique_subscription.models.DocumentSubscription(
-        node = request.user.node,
-        document = doc)
-    sub.save()
-    for parent in sub.parents.all():
-        if not parent.local_is_subscribed:
-            parent.local_is_subscribed = True
-            parent.save()
-    return django.shortcuts.redirect("cliqueclique_ui.views.display_document", document_id=doc.document_id)
-
-@django.contrib.auth.decorators.login_required
-def display_document(request, document_id = None):
-    return django.shortcuts.render_to_response(
-        'cliqueclique_ui/display.html',
-        {'document_id': document_id,
-         'request': request},
-        context_instance=django.template.RequestContext(request))
-
-@django.contrib.auth.decorators.login_required
 def ui(request):
     return django.shortcuts.render_to_response(
         'cliqueclique_ui/ui.html',
