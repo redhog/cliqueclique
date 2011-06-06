@@ -105,7 +105,6 @@ def set_document_flags(request, document_id):
 @django.contrib.auth.decorators.login_required
 def document(request, format, document_id = None, single = False):
     try:
-        print repr(request.GET.get('query', None))
         docs = list(cliqueclique_subscription.models.DocumentSubscription.get_by_query(
                 q = request.GET.get('query', None),
                 node_id = request.user.node.node_id,

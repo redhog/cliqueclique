@@ -302,10 +302,11 @@ Center distance: %(center_distance)s
         elif ands:
             q = ands
 
+        print "QUERY", q
         stmt = q.compile()
         sql = stmt.compile()
-        #print "SQL", sql.sql
-        #print "VARS", sql.vars
+        print "SQL", sql.sql
+        print "VARS", sql.vars
         return cls.objects.raw(sql.sql, sql.vars)
 
 
