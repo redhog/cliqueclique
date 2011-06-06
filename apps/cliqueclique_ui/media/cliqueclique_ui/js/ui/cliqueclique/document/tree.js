@@ -31,6 +31,10 @@ dojo.declare("cliqueclique.document.tree.DocumentTreeModel", [], {
       handleAs: "json",
       content: { query: dojo.toJson(query) },
       load: function (documents) {
+        if (documents.error !== undefined) {
+ 	  console.error(documents.error.type + ": " + documents.error.description + "\n" + documents.error.traceback);
+	  return;
+        }
 	var res = [];
 	for (document_id in documents) {
 	  res.push(new cliqueclique.document.Document(documents[document_id]));
