@@ -17,31 +17,7 @@ dojo.declare("cliqueclique.document.tree.DocumentTreeModel", [], {
 
   fetchItemByIdentity: function (keywordArgs) {},
   getChildren: function (parentItem, onComplete) {
-    var url, query;
-    if (parentItem.getDocumentId() == null) {
-      url = "/find/json";
-      query = this.root_query;
-    } else {
-      url = "/find/json/" + parentItem.getDocumentId();
-      query = this.child_query;
-    }
-
-    dojo.xhrGet({
-      url: url,
-      handleAs: "json",
-      content: { query: dojo.toJson(query) },
-      load: function (documents) {
-        if (documents.error !== undefined) {
- 	  console.error(documents.error.type + ": " + documents.error.description + "\n" + documents.error.traceback);
-	  return;
-        }
-	var res = [];
-	for (document_id in documents) {
-	  res.push(new cliqueclique.document.Document(documents[document_id]));
-	}
-	onComplete(res);
-      }
-    });
+    cliqueclique.document.Document.find(onComplete, parentItem.getDocumentId() ? this.child_query : this.root_query, parentItem.getDocumentId())
   },
   getIdentity: function (item) { return item.getDocumentId(); },
   getLabel: function (item) { return item.getSubject(); },

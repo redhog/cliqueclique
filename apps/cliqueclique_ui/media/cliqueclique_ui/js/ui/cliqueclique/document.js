@@ -92,6 +92,29 @@ cliqueclique.document.Document.post = function (json_data__document, callback) {
   });
 }
 
+cliqueclique.document.Document.find = function (onComplete, query, context) {
+    var url = "/find/json";
+    if (context) {
+      url = "/find/json/" + context;
+    }
+    dojo.xhrGet({
+      url: url,
+      handleAs: "json",
+      content: { query: dojo.toJson(query) },
+      load: function (documents) {
+        if (documents.error !== undefined) {
+ 	  console.error(documents.error.type + ": " + documents.error.description + "\n" + documents.error.traceback);
+	  return;
+        }
+	var res = [];
+	for (document_id in documents) {
+	  res.push(new cliqueclique.document.Document(documents[document_id]));
+	}
+	onComplete(res);
+      }
+    });
+  },
+
 dojo.declare("cliqueclique.document._AbstractDocumentView", [], {
   _getDocumentAttr: function () { return this.item; },
   _setDocumentAttr: function (document) { this.item = document; }
@@ -119,7 +142,7 @@ dojo.declare("cliqueclique.document.DocumentLink", [dijit._Widget, dijit._Templa
 });
 
 dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
- templateString: "<div><h1 dojoAttachPoint='title'></h1><p dojoAttachPoint='body'></p></div>",
+ templateString: "<div><h1><span dojoAttachPoint='title'></span> <a dojoAttachPoint='graph' target='_new'>Graph</a> <a dojoAttachPoint='stat' target='_new'>Stat</a></h1><p dojoAttachPoint='body'></p></div>",
 
   postCreate: function () {
     var res = this.inherited(arguments);
@@ -133,6 +156,8 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
     this.inherited(arguments);
     dojo.html.set(this.title, this.item.getSubject());
     dojo.html.set(this.body, this.item.getBody());
+    this.graph.href = "/" + this.item.getDocumentId() +  "/graph";
+    this.stat.href = "/" + this.item.getDocumentId() +  "/stat";
   }
 });
 
