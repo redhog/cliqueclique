@@ -201,7 +201,7 @@ class Owner(Query):
                                             sql.Column(node, 'id')),
                                    sql.Comp(sql.Column(node, 'node_id'),
                                             sql.Const(self.owner))))]
-        return context.new(joins=joins, end=node)
+        return context.new(joins=joins)
 
 class Id(Query):
     symbol = "id"
@@ -219,13 +219,13 @@ class Id(Query):
 
     def _compile(self, context):
         context.assert_end('cliqueclique_subscription_documentsubscription')
-        doc = sql.Alias(DocumentTable)
-        joins = [sql.On(doc,
+        document = sql.Alias(DocumentTable)
+        joins = [sql.On(document,
                         on=sql.And(sql.Comp(sql.Column(context.end, 'document_id'),
-                                            sql.Column(doc, 'id')),
-                                   sql.Comp(sql.Column(doc, 'document_id'),
+                                            sql.Column(document, 'id')),
+                                   sql.Comp(sql.Column(document, 'document_id'),
                                             sql.Const(self.id))))]
-        return context.new(joins=joins, end=doc)
+        return context.new(joins=joins)
 
 class IsRead(Query):
     symbol = "read"
