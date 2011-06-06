@@ -93,27 +93,27 @@ cliqueclique.document.Document.post = function (json_data__document, callback) {
 }
 
 cliqueclique.document.Document.find = function (onComplete, query, context) {
-    var url = "/find/json";
-    if (context) {
-      url = "/find/json/" + context;
-    }
-    dojo.xhrGet({
-      url: url,
-      handleAs: "json",
-      content: { query: dojo.toJson(query) },
-      load: function (documents) {
-        if (documents.error !== undefined) {
- 	  console.error(documents.error.type + ": " + documents.error.description + "\n" + documents.error.traceback);
-	  return;
-        }
-	var res = [];
-	for (document_id in documents) {
-	  res.push(new cliqueclique.document.Document(documents[document_id]));
-	}
-	onComplete(res);
+  var url = "/find/json";
+  if (context) {
+    url = "/find/json/" + context;
+  }
+  dojo.xhrGet({
+    url: url,
+    handleAs: "json",
+    content: { query: dojo.toJson(query) },
+    load: function (documents) {
+      if (documents.error !== undefined) {
+	console.error(documents.error.type + ": " + documents.error.description + "\n" + documents.error.traceback);
+	return;
       }
-    });
-  },
+      var res = [];
+      for (document_id in documents) {
+	res.push(new cliqueclique.document.Document(documents[document_id]));
+      }
+      onComplete(res);
+    }
+  });
+}
 
 dojo.declare("cliqueclique.document._AbstractDocumentView", [], {
   _getDocumentAttr: function () { return this.item; },
