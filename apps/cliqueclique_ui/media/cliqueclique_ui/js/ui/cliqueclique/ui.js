@@ -43,12 +43,21 @@ dojo.declare("cliqueclique.ui.Ui", [dijit.layout.BorderContainer], {
     ui.addChild(ui.tabCon);
     ui.tabCon.updateVisibility();
 
+    ui.registerData("panels",
+		    {label: 'Bottom pane',
+		     addChild: function (widget) {
+		       widget.attr("closable", true);
+		       widget.attr("style", 'height:100%; overflow: auto;');
+		       ui.tabCon.addChild(widget);
+		     }},
+                     true);
+
     ui.registerData("documentLink",
 		    {label: 'Comment',
 		     load:function (document) {
-		      var docEdit = new cliqueclique.document.editor.DocumentEditor({closable:true, title: 'New comment', style: 'height:100%; overflow: auto;'});
+		       var docEdit = new cliqueclique.document.editor.DocumentEditor({title: 'New comment'});
 		       docEdit.commentToAdd(document);
-		       ui.tabCon.addChild(docEdit);
+		       ui.getDataDefault("panels").addChild(docEdit);
 		     }},
                      false,
                      "cliqueclique.document.DocumentLink");

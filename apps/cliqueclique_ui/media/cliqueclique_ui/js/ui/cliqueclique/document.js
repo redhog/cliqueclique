@@ -178,7 +178,7 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
     "    <tr>" +
     "      <th>Actions:</th>" +
     "      <td>" +
-    "        <a dojoAttachPoint='graph' target='_new'>Graph</a>" +
+    "        <a dojoAttachPoint='graph' target='_new' dojoAttachEvent='onclick:onGraphClick' href='javascript:void(0);'>Graph</a>" +
     "	     <a dojoAttachPoint='stat' target='_new'>Stat</a>" +
     "      </td>" +
     "    </tr>" +
@@ -199,7 +199,7 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
     this.inherited(arguments);
     dojo.html.set(this.title, this.item.getSubject());
     dojo.html.set(this.body, this.item.getBody());
-    this.graph.href = "/" + this.item.getDocumentId() +  "/graph";
+//    this.graph.href = "/" + this.item.getDocumentId() +  "/graph";
     this.stat.href = "/" + this.item.getDocumentId() +  "/stat";
 
     dojo.query('> *', documentView.childDocuments).forEach(function(domNode, index, arr){
@@ -225,6 +225,20 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
       });
     }, "<", this.item.getDocumentId());
 
+  },
+  onGraphClick: function () {
+   var docGraph = new cliqueclique.document.DocumentGraphView({document: this.item});
+    this.getDataDefault("panels", "cliqueclique.ui.Ui").addChild(docGraph);
+  }
+});
+
+dojo.declare("cliqueclique.document.DocumentGraphView", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
+ templateString: "<iframe dojoAttachPoint='iframe' style='width: 100%; height: 100%;'></iframe>",
+  _setDocumentAttr: function (document) {
+    var documentView = this;
+    this.inherited(arguments);
+    dojo.attr(this.iframe, "src", "/" + this.item.getDocumentId() +  "/graph");
+    this.attr("title", "Graph: " + this.item.getSubject());
   }
 });
 
