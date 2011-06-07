@@ -1,7 +1,9 @@
 dojo.provide("cliqueclique.document.DocumentMenu");
 
-dojo.require("cliqueclique.document");
 dojo.require("cliqueclique.document.DocumentLink");
+
+dojo.require('dijit.Menu');
+dojo.require('dijit.MenuItem');
 
 dojo.declare("cliqueclique.document.DocumentMenu", [dijit.Menu], {
   _openMyself: function (e) {

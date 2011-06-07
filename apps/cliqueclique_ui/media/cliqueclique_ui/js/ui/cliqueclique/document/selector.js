@@ -1,7 +1,8 @@
 dojo.provide("cliqueclique.document.selector");
 
 dojo.require("cliqueclique.popuptree");
-dojo.require("cliqueclique.document");
+dojo.require("cliqueclique.document.Document");
+dojo.require("cliqueclique.document._AbstractDocumentView");
 dojo.require("cliqueclique.document.tree");
 dojo.require("dijit.Tree");
 dojo.require("dijit.form.DropDownButton");

@@ -1,6 +1,7 @@
 dojo.provide("cliqueclique.document.DocumentView");
 
-dojo.require("cliqueclique.document");
+dojo.require("cliqueclique.document.Document");
+dojo.require("cliqueclique.document._AbstractDocumentView");
 dojo.require("cliqueclique.document.DocumentLink");
 dojo.require("cliqueclique.document.DocumentMenu");
 dojo.require("cliqueclique.document.DocumentGraphView");

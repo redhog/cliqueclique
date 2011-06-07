@@ -1,7 +1,7 @@
 dojo.provide("cliqueclique.document.tree");
 
 dojo.require("dijit.Tree");
-dojo.require("cliqueclique.document");
+dojo.require("cliqueclique.document.Document");
 
 cliqueclique.document.tree.oldTree = dijit.Tree;
 dojo.declare("dijit.Tree", [cliqueclique.document.tree.oldTree], {

@@ -1,6 +1,7 @@
 dojo.provide("cliqueclique.document.DocumentLink");
 
-dojo.require("cliqueclique.document");
+dojo.require("cliqueclique.document.DocumentMenu");
+dojo.require("cliqueclique.document._AbstractDocumentView");
 
 dojo.declare("cliqueclique.document.DocumentLink", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
   templateString: "<span><a href='javascript: void(0);' dojoAttachPoint='text' dojoAttachEvent='onclick:onClick'>NO SUBJECT SET YET</a> </span>",

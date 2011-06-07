@@ -4,7 +4,7 @@ dojo.require("cliqueclique.document.tree");
 dojo.require("cliqueclique.document.selector");
 dojo.require("cliqueclique.document.editor");
 dojo.require("cliqueclique.document.DocumentView");
-dojo.require("cliqueclique.document");
+dojo.require("cliqueclique.document.Document");
 dojo.require("cliqueclique.nodeinfo");
 dojo.require("dijit.layout.BorderContainer");
 dojo.require("dijit.layout.ContentPane");
