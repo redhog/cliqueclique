@@ -44,6 +44,20 @@ dojo.declare("cliqueclique.document.Document", [], {
       }
     }
   },
+  getParentDocumentId: function () {
+    try {
+      return this.json_data.document.content.parts[0].header.parent_document_id;
+    } catch(err) {
+      return undefined;
+    }
+  },
+  getChildDocumentId: function () {
+    try {
+      return this.json_data.document.content.parts[0].header.child_document_id;
+    } catch(err) {
+      return undefined;
+    }
+  },
   getBody: function () {
     var parts = this.getParts();
     try {
@@ -81,10 +95,12 @@ cliqueclique.document.Document.post = function (json_data__document, callback) {
     handleAs: "json",
     content: { document: dojo.toJson(json_data__document) },
     load: function(data) {
-      if (data.error != undefined)
+      if (data.error != undefined) {
         callback(null, data.error);
-      else
+      } else {
+        cliqueclique.document.Document.updated();
         callback(cliqueclique.document.Document(data));
+      }
     },
     error: function(error) {
       callback(null, error);
@@ -114,6 +130,9 @@ cliqueclique.document.Document.find = function (onComplete, query, context) {
     }
   });
 }
+
+cliqueclique.document.Document.updated = function () {};
+
 
 dojo.declare("cliqueclique.document._AbstractDocumentView", [], {
   _getDocumentAttr: function () { return this.item; },
