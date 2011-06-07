@@ -1,9 +1,4 @@
-dojo.provide("cliqueclique.document");
-
-dojo.require("dijit.layout.ContentPane");
-
-dojo.require('dijit.Menu');
-dojo.require('dijit.MenuItem');
+dojo.provide("cliqueclique.document.Document");
 
 dojo.declare("cliqueclique.document.Document", [], {
   constructor: function (json_data) {
@@ -132,9 +127,3 @@ cliqueclique.document.Document.find = function (onComplete, query, context) {
 }
 
 cliqueclique.document.Document.updated = function () {};
-
-
-dojo.declare("cliqueclique.document._AbstractDocumentView", [], {
-  _getDocumentAttr: function () { return this.item; },
-  _setDocumentAttr: function (document) { this.item = document; }
-});
