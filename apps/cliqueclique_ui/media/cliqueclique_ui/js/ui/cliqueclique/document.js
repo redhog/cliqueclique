@@ -140,7 +140,7 @@ dojo.declare("cliqueclique.document._AbstractDocumentView", [], {
 });
 
 dojo.declare("cliqueclique.document.DocumentLink", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
-  templateString: "<span><a href='javascript: void(0);' dojoAttachPoint='text' dojoAttachEvent='onclick:onClick'></a> </span>",
+  templateString: "<span><a href='javascript: void(0);' dojoAttachPoint='text' dojoAttachEvent='onclick:onClick'>NO SUBJECT SET YET</a> </span>",
 
   postCreate: function () {
     var res = this.inherited(arguments);
@@ -161,7 +161,30 @@ dojo.declare("cliqueclique.document.DocumentLink", [dijit._Widget, dijit._Templa
 });
 
 dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
- templateString: "<div><h1><span dojoAttachPoint='title'></span> <a dojoAttachPoint='graph' target='_new'>Graph</a> <a dojoAttachPoint='stat' target='_new'>Stat</a></h1><p dojoAttachPoint='body'></p></div>",
+  templateString: "" +
+    "<div>" +
+    "  <table>" +
+    "    <tr>" +
+    "      <th colspan='2' dojoAttachPoint='title'></td>" +
+    "    </tr>" +
+    "    <tr>" +
+    "      <th>Parents:</th>" +
+    "      <td dojoAttachPoint='parentDocuments'></td>" +
+    "    </tr>" +
+    "    <tr>" +
+    "      <th>Children:</th>" +
+    "      <td dojoAttachPoint='childDocuments'></td>" +
+    "    </tr>" +
+    "    <tr>" +
+    "      <th>Actions:</th>" +
+    "      <td>" +
+    "        <a dojoAttachPoint='graph' target='_new'>Graph</a>" +
+    "	     <a dojoAttachPoint='stat' target='_new'>Stat</a>" +
+    "      </td>" +
+    "    </tr>" +
+    "  </table>" +
+    "  <p dojoAttachPoint='body'></p>" +
+    "</div>",
 
   postCreate: function () {
     var res = this.inherited(arguments);
@@ -172,11 +195,36 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
     return res;
   },
   _setDocumentAttr: function (document) {
+    var documentView = this;
     this.inherited(arguments);
     dojo.html.set(this.title, this.item.getSubject());
     dojo.html.set(this.body, this.item.getBody());
     this.graph.href = "/" + this.item.getDocumentId() +  "/graph";
     this.stat.href = "/" + this.item.getDocumentId() +  "/stat";
+
+    dojo.query('> *', documentView.childDocuments).forEach(function(domNode, index, arr){
+      dijit.byNode(domNode).destroyRecursive();
+    });
+
+    cliqueclique.document.Document.find(function (children) {
+      dojo.forEach(children, function (child) {
+        var link = new cliqueclique.document.DocumentLink({document: child});
+        dojo.place(link.domNode, documentView.childDocuments);
+      });
+    }, ">", this.item.getDocumentId());
+
+
+    dojo.query('> *', documentView.parentDocuments).forEach(function(domNode, index, arr){
+      dijit.byNode(domNode).destroyRecursive();
+    });
+
+    cliqueclique.document.Document.find(function (parents) {
+      dojo.forEach(parents, function (parent) {
+        var link = new cliqueclique.document.DocumentLink({document: parent});
+        dojo.place(link.domNode, documentView.parentDocuments);
+      });
+    }, "<", this.item.getDocumentId());
+
   }
 });
 
