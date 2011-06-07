@@ -4,7 +4,6 @@ dojo.require("cliqueclique.document.Document");
 dojo.require("cliqueclique.document._AbstractDocumentView");
 dojo.require("cliqueclique.document.DocumentLink");
 dojo.require("cliqueclique.document.DocumentMenu");
-dojo.require("cliqueclique.document.DocumentGraphView");
 
 dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
   templateString: "" +
@@ -20,13 +19,6 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
     "    <tr>" +
     "      <th>Children:</th>" +
     "      <td dojoAttachPoint='childDocuments'></td>" +
-    "    </tr>" +
-    "    <tr>" +
-    "      <th>Actions:</th>" +
-    "      <td>" +
-    "        <a dojoAttachPoint='graph' target='_new' dojoAttachEvent='onclick:onGraphClick' href='javascript:void(0);'>Graph</a>" +
-    "	     <a dojoAttachPoint='stat' target='_new'>Stat</a>" +
-    "      </td>" +
     "    </tr>" +
     "  </table>" +
     "  <p dojoAttachPoint='body'></p>" +
@@ -45,8 +37,6 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
     this.inherited(arguments);
     dojo.html.set(this.title, this.item.getSubject());
     dojo.html.set(this.body, this.item.getBody());
-//    this.graph.href = "/" + this.item.getDocumentId() +  "/graph";
-    this.stat.href = "/" + this.item.getDocumentId() +  "/stat";
 
     dojo.query('> *', documentView.childDocuments).forEach(function(domNode, index, arr){
       dijit.byNode(domNode).destroyRecursive();
@@ -71,9 +61,5 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
       });
     }, "<", this.item.getDocumentId());
 
-  },
-  onGraphClick: function () {
-   var docGraph = new cliqueclique.document.DocumentGraphView({document: this.item});
-    this.getDataDefault("panels", "cliqueclique.ui.Ui").addChild(docGraph);
   }
 });

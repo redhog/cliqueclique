@@ -4,6 +4,9 @@ dojo.require("cliqueclique.document.tree");
 dojo.require("cliqueclique.document.selector");
 dojo.require("cliqueclique.document.editor");
 dojo.require("cliqueclique.document.DocumentView");
+dojo.require("cliqueclique.document.DocumentGraphView");
+dojo.require("cliqueclique.document.DocumentStatView");
+dojo.require("cliqueclique.document.DocumentInfoView");
 dojo.require("cliqueclique.document.Document");
 dojo.require("cliqueclique.nodeinfo");
 dojo.require("dijit.layout.BorderContainer");
@@ -59,6 +62,30 @@ dojo.declare("cliqueclique.ui.Ui", [dijit.layout.BorderContainer], {
 		       var docEdit = new cliqueclique.document.editor.DocumentEditor({title: 'New comment'});
 		       docEdit.commentToAdd(document);
 		       ui.getDataDefault("panels").addChild(docEdit);
+		     }},
+                     false,
+                     "cliqueclique.document.DocumentLink");
+    ui.registerData("documentLink",
+		    {label: 'Graph',
+		     load:function (document) {
+		       var docGraph = new cliqueclique.document.DocumentGraphView({document: document});
+		       ui.getDataDefault("panels").addChild(docGraph);
+		     }},
+                     false,
+                     "cliqueclique.document.DocumentLink");
+    ui.registerData("documentLink",
+		    {label: 'Stat',
+		     load:function (document) {
+		       var docStat = new cliqueclique.document.DocumentStatView({document: document});
+		       ui.getDataDefault("panels").addChild(docStat);
+		     }},
+                     false,
+                     "cliqueclique.document.DocumentLink");
+    ui.registerData("documentLink",
+		    {label: 'Info',
+		     load:function (document) {
+		       var docInfo = new cliqueclique.document.DocumentInfoView({document: document});
+		       ui.getDataDefault("panels").addChild(docInfo);
 		     }},
                      false,
                      "cliqueclique.document.DocumentLink");
