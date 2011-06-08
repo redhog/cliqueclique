@@ -12,9 +12,13 @@ dojo.declare("cliqueclique.document.editor.DocumentEditor", [dijit._Widget, diji
                   "    <tr>" +
                   "     <th>Comment to</th>" +
                   "     <td><div dojoType='cliqueclique.document.selector.DocumentSelector' dojoAttachPoint='commentTo'></div></td>" +
+                  "     <th>Hidden comment to</th>" +
+                  "     <td><div dojoType='cliqueclique.document.selector.DocumentSelector' dojoAttachPoint='commentToHidden'></div></td>" +
                   "    </tr>" +
                   "    <tr>" +
                   "     <th>Has comments in</th>" +
+                  "     <td><div dojoType='cliqueclique.document.selector.DocumentSelector' dojoAttachPoint='commentInHidden'></div></td>" +
+                  "     <th>Has back-linkingcomments in</th>" +
                   "     <td><div dojoType='cliqueclique.document.selector.DocumentSelector' dojoAttachPoint='commentIn'></div></td>" +
                   "    </tr>" +
                   "    <tr>" +
@@ -30,16 +34,15 @@ dojo.declare("cliqueclique.document.editor.DocumentEditor", [dijit._Widget, diji
    send: function () {
      var editor = this;
 
-     var commentTo = this.commentTo.attr("links");
-     var commentIn = this.commentIn.attr("links");
+     var links = [{src: "item", dst:"document", reversed: false, items: this.commentTo.attr("links")},
+		  {src: "document", dst:"item", reversed: true, items: this.commentToHidden.attr("links")},
+		  {src: "document", dst:"item", reversed: false, items: this.commentInHidden.attr("links")},
+		  {src: "item", dst:"document", reversed: true, items: this.commentIn.attr("links")}];
 
      var header = {};
-
 /*
-     if (commentTo.length > 0)
-       header.parent_document_id = commentTo[0].getDocumentId();
-     if (commentIn.length > 0)
-       header.child_document_id = commentIn[0].getDocumentId();
+     header.parent_document_id = xyzzy.getDocumentId();
+     header.child_document_id = xyzzy.getDocumentId();
 */
 
      cliqueclique.document.Document.post(
@@ -59,12 +62,15 @@ dojo.declare("cliqueclique.document.editor.DocumentEditor", [dijit._Widget, diji
 	   return;
 	 }
 
-	 dojo.forEach(commentTo, function (commentToItem) {
-	   cliqueclique.document.Document.post_link(commentToItem, document, function (document, error) {
-	     if (document == null) {
-	       console.error(error);
-	       return;
-	     }
+	 dojo.forEach(links, function (link) {
+	   dojo.forEach(link.items, function (item) {
+	     var params = {document: document, item: item}
+	     cliqueclique.document.Document.post_link(params[link.src], params[link.dst], function (document, error) {
+	       if (document == null) {
+		 console.error(error);
+		 return;
+	       }
+	     }, link.reversed);
 	   });
 	 });
 
