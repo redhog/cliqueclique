@@ -40,7 +40,7 @@ cliqueclique.document.tree.RootDocument = new cliqueclique.document.tree.RootDoc
 
 dojo.declare("cliqueclique.document.tree.DocumentTreeModel", [], {
   root_query: 'bookmarked',
-  child_query: ">",
+  child_query: "->",
 
   constructor: function () {
     var tree = this;

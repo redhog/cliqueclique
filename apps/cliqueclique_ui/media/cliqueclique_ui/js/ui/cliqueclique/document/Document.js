@@ -103,6 +103,38 @@ cliqueclique.document.Document.post = function (json_data__document, callback) {
   });
 }
 
+cliqueclique.document.Document.post_link = function (src, dst, callback, reversed, subject, parts) {
+  if (subject === undefined)
+    if (reversed)
+      subject = src.getSubject();
+    else
+      subject = dst.getSubject();
+
+  var direction = reversed ? "reversed" : "natural";
+
+  var real_parts = [{"__email_message_Message__": true,
+		     "body": "",
+		     "header": {"part_type": "link",
+				"link_direction": direction,
+				"subject": subject,
+				"Content-Type": "text/plain; charset=\"utf-8\""}}];
+  if (parts !== undefined)
+    dojo.forEach(parts, function (part) {
+      real_parts.push(part);
+    });
+
+  cliqueclique.document.Document.post(
+    {
+      "__smime_MIMESigned__": true,
+      "header": {},
+      "parts": [{"__email_mime_multipart_MIMEMultipart__": true,
+		 "parts": real_parts,
+		 "header": {"parent_document_id": src.getDocumentId(),
+			    "child_document_id": dst.getDocumentId()}}]},
+    callback
+  );
+}
+
 cliqueclique.document.Document.find = function (onComplete, query, context) {
   var url = "/find/json";
   if (context) {

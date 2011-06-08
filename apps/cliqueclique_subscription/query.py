@@ -298,7 +298,7 @@ class Property(Query):
                                             sql.Const(self.value))))]
         return context.new(joins=joins)
 
-class Link(ListQuery):
+class ChildLink(ListQuery):
     symbol = "->"
 
     def _compile(self, context):
@@ -308,8 +308,8 @@ class Link(ListQuery):
         # Signed->Multipart->Content
 
         return OrPipe(
-            Pipe(And(Pipe(Parts(), Part(), Part(), Property("part_type", "parent_link"), Property("link_direction", "reversed"), *self.subs)), Child()),
             Pipe(And(Pipe(Parts(), Part(), Part(), Property("part_type", "child_link"), Property("link_direction", "natural"), *self.subs)), Child()),
+            Pipe(And(Pipe(Parts(), Part(), Part(), Property("part_type", "parent_link"), Property("link_direction", "reversed"), *self.subs)), Child()),
 
             Pipe(Child(), And(Pipe(Parts(), Part(), Part(), Property("part_type", "parent_link"), Property("link_direction", "natural"), *self.subs))),
             Pipe(Child(), And(Pipe(Parts(), Part(), Part(), Property("part_type", "child_link"), Property("link_direction", "reversed"), *self.subs))),
@@ -318,5 +318,22 @@ class Link(ListQuery):
             Pipe(Parent(), And(Pipe(Parts(), Part(), Part(), Property("part_type", "link"), Property("link_direction", "reversed"), *self.subs)), Parent())
             )._compile(context)
 
-    def __repr__(self):
-        return ":"
+class ParentLink(ListQuery):
+    symbol = "<-"
+
+    def _compile(self, context):
+        context.assert_end('cliqueclique_subscription_documentsubscription')
+
+        # Parts structure:
+        # Signed->Multipart->Content
+
+        return OrPipe(
+            Pipe(And(Pipe(Parts(), Part(), Part(), Property("part_type", "child_link"), Property("link_direction", "reversed"), *self.subs)), Parent()),
+            Pipe(And(Pipe(Parts(), Part(), Part(), Property("part_type", "parent_link"), Property("link_direction", "natural"), *self.subs)), Parent()),
+
+            Pipe(Parent(), And(Pipe(Parts(), Part(), Part(), Property("part_type", "parent_link"), Property("link_direction", "reversed"), *self.subs))),
+            Pipe(Parent(), And(Pipe(Parts(), Part(), Part(), Property("part_type", "child_link"), Property("link_direction", "natural"), *self.subs))),
+
+            Pipe(Child(), And(Pipe(Parts(), Part(), Part(), Property("part_type", "link"), Property("link_direction", "reversed"), *self.subs)), Child()),
+            Pipe(Parent(), And(Pipe(Parts(), Part(), Part(), Property("part_type", "link"), Property("link_direction", "natural"), *self.subs)), Parent())
+            )._compile(context)

@@ -47,7 +47,7 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
         var link = new cliqueclique.document.DocumentLink({document: child});
         dojo.place(link.domNode, documentView.childDocuments);
       });
-    }, ">", this.item.getDocumentId());
+    }, "->", this.item.getDocumentId());
 
 
     dojo.query('> *', documentView.parentDocuments).forEach(function(domNode, index, arr){
@@ -59,7 +59,7 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
         var link = new cliqueclique.document.DocumentLink({document: parent});
         dojo.place(link.domNode, documentView.parentDocuments);
       });
-    }, "<", this.item.getDocumentId());
+    }, "<-", this.item.getDocumentId());
 
   }
 });

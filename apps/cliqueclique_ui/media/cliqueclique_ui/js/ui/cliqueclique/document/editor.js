@@ -34,10 +34,13 @@ dojo.declare("cliqueclique.document.editor.DocumentEditor", [dijit._Widget, diji
      var commentIn = this.commentIn.attr("links");
 
      var header = {};
+
+/*
      if (commentTo.length > 0)
        header.parent_document_id = commentTo[0].getDocumentId();
      if (commentIn.length > 0)
        header.child_document_id = commentIn[0].getDocumentId();
+*/
 
      cliqueclique.document.Document.post(
        {
@@ -52,11 +55,21 @@ dojo.declare("cliqueclique.document.editor.DocumentEditor", [dijit._Widget, diji
 	            "header": header}]},
        function (document, error) {
 	 if (document == null) {
-	   console.log(error);
+	   console.error(error);
 	   return;
 	 }
- 	 console.log(document);
+
+	 dojo.forEach(commentTo, function (commentToItem) {
+	   cliqueclique.document.Document.post_link(commentToItem, document, function (document, error) {
+	     if (document == null) {
+	       console.error(error);
+	       return;
+	     }
+	   });
+	 });
+
          document.getDocumentLink(editor)();
+
        });
    },
    commentToAdd: function (document) {
