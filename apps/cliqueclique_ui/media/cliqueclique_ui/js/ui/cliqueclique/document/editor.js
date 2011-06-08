@@ -18,7 +18,7 @@ dojo.declare("cliqueclique.document.editor.DocumentEditor", [dijit._Widget, diji
                   "    <tr>" +
                   "     <th>Has comments in</th>" +
                   "     <td><div dojoType='cliqueclique.document.selector.DocumentSelector' dojoAttachPoint='commentInHidden'></div></td>" +
-                  "     <th>Has back-linkingcomments in</th>" +
+                  "     <th>Has back-linking comments in</th>" +
                   "     <td><div dojoType='cliqueclique.document.selector.DocumentSelector' dojoAttachPoint='commentIn'></div></td>" +
                   "    </tr>" +
                   "    <tr>" +

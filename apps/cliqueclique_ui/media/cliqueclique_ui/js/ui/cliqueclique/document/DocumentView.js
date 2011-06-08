@@ -30,6 +30,11 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
     menu.startup();
     menu.bindDomNode(this.title);
 
+    // Update stuff if we need to (mainly links)
+    dojo.connect(cliqueclique.document.Document, "updated", this, function () {
+      this.attr("document", this.attr("document"));
+    });
+
     return res;
   },
   _setDocumentAttr: function (document) {
