@@ -69,6 +69,10 @@ dojo.declare("cliqueclique.document.Document", [], {
       }
     }
   },
+  getObjectId: function () {
+    // Some random hashable the value that changes if any attributes changes
+    return this.json_data.document.document_id + ":" + this.json_data.bookmarked + ":" + this.json_data.read + ":" + this.json_data.local_is_subscribed;
+  },
   getDocumentId: function () {
     return this.json_data.document.document_id;
   },
@@ -80,6 +84,22 @@ dojo.declare("cliqueclique.document.Document", [], {
       // Do something intelligent here
     };
   },
+  setAttribute: function (name, value) {
+    if (value) value = "true";
+    if (value === undefined) value = "toggle";
+    if (!value) value = "";
+    dojo.xhrGet({
+      url: "/" + this.getDocumentId() + "/set?" + name + "=" + value,
+      load: function(data) {
+        if (data.error !== undefined) {
+	  console.error(data.error.type + ": " + data.error.description + "\n" + data.error.traceback);
+	  return;
+        }
+	cliqueclique.document.Document.updated();
+      }
+    });
+  }
+
 });
 
 cliqueclique.document.Document.post = function (json_data__document, callback) {

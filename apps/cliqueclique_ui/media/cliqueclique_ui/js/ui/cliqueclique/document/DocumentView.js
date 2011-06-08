@@ -4,13 +4,23 @@ dojo.require("cliqueclique.document.Document");
 dojo.require("cliqueclique.document._AbstractDocumentView");
 dojo.require("cliqueclique.document.DocumentLink");
 dojo.require("cliqueclique.document.DocumentMenu");
+dojo.require("dijit.form.CheckBox");
 
 dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
+  widgetsInTemplate: true,
   templateString: "" +
     "<div>" +
     "  <table>" +
     "    <tr>" +
     "      <th colspan='2' dojoAttachPoint='title'></td>" +
+    "    </tr>" +
+    "    <tr>" +
+    "      <th>Flags:</th>" +
+    "      <td>" +
+    "        <input dojoType='dijit.form.CheckBox' dojoAttachPoint='bookmarkedInput' dojoAttachEvent='onClick:onBookmarkedInputClick'></input><label dojoAttachPoint='bookmarkedLabel'>bookmarked</label>" +
+    "        <input dojoType='dijit.form.CheckBox' dojoAttachPoint='readInput' dojoAttachEvent='onClick:onReadInputClick'></input><label dojoAttachPoint='readLabel'>read</label>" +
+    "        <input dojoType='dijit.form.CheckBox' dojoAttachPoint='subscribedInput' dojoAttachEvent='onClick:onSubscribedInputClick'></input><label dojoAttachPoint='subscribedInput'>subscribed</label>" +
+    "      </td>" +
     "    </tr>" +
     "    <tr>" +
     "      <th>Parents:</th>" +
@@ -31,17 +41,24 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
     menu.bindDomNode(this.title);
 
     // Update stuff if we need to (mainly links)
-    dojo.connect(cliqueclique.document.Document, "updated", this, function () {
-      this.attr("document", this.attr("document"));
-    });
+    dojo.connect(cliqueclique.document.Document, "updated", this, "refresh");
 
     return res;
+  },
+  refresh: function () {
+    var view = this;
+    cliqueclique.document.Document.find(function (documents) {
+      view.attr("document", documents[0]);
+    }, [], view.attr("document").getDocumentId());
   },
   _setDocumentAttr: function (document) {
     var documentView = this;
     this.inherited(arguments);
     dojo.html.set(this.title, this.item.getSubject());
     dojo.html.set(this.body, this.item.getBody());
+    this.bookmarkedInput.attr("value", this.item.json_data.bookmarked);
+    this.readInput.attr("value", this.item.json_data.read);
+    this.subscribedInput.attr("value", this.item.json_data.local_is_subscribed);
 
     dojo.query('> *', documentView.childDocuments).forEach(function(domNode, index, arr){
       dijit.byNode(domNode).destroyRecursive();
@@ -54,7 +71,6 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
       });
     }, "->", this.item.getDocumentId());
 
-
     dojo.query('> *', documentView.parentDocuments).forEach(function(domNode, index, arr){
       dijit.byNode(domNode).destroyRecursive();
     });
@@ -66,5 +82,14 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
       });
     }, "<-", this.item.getDocumentId());
 
+  },
+  onBookmarkedInputClick: function () {
+   this.item.setAttribute("bookmarked");
+  },
+  onReadInputClick: function () {
+   this.item.setAttribute("read");
+  },
+  onSubscribedInputClick: function () {
+   this.item.setAttribute("local_is_subscribed");
   }
 });

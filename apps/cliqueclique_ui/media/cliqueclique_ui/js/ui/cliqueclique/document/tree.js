@@ -7,9 +7,11 @@ cliqueclique.document.tree.oldTree = dijit.Tree;
 dojo.declare("dijit.Tree", [cliqueclique.document.tree.oldTree], {
   refresh: function(){
     var model = this.model;
-    var node = this._getRootOrFirstNode();
+    var node = this.rootNode;
+
     loaded_items = [node.item];
     unloaded_items = [node.item];
+
     while((node = this._getNextNode(node)) != null)
       if (node.state == "LOADED")
         loaded_items.push(node.item);
@@ -24,6 +26,7 @@ dojo.declare("dijit.Tree", [cliqueclique.document.tree.oldTree], {
     dojo.forEach(unloaded_items, function (item) {
       model.onChange(item);
     });
+
   },
   postCreate: function(){
     this.inherited(arguments);
@@ -34,6 +37,7 @@ dojo.declare("dijit.Tree", [cliqueclique.document.tree.oldTree], {
 dojo.declare("cliqueclique.document.tree.RootDocumentClass", [cliqueclique.document.Document], {
   constructor: function () { },
   getSubject: function () { return 'The roo'; },
+  getObjectId: function () { return null; },
   getDocumentId: function () { return null; },
 });
 cliqueclique.document.tree.RootDocument = new cliqueclique.document.tree.RootDocumentClass();
@@ -56,7 +60,7 @@ dojo.declare("cliqueclique.document.tree.DocumentTreeModel", [], {
   getChildren: function (parentItem, onComplete) {
     cliqueclique.document.Document.find(onComplete, parentItem.getDocumentId() ? this.child_query : this.root_query, parentItem.getDocumentId())
   },
-  getIdentity: function (item) { return item.getDocumentId(); },
+  getIdentity: function (item) { return item.getObjectId(); },
   getLabel: function (item) { return item.getSubject(); },
   getRoot: function (onItem) { onItem(cliqueclique.document.tree.RootDocument); },
   isItem: function (something) { return true; },
