@@ -23,6 +23,13 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
     "      </td>" +
     "    </tr>" +
     "    <tr>" +
+    "      <th>Download:</th>" +
+    "      <td>" +
+    "        <a dojoAttachPoint='downloadAsMime' target='_new'>as mime</a>" +
+    "        <a dojoAttachPoint='downloadAsJson' target='_new'>as json</a>" +
+    "      </td>" +
+    "    </tr>" +
+    "    <tr>" +
     "      <th>Parents:</th>" +
     "      <td dojoAttachPoint='parentDocuments'></td>" +
     "    </tr>" +
@@ -56,6 +63,10 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
     this.inherited(arguments);
     dojo.html.set(this.title, this.item.getSubject());
     dojo.html.set(this.body, this.item.getBody());
+
+    this.downloadAsMime.href = "/find/mime/" + this.item.getDocumentId();
+    this.downloadAsJson.href = "/find/json/" + this.item.getDocumentId();
+
     this.bookmarkedInput.attr("value", this.item.json_data.bookmarked);
     this.readInput.attr("value", this.item.json_data.read);
     this.subscribedInput.attr("value", this.item.json_data.local_is_subscribed);
