@@ -39,7 +39,7 @@ dojo.declare("cliqueclique.document.editor.DocumentEditor", [dijit._Widget, diji
 		  {src: "document", dst:"item", reversed: false, items: this.commentInHidden.attr("links")},
 		  {src: "item", dst:"document", reversed: true, items: this.commentIn.attr("links")}];
 
-     var header = {};
+     var header = {subject: this.subject.attr("value")};
 /*
      header.parent_document_id = xyzzy.getDocumentId();
      header.child_document_id = xyzzy.getDocumentId();
@@ -53,8 +53,7 @@ dojo.declare("cliqueclique.document.editor.DocumentEditor", [dijit._Widget, diji
 		    "parts": [{"__email_message_Message__": true,
 	                       "body": this.content.attr("value"),
 			       "header": {"part_type": "content",
-	                                  "subject": this.subject.attr("value"),
-					  "Content-Type": "text/plain; charset=\"utf-8\""}}],
+	                                  "Content-Type": "text/plain; charset=\"utf-8\""}}],
 	            "header": header}]},
        function (document, error) {
 	 if (document == null) {

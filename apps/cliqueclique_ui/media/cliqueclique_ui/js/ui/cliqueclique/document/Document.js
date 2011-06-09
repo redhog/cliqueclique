@@ -26,16 +26,12 @@ dojo.declare("cliqueclique.document.Document", [], {
   getSubject: function () {
     var parts = this.getParts();
     try {
-      return parts.content.header.subject;
+      return this.json_data.document.content.parts[0].header.subject;
     } catch(err) {
       try {
-	return this.json_data.document.content.parts[0].header.subject;
+	return this.json_data.document.document_id.substring(0, 5);
       } catch(err) {
-        try {
-          return this.json_data.document.document_id.substring(0, 5);
-        } catch(err) {
-	  return undefined;
-        }
+	return undefined;
       }
     }
   },
@@ -136,7 +132,6 @@ cliqueclique.document.Document.post_link = function (src, dst, callback, reverse
 		     "body": "",
 		     "header": {"part_type": "link",
 				"link_direction": direction,
-				"subject": subject,
 				"Content-Type": "text/plain; charset=\"utf-8\""}}];
   if (parts !== undefined)
     dojo.forEach(parts, function (part) {
@@ -150,7 +145,8 @@ cliqueclique.document.Document.post_link = function (src, dst, callback, reverse
       "parts": [{"__email_mime_multipart_MIMEMultipart__": true,
 		 "parts": real_parts,
 		 "header": {"parent_document_id": src.getDocumentId(),
-			    "child_document_id": dst.getDocumentId()}}]},
+	                    "child_document_id": dst.getDocumentId(),
+	                    "subject": subject}}]},
     callback
   );
 }
