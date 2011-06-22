@@ -61,6 +61,29 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
   _setDocumentAttr: function (document) {
     var documentView = this;
     this.inherited(arguments);
+
+    dojo.query('> *', documentView.childDocuments).forEach(function(domNode, index, arr){
+      dijit.byNode(domNode).destroyRecursive();
+    });
+
+    if (!this.item) {
+      dojo.html.set(this.title, "No document selected");
+      dojo.html.set(this.body, "");
+
+      this.downloadAsMime.href = "";
+      this.downloadAsJson.href = "";
+
+      this.bookmarkedInput.attr("value", false);
+      this.readInput.attr("value", false);
+      this.subscribedInput.attr("value", false);
+
+      return;
+    }
+
+    if (!this.item.json_data.read) {
+      this.item.setAttribute("read", true);
+    }
+
     dojo.html.set(this.title, this.item.getSubject());
     dojo.html.set(this.body, this.item.getBody());
 
@@ -70,10 +93,6 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
     this.bookmarkedInput.attr("value", this.item.json_data.bookmarked);
     this.readInput.attr("value", this.item.json_data.read);
     this.subscribedInput.attr("value", this.item.json_data.local_is_subscribed);
-
-    dojo.query('> *', documentView.childDocuments).forEach(function(domNode, index, arr){
-      dijit.byNode(domNode).destroyRecursive();
-    });
 
     cliqueclique.document.Document.find(function (children) {
       dojo.forEach(children, function (child) {

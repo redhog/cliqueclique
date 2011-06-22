@@ -36,7 +36,7 @@ dojo.declare("dijit.Tree", [cliqueclique.document.tree.oldTree], {
 
 dojo.declare("cliqueclique.document.tree.RootDocumentClass", [cliqueclique.document.Document], {
   constructor: function () { },
-  getSubject: function () { return 'The roo'; },
+  getSubject: function () { return 'The root'; },
   getObjectId: function () { return null; },
   getDocumentId: function () { return null; },
 });
@@ -58,6 +58,9 @@ dojo.declare("cliqueclique.document.tree.DocumentTreeModel", [], {
 
   fetchItemByIdentity: function (keywordArgs) {},
   getChildren: function (parentItem, onComplete) {
+    if (parentItem.json_data && !parentItem.json_data.local_is_subscribed) {
+      parentItem.setAttribute("local_is_subscribed", true); // Don't signal changes here or we'll get an infinite loop
+    }
     cliqueclique.document.Document.find(onComplete, parentItem.getDocumentId() ? this.child_query : this.root_query, parentItem.getDocumentId())
   },
   getIdentity: function (item) { return item.getObjectId(); },

@@ -80,10 +80,13 @@ dojo.declare("cliqueclique.document.Document", [], {
       // Do something intelligent here
     };
   },
-  setAttribute: function (name, value) {
+  setAttribute: function (name, value, onComplete) {
     if (value) value = "true";
     if (value === undefined) value = "toggle";
     if (!value) value = "";
+
+    this.json_data[name] = value; // Set it already client-side, since we might not actually reload the item
+
     dojo.xhrGet({
       url: "/" + this.getDocumentId() + "/set?" + name + "=" + value,
       load: function(data) {
@@ -91,7 +94,10 @@ dojo.declare("cliqueclique.document.Document", [], {
 	  console.error(data.error.type + ": " + data.error.description + "\n" + data.error.traceback);
 	  return;
         }
-	cliqueclique.document.Document.updated();
+	if (onComplete)
+	  onComplete();
+	else
+  	  cliqueclique.document.Document.updated();
       }
     });
   }
