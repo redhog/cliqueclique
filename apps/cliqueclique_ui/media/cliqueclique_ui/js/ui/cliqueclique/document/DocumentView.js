@@ -55,7 +55,10 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
   refresh: function () {
     var view = this;
     cliqueclique.document.Document.find(function (documents) {
-      view.attr("document", documents[0]);
+      var document = documents[0];
+      // Check that we haven't changed document since the refresh was asked for...
+      if (document.getDocumentId() == view.attr("document").getDocumentId())
+        view.attr("document", document);
     }, [], view.attr("document").getDocumentId());
   },
   _setDocumentAttr: function (document) {
