@@ -74,9 +74,18 @@ dojo.declare("cliqueclique.ui.Dialog", [dijit.Dialog], {
   }
 });
 
+dojo.declare("cliqueclique.ui._ImportDialogContent", [dijit._Widget, dijit._Templated], {
+  widgetsInTemplate: true,
+  templateString: "" +
+    "<b>Some content should go here</b>"
+});
+
 dojo.declare("cliqueclique.ui.ImportDialog", [cliqueclique.ui.Dialog], {
   title: "Import document",
-  content: "Something should go here"
+  postCreate: function () {
+    this.inherited(arguments);
+    this.attr("content", new cliqueclique.ui._ImportDialogContent());    
+  }
 });
 
 dojo.declare("cliqueclique.ui.Ui", [dijit.layout.BorderContainer], {
