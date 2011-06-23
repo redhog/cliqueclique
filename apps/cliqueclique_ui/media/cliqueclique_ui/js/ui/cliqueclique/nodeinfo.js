@@ -18,7 +18,7 @@ dijit._Widget.prototype.getData = function (name, namespace) {
   if (namespace === undefined)
     namespace = this.declaredClass;
   var parentData = [];
-  var parent = this.getHtmlParent();
+  var parent = this.dataParent || this.getHtmlParent();
   if (parent)
    parentData = parent.getData(name, namespace);
   if (this.dataRegistry == null || this.dataRegistry.values[namespace + "." + name] == undefined)
@@ -28,7 +28,7 @@ dijit._Widget.prototype.getData = function (name, namespace) {
 
 dijit._Widget.prototype._getDataDefault = function (name, namespace) {
   if (this.dataRegistry == null || this.dataRegistry.defaults[namespace + "." + name] == undefined) {
-    var parent = this.getHtmlParent();
+    var parent = this.dataParent || this.getHtmlParent();
     if (parent)
      return parent._getDataDefault(name, namespace);
     return undefined;
