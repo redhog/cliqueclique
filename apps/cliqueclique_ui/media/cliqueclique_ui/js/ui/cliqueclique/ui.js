@@ -21,15 +21,25 @@ dojo.require("cliqueclique.general.OptionalTabContainer");
 
 
 dojo.require('dijit.MenuBar');
-dojo.require('dijit.MenuBarItem');
+dojo.require('dijit.PopupMenuBarItem');
+dojo.require('dijit.MenuItem');
+dojo.require('dijit.Menu');
 
 dojo.declare("cliqueclique.ui.TopMenu", [dijit.MenuBar], {
   startup: function () {
     var menu = this;
+    var item;
+    var submenu;
 
-    var item = new dijit.MenuBarItem({label:"File"});
+    submenu = new dijit.Menu();
+    item = new dijit.MenuItem({label:"Import"});
+    submenu.addChild(item);
+    item = new dijit.MenuItem({label:"Test X"});
+    submenu.addChild(item);
+
+    item = new dijit.PopupMenuBarItem({label:"File", popup: submenu});
     menu.addChild(item);
-    var item = new dijit.MenuBarItem({label:"Help"});
+    item = new dijit.MenuBarItem({label:"Help"});
     menu.addChild(item);
     // item.connect(item, 'onClick', function (e) { item.load(tn.item); });
 
