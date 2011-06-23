@@ -20,16 +20,41 @@ dojo.require("dojo.html");
 dojo.require("cliqueclique.general.OptionalTabContainer");
 
 
+dojo.require('dijit.MenuBar');
+dojo.require('dijit.MenuBarItem');
+
+dojo.declare("cliqueclique.ui.TopMenu", [dijit.MenuBar], {
+  startup: function () {
+    var menu = this;
+
+    var item = new dijit.MenuBarItem({label:"File"});
+    menu.addChild(item);
+    var item = new dijit.MenuBarItem({label:"Help"});
+    menu.addChild(item);
+    // item.connect(item, 'onClick', function (e) { item.load(tn.item); });
+
+    this.inherited(arguments);
+  }
+});
+
+
 dojo.declare("cliqueclique.ui.Ui", [dijit.layout.BorderContainer], {
   design:'sidebar',
   style:'border: 0px; height: 100%; width: 100%;',
+  gutters: false,
   startup: function () {
     this.inherited(arguments);
 
     var ui = this;
 
+    ui.menu = new cliqueclique.ui.TopMenu({region: 'top'});
+    ui.addChild(ui.menu);
+
+    ui.inner = new dijit.layout.BorderContainer({region: 'center', gutters: false, design: 'sidebar'});
+    ui.addChild(ui.inner);
+
     ui.leftPane = new dijit.layout.AccordionContainer({region: 'left', splitter: true, minSize: 200});
-    ui.addChild(ui.leftPane);
+    ui.inner.addChild(ui.leftPane);
 
     ui.tree = new dijit.Tree({showRoot: false, model: cliqueclique.document.tree.DocumentTreeModel(), style: "width: 200px;", title: 'Bookmarks'});
     ui.leftPane.addChild(ui.tree);
@@ -40,11 +65,11 @@ dojo.declare("cliqueclique.ui.Ui", [dijit.layout.BorderContainer], {
     ui.menu.bindDomNode(ui.tree.domNode);
 
     ui.docView = cliqueclique.document.DocumentView({region: 'center'});
-    ui.addChild(ui.docView);
+    ui.inner.addChild(ui.docView);
     ui.registerData("documentLink", {label: 'Display', load:function (document) { return ui.docView.attr("document", document); }}, true, "cliqueclique.document.DocumentLink");
 
     ui.tabCon = cliqueclique.general.OptionalTabContainer({region:'bottom', splitter: true, style:'height: 30%;'});        
-    ui.addChild(ui.tabCon);
+    ui.inner.addChild(ui.tabCon);
     ui.tabCon.updateVisibility();
 
     ui.registerData("panels",
