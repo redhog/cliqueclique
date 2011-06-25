@@ -74,7 +74,7 @@ dojo.declare("cliqueclique.document.editor.DocumentEditor", [dijit._Widget, diji
 	 });
 
          document.getDocumentLink(editor)();
-
+	 editor.getHtmlParent().removeChild(editor);
        });
    },
    commentToAdd: function (document) {
