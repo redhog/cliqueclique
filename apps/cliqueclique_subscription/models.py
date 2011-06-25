@@ -301,12 +301,11 @@ Center distance: %(center_distance)s
             q = query.Pipe(ands, q)
         elif ands:
             q = ands
-
-        print "QUERY", q
+        if settings.CLIQUECLIQUE_DEBUG_QUERIES: print "QUERY", q
         stmt = q.compile()
         sql = stmt.compile()
-        print "SQL", sql.sql
-        print "VARS", sql.vars
+        if settings.CLIQUECLIQUE_DEBUG_QUERIES: print "SQL", sql.sql
+        if settings.CLIQUECLIQUE_DEBUG_QUERIES: print "VARS", sql.vars
         return cls.objects.raw(sql.sql, sql.vars)
 
 

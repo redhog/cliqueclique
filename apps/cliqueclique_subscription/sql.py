@@ -40,8 +40,7 @@ class Statement(object):
                     if part is not None)
 
     def _compile(self, ind, tab, ln):
-        print type(self)
-        raise NotImplementedError
+        raise NotImplementedError(type(self))
 
     def compile(self):
         return self._compile('', '  ', '\n')

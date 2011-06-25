@@ -156,6 +156,8 @@ if not os.path.exists(CONFIGFILE):
     with open(os.path.join(PROJECT_ROOT, "local_settings.template.py")) as s:
         with open(CONFIGFILE, "w") as d:
             d.write(s.read())
+
+CLIQUECLIQUE_DEBUG_QUERIES = False
  
 sys.stderr.write("Loading local settings from " + CONFIGFILE + "\n")
 with open(CONFIGFILE) as f:
