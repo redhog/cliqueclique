@@ -9,36 +9,25 @@ dojo.require("dijit.form.CheckBox");
 dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
   widgetsInTemplate: true,
   templateString: "" +
-    "<div>" +
-    "  <table>" +
-    "    <tr>" +
-    "      <th colspan='2' dojoAttachPoint='title'></td>" +
-    "    </tr>" +
-    "    <tr>" +
-    "      <th>Flags:</th>" +
-    "      <td>" +
-    "        <input dojoType='dijit.form.CheckBox' dojoAttachPoint='bookmarkedInput' dojoAttachEvent='onClick:onBookmarkedInputClick'></input><label dojoAttachPoint='bookmarkedLabel'>bookmarked</label>" +
-    "        <input dojoType='dijit.form.CheckBox' dojoAttachPoint='readInput' dojoAttachEvent='onClick:onReadInputClick'></input><label dojoAttachPoint='readLabel'>read</label>" +
-    "        <input dojoType='dijit.form.CheckBox' dojoAttachPoint='subscribedInput' dojoAttachEvent='onClick:onSubscribedInputClick'></input><label dojoAttachPoint='subscribedInput'>subscribed</label>" +
-    "      </td>" +
-    "    </tr>" +
-    "    <tr>" +
-    "      <th>Download:</th>" +
-    "      <td>" +
-    "        <a dojoAttachPoint='downloadAsMime' target='_new'>as mime</a>" +
-    "        <a dojoAttachPoint='downloadAsJson' target='_new'>as json</a>" +
-    "      </td>" +
-    "    </tr>" +
-    "    <tr>" +
-    "      <th>Parents:</th>" +
-    "      <td dojoAttachPoint='parentDocuments'></td>" +
-    "    </tr>" +
-    "    <tr>" +
-    "      <th>Children:</th>" +
-    "      <td dojoAttachPoint='childDocuments'></td>" +
-    "    </tr>" +
-    "  </table>" +
-    "  <p dojoAttachPoint='body'></p>" +
+    "<div class='documentView'>" +
+    "  <div class='actionBox'>" +
+    "    <input dojoType='dijit.form.CheckBox' dojoAttachPoint='bookmarkedInput' dojoAttachEvent='onClick:onBookmarkedInputClick'></input><label dojoAttachPoint='bookmarkedLabel'>bookmarked</label>" +
+    "    <input dojoType='dijit.form.CheckBox' dojoAttachPoint='readInput' dojoAttachEvent='onClick:onReadInputClick'></input><label dojoAttachPoint='readLabel'>read</label>" +
+    "    <input dojoType='dijit.form.CheckBox' dojoAttachPoint='subscribedInput' dojoAttachEvent='onClick:onSubscribedInputClick'></input><label dojoAttachPoint='subscribedInput'>subscribed</label><br>" +
+    "    Download: <a dojoAttachPoint='downloadAsMime' target='_new'>as mime</a> or <a dojoAttachPoint='downloadAsJson' target='_new'>as json</a>" +
+    "  </div>" +
+    "  <div>" +
+    "    <h1 dojoAttachPoint='title'></h1>" +
+    "    <div>" +
+    "      Parents:" +
+    "      <span dojoAttachPoint='parentDocuments'></span>" +
+    "    </div>" +
+    "    <div>" +
+    "      Children:" +
+    "      <span dojoAttachPoint='childDocuments'></span>" +
+    "    </div>" +
+    "    <p dojoAttachPoint='body'></p>" +
+    "  </div>" +
     "</div>",
 
   postCreate: function () {

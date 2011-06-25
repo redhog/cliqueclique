@@ -1,22 +1,11 @@
-a img {
-  border: none;
+html {
+  height: 100%;
 }
-
-.menubar {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 200pt;
-  border-right: 1pt solid black;
-  padding: 10pt;
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
-
-.document_area {
-  position: absolute;
-  left: 221pt;
-  top: 0;
-  bottom: 0;
-  right: 0;
-  padding: 10pt;
+.documentView .actionBox {
+  float: right;
 }
