@@ -4,6 +4,13 @@ dojo.declare("cliqueclique.document.Document", [], {
   constructor: function (json_data) {
     this.json_data = json_data;
   },
+  getObjectId: function () {
+    // Some random hashable the value that changes if any attributes changes
+    return this.json_data.document.document_id + ":" + this.json_data.bookmarked + ":" + this.json_data.read + ":" + this.json_data.local_is_subscribed;
+  },
+  getDocumentId: function () {
+    return this.json_data.document.document_id;
+  },
   getContent: function () {
     try {
       return this.json_data.document.content.parts[0];
@@ -24,12 +31,12 @@ dojo.declare("cliqueclique.document.Document", [], {
     return parts;
   },
   getSubject: function () {
-    var parts = this.getParts();
+    var content = this.getContent()
     try {
-      return this.json_data.document.content.parts[0].header.subject;
+      return content.header.subject;
     } catch(err) {
       try {
-	return this.json_data.document.document_id.substring(0, 5);
+       return this.getDocumentId().substring(0, 5);
       } catch(err) {
 	return undefined;
       }
@@ -37,14 +44,14 @@ dojo.declare("cliqueclique.document.Document", [], {
   },
   getParentDocumentId: function () {
     try {
-      return this.json_data.document.content.parts[0].header.parent_document_id;
+      return this.getContent().header.parent_document_id;
     } catch(err) {
       return undefined;
     }
   },
   getChildDocumentId: function () {
     try {
-      return this.json_data.document.content.parts[0].header.child_document_id;
+      return this.getContent().header.child_document_id;
     } catch(err) {
       return undefined;
     }
@@ -55,7 +62,7 @@ dojo.declare("cliqueclique.document.Document", [], {
       return parts.content.body;
     } catch(err) {
       try {
-	return this.json_data.document.content.parts[0].body;
+        return this.getContent().body;
       } catch(err) {
         try {
           return this.json_data.document.content.body;
@@ -64,13 +71,6 @@ dojo.declare("cliqueclique.document.Document", [], {
         }
       }
     }
-  },
-  getObjectId: function () {
-    // Some random hashable the value that changes if any attributes changes
-    return this.json_data.document.document_id + ":" + this.json_data.bookmarked + ":" + this.json_data.read + ":" + this.json_data.local_is_subscribed;
-  },
-  getDocumentId: function () {
-    return this.json_data.document.document_id;
   },
   getDocumentLink: function (widget) {
     var document = this;
