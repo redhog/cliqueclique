@@ -1,5 +1,7 @@
 dojo.provide("cliqueclique.document.Document");
 
+dojo.require("cliqueclique.general.helpers");
+
 dojo.declare("cliqueclique.document.Document", [], {
   constructor: function (json_data) {
     this.json_data = json_data;
@@ -179,5 +181,24 @@ cliqueclique.document.Document.find = function (onComplete, query, context) {
     }
   });
 }
+
+/* FIXME: Handle attr values with = and spaces in them (and " around such values) correctly */
+cliqueclique.document.Document.parseContentType = function (mimePart) {
+  var res = {attrs: {}};
+
+  contentTypeParts = cliqueclique.general.helpers.splitWithQuotes(mimePart.header["Content-Type"], /; */);
+  var contentType = contentTypeParts[0].split("/");
+
+  for (var i = 1; i < contentTypeParts.length; i++) {
+    var nameValue = /^([^=]*)=(.*)$/.exec(contentTypeParts[i]);
+    res.attrs[nameValue[1].toLowerCase()] = nameValue[2];
+  }
+
+  res.subtype = contentType[1].toLowerCase();
+  res.type = contentType[0].toLowerCase();
+
+  return res;
+}
+
 
 cliqueclique.document.Document.updated = function () {};
