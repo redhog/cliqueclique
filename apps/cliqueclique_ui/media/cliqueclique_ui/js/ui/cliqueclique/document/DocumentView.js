@@ -6,6 +6,27 @@ dojo.require("cliqueclique.document.DocumentLink");
 dojo.require("cliqueclique.document.DocumentMenu");
 dojo.require("dijit.form.CheckBox");
 
+dojo.declare("cliqueclique.document.DocumentBodyView", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
+  widgetsInTemplate: true,
+  templateString: "" +
+    "<div class='documentBodyView'>" +
+    "  <p dojoAttachPoint='body'></p>" +
+    "</div>",
+  _setDocumentAttr: function (document) {
+    this.inherited(arguments);
+
+    var body = {body: ''}
+    if (this.item) {
+      try {
+        body = this.item.getParts()[this.displayPart || this.declaredClass].body;
+      } catch (e) {        
+      }
+    }
+    dojo.html.set(this.body, body);
+  },
+  displayPart: "content"
+});
+
 dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
   widgetsInTemplate: true,
   templateString: "" +
@@ -26,9 +47,11 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
     "      Children:" +
     "      <span dojoAttachPoint='childDocuments'></span>" +
     "    </div>" +
-    "    <p dojoAttachPoint='body'></p>" +
+    "    <div dojoAttachPoint='body'></div>" +
     "  </div>" +
     "</div>",
+
+  BodyView: cliqueclique.document.DocumentBodyView,
 
   postCreate: function () {
     var res = this.inherited(arguments);
@@ -38,6 +61,8 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
 
     // Update stuff if we need to (mainly links)
     dojo.connect(cliqueclique.document.Document, "updated", this, "refresh");
+
+    this.bodyView = new this.BodyView({}, this.body);
 
     return res;
   },
@@ -53,14 +78,17 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
   _setDocumentAttr: function (document) {
     var documentView = this;
     this.inherited(arguments);
+    this.bodyView.attr("document", document);
 
     dojo.query('> *', documentView.childDocuments).forEach(function(domNode, index, arr){
+      dijit.byNode(domNode).destroyRecursive();
+    });
+    dojo.query('> *', documentView.parentDocuments).forEach(function(domNode, index, arr){
       dijit.byNode(domNode).destroyRecursive();
     });
 
     if (!this.item) {
       dojo.html.set(this.title, "No document selected");
-      dojo.html.set(this.body, "");
 
       this.downloadAsMime.href = "";
       this.downloadAsJson.href = "";
@@ -77,7 +105,6 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
     }
 
     dojo.html.set(this.title, this.item.getSubject());
-    dojo.html.set(this.body, this.item.getBody());
 
     this.downloadAsMime.href = "/find/mime/" + this.item.getDocumentId();
     this.downloadAsJson.href = "/find/json/" + this.item.getDocumentId();
@@ -93,17 +120,12 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
       });
     }, "->", this.item.getDocumentId());
 
-    dojo.query('> *', documentView.parentDocuments).forEach(function(domNode, index, arr){
-      dijit.byNode(domNode).destroyRecursive();
-    });
-
     cliqueclique.document.Document.find(function (parents) {
       dojo.forEach(parents, function (parent) {
         var link = new cliqueclique.document.DocumentLink({document: parent});
         dojo.place(link.domNode, documentView.parentDocuments);
       });
     }, "<-", this.item.getDocumentId());
-
   },
   onBookmarkedInputClick: function () {
    this.item.setAttribute("bookmarked");
