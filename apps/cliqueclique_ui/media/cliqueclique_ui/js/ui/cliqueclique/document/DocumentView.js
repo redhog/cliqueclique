@@ -14,15 +14,32 @@ dojo.declare("cliqueclique.document.DocumentBodyView", [dijit._Widget, dijit._Te
     "</div>",
   _setDocumentAttr: function (document) {
     this.inherited(arguments);
-
-    var body = {body: ''};
+    var body = {body: '', headers: {"Content-Type": 'text/plain'}};
     if (this.item) {
       try {
         body = this.item.getParts()[this.displayPart || this.declaredClass];
       } catch (e) {
       }
     }
+    var contentType = body.header["Content-Type"].split(";")[0];
+    var contentMainType = contentType.split("/")[0];
+    var contentTypeMethod = contentType.replace("/", "_");
+
+    if (this["render_" + contentTypeMethod] !== undefined)
+      this["render_" + contentTypeMethod](body);
+    else if (this["render_" + contentMainType] !== undefined)
+      this["render_" + contentMainType](body);
+    else
+      this.render_other(body);
+  },
+  render_text: function (body) {
+    dojo.html.set(this.body, "<pre>" + body.body + "</pre>");
+  },
+  render_text_html: function (body) {
     dojo.html.set(this.body, body.body);
+  },
+  render_other: function (body) {
+    dojo.html.set(this.body, "<UNKNOWN FORMAT>");
   },
   displayPart: "content"
 });
