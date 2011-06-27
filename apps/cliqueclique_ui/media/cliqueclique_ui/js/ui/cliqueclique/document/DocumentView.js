@@ -15,14 +15,14 @@ dojo.declare("cliqueclique.document.DocumentBodyView", [dijit._Widget, dijit._Te
   _setDocumentAttr: function (document) {
     this.inherited(arguments);
 
-    var body = {body: ''}
+    var body = {body: ''};
     if (this.item) {
       try {
-        body = this.item.getParts()[this.displayPart || this.declaredClass].body;
-      } catch (e) {        
+        body = this.item.getParts()[this.displayPart || this.declaredClass];
+      } catch (e) {
       }
     }
-    dojo.html.set(this.body, body);
+    dojo.html.set(this.body, body.body);
   },
   displayPart: "content"
 });
