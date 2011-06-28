@@ -1,0 +1,10 @@
+Content-Type: multipart/mixed; boundary="===============0229576304104722171=="
+MIME-Version: 1.0
+subject: Test fake document
+
+--===============0229576304104722171==
+part_type: content
+Content-Type: text/plain; charset="utf-8"
+
+Is all fake...
+--===============0229576304104722171==--

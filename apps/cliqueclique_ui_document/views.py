@@ -5,6 +5,7 @@ import cliqueclique_node.models
 import cliqueclique_document.models
 import cliqueclique_subscription.models
 import cliqueclique_ui_security_context.security_context
+import email
 import email.mime.text
 import django.http
 import utils.hash
@@ -15,6 +16,8 @@ import fcdjangoutils.jsonview
 import sys
 import traceback
 import jogging
+import os.path
+import settings
 
 def json_view_or_redirect(fn):
     def json_view_or_redirect(request, *arg, **kw):
@@ -105,10 +108,33 @@ def set_document_flags(request, document_id):
 @django.contrib.auth.decorators.login_required
 def document(request, format, document_id = None, single = False):
     try:
-        docs = list(cliqueclique_subscription.models.DocumentSubscription.get_by_query(
-                q = request.GET.get('query', None),
-                node_id = request.user.node.node_id,
-                document_id = document_id))
+        if document_id.startswith("local:"):
+            # Emulate documents with local files for development. Don't use in production!
+            docs = []
+            for filename in [os.path.join(settings.CONFIGDIR, "local_documents", document_id[len("local:"):] + ".mime"),
+                             os.path.join(settings.PROJECT_ROOT, "local_documents", document_id[len("local:"):] + ".mime")]:
+                if os.path.exists(filename):
+                    with open(filename) as f:
+                        data = f.read()
+                    # This is all fake; we're never commiting
+                    # anything to the DB, we just do this to be able
+                    # to serialize it as json or mime or whatever...
+                    node = request.user.node
+                    signed = utils.smime.MIMESigned()
+                    signed.set_cert(utils.smime.der2pem(node.public_key))
+                    signed.set_private_key(utils.smime.der2pem(node.private_key, "PRIVATE KEY"))
+                    signed.attach(email.message_from_string(data))
+                    doc = cliqueclique_document.models.Document(content = signed.as_string())
+                    doc.on_pre_save(None, doc)
+                    sub = cliqueclique_subscription.models.DocumentSubscription(document = doc)
+                    sub.node = node
+                    docs.append(sub)
+                    break
+        else:
+            docs = list(cliqueclique_subscription.models.DocumentSubscription.get_by_query(
+                    q = request.GET.get('query', None),
+                    node_id = request.user.node.node_id,
+                    document_id = document_id))
 
         if format == 'mime':
             if len(docs) == 0:

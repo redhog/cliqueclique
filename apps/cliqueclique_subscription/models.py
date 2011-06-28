@@ -552,6 +552,14 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
 
 @fcdjangoutils.jsonview.JsonEncodeRegistry.register(DocumentSubscription)
 def conv(self, obj):
+    try:
+        parents = [parent.document.document_id for parent in obj.parents.all()]
+        children = [child.document.document_id for child in obj.children.all()]
+    except ValueError:
+        # Document is unsaved, just ignore...
+        parents = []
+        children = []
+
     return {'__cliqueclique_subscription_models_DocumentSubscription__': True,
 
             "center_node_is_subscribed": obj.center_node_is_subscribed,
@@ -566,8 +574,8 @@ def conv(self, obj):
             "bookmarked": obj.bookmarked,
             "local_is_subscribed": obj.local_is_subscribed,
 
-            "parents": [parent.document.document_id for parent in obj.parents.all()],
-            "children": [child.document.document_id for child in obj.children.all()],
+            "parents": parents,
+            "children": children,
 
             "peer_nrs": obj.peer_nrs,
             "wanters": obj.wanters,

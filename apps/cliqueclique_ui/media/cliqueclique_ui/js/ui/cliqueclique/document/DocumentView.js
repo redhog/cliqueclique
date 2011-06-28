@@ -23,35 +23,52 @@ dojo.declare("cliqueclique.document.DocumentBodyView", [dijit._Widget, dijit._Te
     }
 
     contentType = cliqueclique.document.Document.parseContentType(body);
-
+    renderers = ["render:" + contentType.type + "/" + contentType.subtype,
+		 "render:" + contentType.type,
+		 "render:default"];
     var renderer;
-    if (this["render_" + contentType.type + "_" + contentType.subtype] !== undefined)
-      renderer = this["render_" + contentType.type + "_" + contentType.subtype];
-    else if (this["render_" + contentType.type ] !== undefined)
-      renderer = this["render_" + contentType.type];
-    else
-      renderer = this.render_other;
+    for (var i = 0; i < renderers.length && renderer === undefined; i++)
+      renderer = this[renderers[i]];
     renderer.call(this, contentType, body);
   },
-  render_text: function (contentType, body) {
-   console.log(body);
+  "render:default": function (contentType, body) {
+    dojo.html.set(this.body, "[UNKNOWN FORMAT]");
+  },
+  "render:text": function (contentType, body) {
     dojo.html.set(this.body, "<pre>" + body.body + "</pre>");
   },
-  render_text_html: function (contentType, body) {
+  "render:text/html": function (contentType, body) {
     dojo.html.set(this.body, body.body);
   },
-  render_linked: function (contentType, body) {
+  "render:linked": function (contentType, body) {
+    var document = this;
+
     cliqueclique.document.Document.find(function (templateDocuments) {
       var templateDocument = templateDocuments[0];
 
       var template = templateDocument.getParts().template;
       templateContentType = cliqueclique.document.Document.parseContentType(template);
 
-
+      renderers = ["render:linked:" + templateContentType.type + "/" + templateContentType.subtype,
+		   "render:linked:" + templateContentType.type,
+		   "render:linked:default"];
+      var renderer;
+      for (var i = 0; i < renderers.length && renderer === undefined; i++)
+	renderer = document[renderers[i]];
+      renderer.call(document, contentType, body, templateContentType, template);
     }, [], contentSubtype);
   },
-  render_other: function (contentType, contentSubtype, contentTypeAttrs, body) {
-    dojo.html.set(this.body, "<UNKNOWN FORMAT>");
+  "render:linked:text/html+dojo": function (document, contentType, body, templateContentType, template) {
+    var TemplateWidget = dojo.declare("cliqueclique.document.DocumentBodyView", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
+      widgetsInTemplate: true,
+      templateString: template.body
+    });
+    var templateWidget = new TemplateWidget({document: document, contentType: contentType});
+    dojo.html.set(this.body, "");
+    dojo.place(this.body, templateWidget);
+  },
+  "render:linked:default": function (document, contentType, body, templateContentType, template) {
+    dojo.html.set(this.body, "[UNKNOWN TEMPLATE FORMAT]");
   },
   displayPart: "content"
 });
