@@ -181,19 +181,23 @@ Center distance: %(center_distance)s
 
     def update_child_subscriptions(self):
         if self.document.parent_document_id is not None:
-            parent_document = cliqueclique_document.models.Document.objects.get(document_id=self.document.parent_document_id)
-            parent_subscription = self.subscription_for_document(self.node, parent_document) 
-            if parent_subscription not in self.parents.all():
-                self.parents.add(parent_subscription)
-                self.update_subscribed_parents()
-                self.save()
+            parent_subscriptions = PeerDocumentSubscription.objects.filter(node_id = self.node.id,
+                                                                           peer_id = self.peer.id,
+                                                                           local_subscription__document__document_id = self.document.parent_document_id)
+            for parent_subscription in parent_subscriptions:
+                if parent_subscription not in self.parents.all():
+                    self.parents.add(parent_subscription)
+                    self.update_subscribed_parents()
+                    self.save()
 
         if self.document.child_document_id is not None:
-            child_document = cliqueclique_document.models.Document.objects.get(document_id=self.document.child_document_id)
-            child_subscription = self.subscription_for_document(self.node, child_document) 
-            if child_subscription not in self.children.all():
-                self.children.add(child_subscription)
-                self.save()
+            child_subscriptions = PeerDocumentSubscription.objects.filter(node_id = self.node.id,
+                                                                          peer_id = self.peer.id,
+                                                                          local_subscription__document__document_id = self.document.child_document_id)
+            for child_subscription in child_subscriptions:
+                if child_subscription not in self.children.all():
+                    self.children.add(child_subscription)
+                    self.save()
 
         for child in self.children.all():
             child.update_subscribed_parents()
