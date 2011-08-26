@@ -138,10 +138,8 @@ class Peer(Node):
 
     @property
     def updates(self):
-        return self.subscriptions.filter(Q(Q( ~Q(local_serial=F("local_subscription__serial"))
-                                             |Q(has_enought_peers=False))
-                                           &Q(local_resend_time__lte = time.time()))
-                                         |Q(peer_send=True))
+        import cliqueclique_subscription.models
+        return self.subscriptions.filter(cliqueclique_subscription.models.PeerDocumentSubscription.will_send)
 
     @property
     def new(self):
@@ -155,7 +153,7 @@ class Peer(Node):
         for sub in updates:
             sub_msgs = sub.send()
             if not sub_msgs:
-                sys.stderr.write("This should not happend: update.send() returned empty list for %s\n" % (sub,))
+                sys.stderr.write("This should not happend: update.send() returned empty list for:\n%s\n\n" % (repr(sub),))
             update_msgs.extend(sub_msgs)
         if len(update_msgs) == 0:
             return None

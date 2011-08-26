@@ -108,7 +108,7 @@ def set_document_flags(request, document_id):
 @django.contrib.auth.decorators.login_required
 def document(request, format, document_id = None, single = False):
     try:
-        if document_id.startswith("local:"):
+        if document_id and document_id.startswith("local:"):
             # Emulate documents with local files for development. Don't use in production!
             docs = []
             for filename in [os.path.join(settings.CONFIGDIR, "local_documents", document_id[len("local:"):] + ".mime"),

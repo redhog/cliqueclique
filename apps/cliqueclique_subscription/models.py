@@ -6,6 +6,7 @@ import settings
 import cliqueclique_node.models
 import cliqueclique_document.models
 from django.db.models import Q
+from django.db.models import F
 from utils.curryprefix import curryprefix
 
 import email
@@ -492,6 +493,8 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
         else:
             assert False
 
+    will_send_update = Q(~Q(local_serial=F("local_subscription__serial"))
+                         &Q(local_resend_time__lte = time.time()))
     def send_update(self, export = False):
         if self.local_serial == self.local_subscription.serial:
             if self.local_resend_interval is not None:
@@ -508,6 +511,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
 
         return [self.local_subscription.send(not self.has_copy or export)]
 
+    will_send_ack = Q(peer_send=True)
     def send_ack(self):
         if not self.peer_send:
             return []
@@ -527,6 +531,8 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
         
         return [msg]
 
+    will_send_peer_suggestion = Q( Q(has_enought_peers=False)
+                                  &Q(local_subscription__peer_nrs__gt=1))
     def send_peer_suggestion(self):
         def get_offsetslice(lst, offset, count):
             lstlen = len(lst)
@@ -544,6 +550,7 @@ class PeerDocumentSubscription(BaseDocumentSubscription):
                 msgs.append(msg)
         return msgs
 
+    will_send = will_send_update | will_send_ack | will_send_peer_suggestion
     def send(self, export = False):
         return self.send_update(export) + self.send_ack() + self.send_peer_suggestion()
 
