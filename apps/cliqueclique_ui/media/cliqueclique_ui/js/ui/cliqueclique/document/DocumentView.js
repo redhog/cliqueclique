@@ -14,7 +14,7 @@ dojo.declare("cliqueclique.document.DocumentBodyView", [dijit._Widget, dijit._Te
     "</div>",
   _setDocumentAttr: function (document) {
     this.inherited(arguments);
-    var body = {body: '', headers: {"Content-Type": 'text/plain'}};
+    var body = {body: '', header: {"Content-Type": 'text/plain'}};
     if (this.item) {
       try {
         body = this.item.getParts()[this.displayPart || this.declaredClass];
