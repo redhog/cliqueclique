@@ -1,7 +1,7 @@
 class CompiledStatement(object):
     def __init__(self, sql, vars):
         self.sql = sql
-        self.vars = vars
+        self.vars = tuple(vars)
 
     def __repr__(self):
         return "%s %% %s" % (repr(self.sql), repr(self.vars))

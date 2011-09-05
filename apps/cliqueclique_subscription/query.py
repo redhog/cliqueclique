@@ -1,12 +1,13 @@
 import sql
 import simplejson
 
-PartTable = sql.Table('cliqueclique_document_documentpart')
+MimeTable = sql.Table('cliqueclique_mime_mime')
+PartTable = sql.Table('cliqueclique_mime_mimepart')
+PropertyTable = sql.Table('cliqueclique_mime_mimeheader')
 SubscriptionTable = sql.Table('cliqueclique_subscription_documentsubscription')
 ParentsTable = sql.Table('cliqueclique_subscription_documentsubscription_parents')
 NodeTable = sql.Table('cliqueclique_node_localnode')
 DocumentTable = sql.Table('cliqueclique_document_document')
-PropertyTable = sql.Table('cliqueclique_document_documentproperty')
 
 class Context(object):
     def __init__(self, start, joins, end, wheres = []):
@@ -35,6 +36,8 @@ class Context(object):
             raise AssertionError("Context expected to start with %s but it starts with %s" % (name, self.start.get_original_name()))
 
     def assert_end(self, name):
+        if hasattr(name, "get_original_name"):
+            name = name.get_original_name()
         if self.end.get_original_name() != name:
             raise AssertionError("Context expected to end in %s but it ends in %s" % (name, self.end.get_original_name()))
 
@@ -138,7 +141,7 @@ class OrPipe(ListQuery):
         end = None
         for subselect in subselects:
             if end:
-                subselect.assert_end(end.get_original_name())
+                subselect.assert_end(end)
             else:
                 end = subselect.end
         
@@ -163,7 +166,7 @@ class Child(Query):
     next_col = 'from_documentsubscription_id'
 
     def _compile(self, context):
-        context.assert_end('cliqueclique_subscription_documentsubscription')
+        context.assert_end(SubscriptionTable)
         join = sql.Alias(ParentsTable)
         next = sql.Alias(SubscriptionTable)
         joins = [sql.On(join,
@@ -194,7 +197,7 @@ class Owner(Query):
         return [self.symbol, self.owner]
 
     def _compile(self, context):
-        context.assert_end('cliqueclique_subscription_documentsubscription')
+        context.assert_end(SubscriptionTable)
         node = sql.Alias(NodeTable)
         joins = [sql.On(node,
                         on=sql.And(sql.Comp(sql.Column(context.end, 'node_id'),
@@ -218,7 +221,7 @@ class Id(Query):
         return [self.symbol, self.id]
 
     def _compile(self, context):
-        context.assert_end('cliqueclique_subscription_documentsubscription')
+        context.assert_end(SubscriptionTable)
         document = sql.Alias(DocumentTable)
         joins = [sql.On(document,
                         on=sql.And(sql.Comp(sql.Column(context.end, 'document_id'),
@@ -230,29 +233,33 @@ class Id(Query):
 class IsRead(Query):
     symbol = "read"
     def _compile(self, context):
-        context.assert_end('cliqueclique_subscription_documentsubscription')
+        context.assert_end(SubscriptionTable)
         return context.new(wheres = [sql.Column(context.end, 'read')])
 
 class IsBookmarked(Query):
     symbol = "bookmarked"
     def _compile(self, context):
-        context.assert_end('cliqueclique_subscription_documentsubscription')
+        context.assert_end(SubscriptionTable)
         return context.new(wheres = [sql.Column(context.end, 'bookmarked')])
 
 class IsSubscribed(Query):
     symbol = "subscribed"
     def _compile(self, context):
-        context.assert_end('cliqueclique_subscription_documentsubscription')
+        context.assert_end(SubscriptionTable)
         return context.new(wheres = [sql.Column(context.end, 'local_is_subscribed')])
 
 class Parts(Query):
     symbol = ":"
     def _compile(self, context):
-        context.assert_end('cliqueclique_subscription_documentsubscription')
+        context.assert_end(SubscriptionTable)
+        doc = sql.Alias(DocumentTable)
         part = sql.Alias(PartTable)
-        joins = [sql.On(part,
-                        on=sql.And(sql.Comp(sql.Column(context.end, 'document_id'),
-                                            sql.Column(part, 'document_id')),
+        joins = [sql.On(doc,
+                        on=sql.Comp(sql.Column(context.end, 'document_id'),
+                                    sql.Column(doc, 'id'))),
+                 sql.On(part,
+                        on=sql.And(sql.Comp(sql.Column(doc, 'content_id'),
+                                            sql.Column(part, 'mime_id')),
                                    sql.Comp(sql.Column(part, 'parent_id'),
                                             sql.Const(None),
                                             'is')))]
@@ -264,7 +271,7 @@ class Parts(Query):
 class Part(Query):
     symbol = "::"
     def _compile(self, context):
-        context.assert_end('cliqueclique_document_documentpart')
+        context.assert_end(PartTable)
         part = sql.Alias(PartTable)
         joins = [sql.On(part,
                         on=sql.And(sql.Comp(sql.Column(context.end, 'id'),
@@ -287,7 +294,7 @@ class Property(Query):
         return [self.symbol, self.key, self.value]
 
     def _compile(self, context):
-        context.assert_end('cliqueclique_document_documentpart')
+        context.assert_end(PartTable)
         prop = sql.Alias(PropertyTable)
         joins = [sql.On(prop,
                         on=sql.And(sql.Comp(sql.Column(context.end, 'id'),
@@ -302,7 +309,7 @@ class ChildLink(ListQuery):
     symbol = "->"
 
     def _compile(self, context):
-        context.assert_end('cliqueclique_subscription_documentsubscription')
+        context.assert_end(SubscriptionTable)
 
         # Parts structure:
         # Signed->Multipart->Content
@@ -322,7 +329,7 @@ class ParentLink(ListQuery):
     symbol = "<-"
 
     def _compile(self, context):
-        context.assert_end('cliqueclique_subscription_documentsubscription')
+        context.assert_end(SubscriptionTable)
 
         # Parts structure:
         # Signed->Multipart->Content

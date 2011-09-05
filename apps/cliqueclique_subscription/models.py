@@ -180,10 +180,12 @@ Center distance: %(center_distance)s
             self.save()
 
     def update_child_subscriptions(self):
+        print "UPDATE:  ", self.document.document_id
+        print "  PARENT:", self.document.parent_document_id
+        print "  CHILD: ", self.document.child_document_id
         if self.document.parent_document_id is not None:
-            parent_subscriptions = PeerDocumentSubscription.objects.filter(node_id = self.node.id,
-                                                                           peer_id = self.peer.id,
-                                                                           local_subscription__document__document_id = self.document.parent_document_id)
+            parent_subscriptions = DocumentSubscription.objects.filter(node__id = self.node.id,
+                                                                       document__document_id = self.document.parent_document_id)
             for parent_subscription in parent_subscriptions:
                 if parent_subscription not in self.parents.all():
                     self.parents.add(parent_subscription)
@@ -191,9 +193,8 @@ Center distance: %(center_distance)s
                     self.save()
 
         if self.document.child_document_id is not None:
-            child_subscriptions = PeerDocumentSubscription.objects.filter(node_id = self.node.id,
-                                                                          peer_id = self.peer.id,
-                                                                          local_subscription__document__document_id = self.document.child_document_id)
+            child_subscriptions = DocumentSubscription.objects.filter(node__id = self.node.id,
+                                                                      document__document_id = self.document.child_document_id)
             for child_subscription in child_subscriptions:
                 if child_subscription not in self.children.all():
                     self.children.add(child_subscription)
@@ -277,7 +278,7 @@ Center distance: %(center_distance)s
             msg.add_header(attr, str(getattr(self, attr)))
 
         if include_body:
-            msg.attach(self.document.as_mime)
+            msg.attach(self.document.content.as_mime)
 
         return msg
 

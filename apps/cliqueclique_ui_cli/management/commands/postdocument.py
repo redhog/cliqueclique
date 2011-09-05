@@ -4,6 +4,7 @@ import datetime
 import codecs
 from django.core.management.base import BaseCommand, CommandError
 from optparse import make_option
+import cliqueclique_mime.models
 import cliqueclique_node.models
 import cliqueclique_document.models
 import cliqueclique_subscription.models
@@ -32,7 +33,9 @@ class Command(BaseCommand):
             data = f.read()
         node = cliqueclique_node.models.LocalNode.objects.get(node_id=node_id)
 
-        doc = cliqueclique_document.models.Document(content=data)
+        mime = cliqueclique_mime.models.Mime(content=data)
+        mime.save()
+        doc = cliqueclique_document.models.Document(content=mime)
         doc.save()
         sub = cliqueclique_subscription.models.DocumentSubscription(
             node = node,

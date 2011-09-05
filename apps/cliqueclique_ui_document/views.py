@@ -2,6 +2,7 @@ import django.shortcuts
 import django.template
 import django.core.urlresolvers
 import cliqueclique_node.models
+import cliqueclique_mime.models
 import cliqueclique_document.models
 import cliqueclique_subscription.models
 import cliqueclique_ui_security_context.security_context
@@ -18,6 +19,8 @@ import traceback
 import jogging
 import os.path
 import settings
+
+debug_document_exceptions = True
 
 def json_view_or_redirect(fn):
     def json_view_or_redirect(request, *arg, **kw):
@@ -63,11 +66,13 @@ def post(request):
 
     node = request.user.node
 
-    doc = cliqueclique_document.models.Document(
+    mime = cliqueclique_mime.models.Mime(
         content = fcdjangoutils.jsonview.from_json(
             doc,
             public_key=utils.smime.der2pem(node.public_key),
             private_key=utils.smime.der2pem(node.private_key, "PRIVATE KEY")).as_string())
+    mime.save()
+    doc = cliqueclique_document.models.Document(content = mime)
     doc.save()
 
     sub = cliqueclique_subscription.models.DocumentSubscription(
@@ -124,7 +129,9 @@ def document(request, format, document_id = None, single = False):
                     signed.set_cert(utils.smime.der2pem(node.public_key))
                     signed.set_private_key(utils.smime.der2pem(node.private_key, "PRIVATE KEY"))
                     signed.attach(email.message_from_string(data))
-                    doc = cliqueclique_document.models.Document(content = signed.as_string())
+                    mime = cliqueclique_mime.models.Mime(content = signed.as_string())
+                    mime.save()
+                    doc = cliqueclique_document.models.Document(content = mime)
                     doc.on_pre_save(None, doc)
                     sub = cliqueclique_subscription.models.DocumentSubscription(document = doc)
                     sub.node = node
@@ -157,6 +164,10 @@ def document(request, format, document_id = None, single = False):
     except django.core.servers.basehttp.WSGIServerException:
         raise
     except Exception, e:
+        if debug_document_exceptions:
+            import traceback
+            traceback.print_exc()
+
         etype = sys.modules[type(e).__module__].__name__ + "." + type(e).__name__
         jogging.logging.error("%s: %s" % (str(e), etype))
         if format != 'json':
