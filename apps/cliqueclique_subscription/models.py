@@ -180,9 +180,10 @@ Center distance: %(center_distance)s
             self.save()
 
     def update_child_subscriptions(self):
-        print "UPDATE:  ", self.document.document_id
-        print "  PARENT:", self.document.parent_document_id
-        print "  CHILD: ", self.document.child_document_id
+        if settings.CLIQUECLIQUE_DEBUG_CHILD_UPDATE:
+            print "UPDATE:  ", self.document.document_id
+            print "  PARENT:", self.document.parent_document_id
+            print "  CHILD: ", self.document.child_document_id
         if self.document.parent_document_id is not None:
             parent_subscriptions = DocumentSubscription.objects.filter(node__id = self.node.id,
                                                                        document__document_id = self.document.parent_document_id)

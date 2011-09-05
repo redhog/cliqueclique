@@ -20,8 +20,6 @@ import jogging
 import os.path
 import settings
 
-debug_document_exceptions = True
-
 def json_view_or_redirect(fn):
     def json_view_or_redirect(request, *arg, **kw):
         redirect = None
@@ -164,7 +162,7 @@ def document(request, format, document_id = None, single = False):
     except django.core.servers.basehttp.WSGIServerException:
         raise
     except Exception, e:
-        if debug_document_exceptions:
+        if settings.CLIQUECLIQUE_DEBUG_DOCUMENT_EXCEPTIONS:
             import traceback
             traceback.print_exc()
 

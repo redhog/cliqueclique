@@ -159,6 +159,11 @@ if not os.path.exists(CONFIGFILE):
 
 CLIQUECLIQUE_DEBUG_QUERIES = False
  
+CLIQUECLIQUE_DEBUG_CHILD_UPDATE = False
+
+CLIQUECLIQUE_DEBUG_DOCUMENT_EXCEPTIONS = True
+
+
 sys.stderr.write("Loading local settings from " + CONFIGFILE + "\n")
 with open(CONFIGFILE) as f:
     exec f
