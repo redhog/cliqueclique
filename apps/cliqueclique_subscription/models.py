@@ -4,6 +4,7 @@ import django.contrib.auth.models
 import fcdjangoutils.signalautoconnectmodel
 import settings
 import cliqueclique_node.models
+import cliqueclique_mime.models
 import cliqueclique_document.models
 from django.db.models import Q
 from django.db.models import F
@@ -56,6 +57,7 @@ class DocumentSubscription(BaseDocumentSubscription):
 
     node = django.db.models.ForeignKey(cliqueclique_node.models.LocalNode, related_name="subscriptions")
     document = django.db.models.ForeignKey(cliqueclique_document.models.Document, related_name="subscriptions")
+    local_data = django.db.models.ForeignKey(cliqueclique_mime.models.Mime, related_name="subscription", null=True)
 
     read = django.db.models.BooleanField(default=False)
     bookmarked = django.db.models.BooleanField(default=False)
