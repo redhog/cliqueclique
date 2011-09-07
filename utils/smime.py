@@ -289,6 +289,9 @@ class MIMEEncrypted(MIMEM2):
 
         s = M2Crypto.SMIME.SMIME()
         s.load_key_bio(M2Crypto.BIO.MemoryBuffer(self.private_key), M2Crypto.BIO.MemoryBuffer(self.cert))
+        # Ok, this is ugly, but it's a workaround around a limitation
+        # in M2Crypto; if there are extra (non-encrypted) headers it
+        # fails...
         header = """MIME-Version: 1.0
 Content-Disposition: attachment; filename="smime.p7m"
 Content-Type: application/x-pkcs7-mime; smime-type=enveloped-data; name="smime.p7m"
