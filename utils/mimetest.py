@@ -9,9 +9,12 @@ import email.feedparser
 
 import utils.smime
 
-signer_cert, signer_key =  utils.smime.make_self_signed_cert("kafoo", 1024)
+signer_cert, signer_key =  utils.smime.make_self_signed_cert("kafoo", "localhost", 1024)
 signer_cert = utils.smime.der2pem(signer_cert)
 signer_key = utils.smime.der2pem(signer_key, "PRIVATE KEY")
+
+
+#### Signing
 
 msg1 = email.mime.multipart.MIMEMultipart()
 msg1.add_header("Msg", "msg1")
@@ -56,5 +59,33 @@ except:
     pass
 
 assert ret
+
+
+
+
+##### Encryption
+
+msg1 = email.mime.multipart.MIMEMultipart()
+msg1.add_header("Msg", "msg1")
+
+msg2 = email.mime.text.MIMEText("Blabla")
+msg2.add_header("Msg", "msg2")
+
+msg1.attach(msg2)
+
+msg3 = utils.smime.MIMEEncrypted()
+msg3.set_cert(signer_cert)
+msg3.add_header("Msg", "msg3")
+
+msg3.attach(msg1)
+
+msgy = msg3.as_string()
+
+msgx = email.message_from_string(msgy)
+msgx.set_private_key(signer_key)
+msgx.set_cert(signer_cert)
+msgx.decrypt()
+
+assert msg1.as_string() == msgx.get_payload().as_string()
 
 print "Everything's OK"

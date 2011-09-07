@@ -83,7 +83,7 @@ _parse_headers = email.feedparser.FeedParser._parse_headers
 def parse_headers(self, lines):
     res = _parse_headers(self, lines)
     content_type = self._cur.get_content_type()
-    meth = getattr(self, "_get_message_class_" + content_type.replace("/", "_"), None)
+    meth = getattr(self, "_get_message_class_" + content_type.replace("/", "_").replace("-", "_"), None)
     if meth is None:
         meth = getattr(self, "_get_message_class_" + content_type.split("/")[0], None)
     if meth is not None:
@@ -109,10 +109,18 @@ def get_message_class_multipart_signed(self):
     return MIMESigned()
 email.feedparser.FeedParser._get_message_class_multipart_signed = get_message_class_multipart_signed
 
+def get_message_class_application_x_pkcs7_mime(self):
+    return MIMEEncrypted()
+email.feedparser.FeedParser._get_message_class_application_x_pkcs7_mime = get_message_class_application_x_pkcs7_mime
+
 
 def handle_multipart_signed(self, msg):
     msg._write(self)
 email.generator.Generator._handle_multipart_signed = handle_multipart_signed
+
+def handle_multipart_encrypted(self, msg):
+    msg._write(self)
+email.generator.Generator._handle_multipart_encrypted = handle_multipart_encrypted
 
 # Bugfix: if epiloque is None, no new-line is added at the end of the
 # message, but the feedparser reads such a message as having an
@@ -180,10 +188,8 @@ class MIMESigned(MIMEM2):
             payload_data = payload[0].as_string()
 
             s = M2Crypto.SMIME.SMIME()
-            
             s.load_key_bio(M2Crypto.BIO.MemoryBuffer(self.private_key), M2Crypto.BIO.MemoryBuffer(self.cert))
             p7 = s.sign(M2Crypto.BIO.MemoryBuffer(payload_data))
-
             out = M2Crypto.BIO.MemoryBuffer()
             s.write(out, p7, M2Crypto.BIO.MemoryBuffer(payload_data))
             
@@ -233,3 +239,67 @@ class MIMESigned(MIMEM2):
         for cert in sk3:
             signer_certs.append(cert.as_der())
         return signer_certs
+
+class MIMEEncrypted(MIMEM2):
+    def __init__(self, boundary=None, _subparts=None, **_params):
+        MIMEM2.__init__(self, _subtype='encrypted', boundary=boundary, _subparts=_subparts, **_params)
+
+    def _write(self, gen):
+        gen._fp.write(self.encrypt(False))
+
+    def set_private_key(self, key):
+        self.private_key = key
+
+    def set_cert(self, cert):
+        self.cert = cert
+
+    def encrypt(self, in_place = True):
+        """Encrypts the payload"""
+
+        payload = self.get_payload()
+
+        assert len(payload) == 1
+        if isinstance(payload[0], (str, unicode)): return
+        payload_data = payload[0].as_string()
+
+        s = M2Crypto.SMIME.SMIME()
+        x509 = M2Crypto.X509.load_cert_bio(M2Crypto.BIO.MemoryBuffer(self.cert))
+        sk = M2Crypto.X509.X509_Stack()
+        sk.push(x509)
+        s.set_x509_stack(sk)
+        # Set cipher: 3-key triple-DES in CBC mode.
+        s.set_cipher(M2Crypto.SMIME.Cipher('des_ede3_cbc'))
+
+        p7 = s.encrypt(M2Crypto.BIO.MemoryBuffer(payload_data))
+
+        out = M2Crypto.BIO.MemoryBuffer()
+        s.write(out, p7)
+        out = out.read()
+
+        if in_place:
+            payload[0] = out
+        return out
+
+    def decrypt(self, in_place = True):
+        "Decrypts payload"
+
+        payload_data = self.get_payload()
+
+        if not isinstance(payload_data, (str, unicode)): return
+
+        s = M2Crypto.SMIME.SMIME()
+        s.load_key_bio(M2Crypto.BIO.MemoryBuffer(self.private_key), M2Crypto.BIO.MemoryBuffer(self.cert))
+        header = """MIME-Version: 1.0
+Content-Disposition: attachment; filename="smime.p7m"
+Content-Type: application/x-pkcs7-mime; smime-type=enveloped-data; name="smime.p7m"
+Content-Transfer-Encoding: base64
+
+"""
+        p7, data_bio = M2Crypto.SMIME.smime_load_pkcs7_bio(M2Crypto.BIO.MemoryBuffer(header + payload_data))
+        out = s.decrypt(p7)
+
+        out = email.message_from_string(out)
+
+        if in_place:
+             self.set_payload(out)
+        return out
