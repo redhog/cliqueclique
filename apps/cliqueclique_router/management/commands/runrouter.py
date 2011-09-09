@@ -18,7 +18,7 @@ import threading
 import time
 import django.core.management.commands.runserver
 import settings
-import utils.i2p
+import utils.i2phelpers
 import utils.smime
 import utils.thread
 import os
@@ -51,7 +51,7 @@ class Command(django.core.management.commands.runserver.Command):
             sock = cliqueclique_router.server.LocalSocket(local_address)
         else:
             sock = i2p.socket.socket(settings.CLIQUECLIQUE_I2P_SESSION_NAME, i2p.socket.SOCK_DGRAM)
-            local_address = utils.i2p.dest2b32(sock.dest)
+            local_address = utils.i2phelpers.dest2b32(sock.dest)
         print 'Serving at: %s.' % (local_address,)
 
         for local in cliqueclique_node.models.LocalNode.objects.all():

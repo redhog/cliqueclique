@@ -14,7 +14,7 @@ import threading
 import time
 import django.core.management.commands.runserver
 import settings
-import utils.i2p
+import utils.i2phelpers
 import utils.smime
 import utils.hash
 import utils.thread
@@ -111,7 +111,7 @@ class Receiver(utils.thread.Thread):
                 (msg, address) = self.sock.recvfrom(-1)
 
             try:
-                msg2debug(msg, utils.i2p.dest2b32(address))
+                msg2debug(msg, utils.i2phelpers.dest2b32(address))
                 cliqueclique_node.models.LocalNode.receive_any(msg)
             except SystemExit:
                 raise

@@ -19,6 +19,8 @@ import difflib
 import time
 import re
 
+import unittest
+
 def message_from_anything(msg):
     if isinstance(msg, unicode):
         msg = str(msg)
@@ -252,6 +254,12 @@ class MIMEEncrypted(MIMEM2):
 
     def set_cert(self, cert):
         self.cert = cert
+        self.add_cert(cert)
+
+    def add_cert(self, cert):
+        if not hasattr(self, "certs"):
+            self.certs = []
+        self.certs.append(cert)
 
     def encrypt(self, in_place = True):
         """Encrypts the payload"""
@@ -263,9 +271,9 @@ class MIMEEncrypted(MIMEM2):
         payload_data = payload[0].as_string()
 
         s = M2Crypto.SMIME.SMIME()
-        x509 = M2Crypto.X509.load_cert_bio(M2Crypto.BIO.MemoryBuffer(self.cert))
         sk = M2Crypto.X509.X509_Stack()
-        sk.push(x509)
+        for cert in self.certs:
+            sk.push(M2Crypto.X509.load_cert_bio(M2Crypto.BIO.MemoryBuffer(cert)))
         s.set_x509_stack(sk)
         # Set cipher: 3-key triple-DES in CBC mode.
         s.set_cipher(M2Crypto.SMIME.Cipher('des_ede3_cbc'))
@@ -277,10 +285,10 @@ class MIMEEncrypted(MIMEM2):
         out = out.read()
 
         if in_place:
-            payload[0] = out
+            self.set_payload(out)
         return out
 
-    def decrypt(self, in_place = True):
+    def decrypt(self, in_place = True, cert = None, private_key = None):
         "Decrypts payload"
 
         payload_data = self.get_payload()
@@ -288,7 +296,7 @@ class MIMEEncrypted(MIMEM2):
         if not isinstance(payload_data, (str, unicode)): return
 
         s = M2Crypto.SMIME.SMIME()
-        s.load_key_bio(M2Crypto.BIO.MemoryBuffer(self.private_key), M2Crypto.BIO.MemoryBuffer(self.cert))
+        s.load_key_bio(M2Crypto.BIO.MemoryBuffer(private_key or self.private_key), M2Crypto.BIO.MemoryBuffer(cert or self.cert))
         # Ok, this is ugly, but it's a workaround around a limitation
         # in M2Crypto; if there are extra (non-encrypted) headers it
         # fails...
@@ -304,5 +312,83 @@ Content-Transfer-Encoding: base64
         out = email.message_from_string(out)
 
         if in_place:
-             self.set_payload(out)
+             self.set_payload([out])
         return out
+
+
+
+class Test(unittest.TestCase):
+    def setUp(self):
+        self.signer_cert, self.signer_key =  make_self_signed_cert("kafoo", "localhost", 1024)
+        self.signer_cert = der2pem(self.signer_cert)
+        self.signer_key = der2pem(self.signer_key, "PRIVATE KEY")
+
+    def test_sign(self):
+        msg1 = email.mime.multipart.MIMEMultipart()
+        msg1.add_header("Msg", "msg1")
+
+        msg2 = email.mime.text.MIMEText("Blabla")
+        msg2.add_header("Msg", "msg2")
+
+        msg1.attach(msg2)
+
+        msg3 = MIMESigned()
+        msg3.set_private_key(self.signer_key)
+        msg3.set_cert(self.signer_cert)
+        msg3.add_header("Msg", "msg3")
+
+        msg4 = email.mime.multipart.MIMEMultipart()
+        msg4.add_header("Msg", "msg4")
+
+        msg5 = email.mime.text.MIMEText("Nunani")
+        msg5.add_header("Msg", "msg5")
+
+        msg4.attach(msg5)
+        msg3.attach(msg4)
+        msg1.attach(msg3)
+
+        #print msg1.as_string()
+
+        msgx = email.message_from_string(msg1.as_string())
+        #print msgx.as_string()
+
+        msgy = msgx.get_payload()[1]
+
+        msgy.verify()
+
+        msgy.get_payload()[0]['Foo'] = 'Bar'
+        ret = True
+        try:
+            msgy.verify()
+            ret = False
+        except:
+            pass
+
+        self.assertTrue(ret)
+
+    def test_encrypt(self):
+        msg1 = email.mime.multipart.MIMEMultipart()
+        msg1.add_header("Msg", "msg1")
+
+        msg2 = email.mime.text.MIMEText("Blabla")
+        msg2.add_header("Msg", "msg2")
+
+        msg1.attach(msg2)
+
+        msg3 = MIMEEncrypted()
+        msg3.set_cert(self.signer_cert)
+        msg3.add_header("Msg", "msg3")
+
+        msg3.attach(msg1)
+
+        msgy = msg3.as_string()
+
+        msgx = email.message_from_string(msgy)
+        msgx.set_private_key(self.signer_key)
+        msgx.set_cert(self.signer_cert)
+        msgx.decrypt()
+
+        self.assertEqual(msg1.as_string(), msgx.get_payload()[0].as_string())
+
+if __name__ == "__main__":
+    unittest.main()
