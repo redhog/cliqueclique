@@ -156,9 +156,8 @@ class Test(unittest.TestCase):
                                 "header": {"Msg": "msg1",
                                            "Content-Type": "text/plain; charset=\"us-ascii\""}}]}
         json = django.utils.simplejson.dumps(json_data)
-        mime_data = fcdjangoutils.jsonview.from_json(json, certs = [self.signer_cert])
+        mime_data = fcdjangoutils.jsonview.from_json(json)
         mime = mime_data.as_string()
-
 
         mime2 = email.message_from_string(mime)
         json2 = fcdjangoutils.jsonview.to_json(mime2, cert = self.signer_cert, private_key = self.signer_key)
