@@ -211,6 +211,19 @@ Center distance: %(center_distance)s
                 if peer_subscription.is_subscribed:
                     self.ensure_peer_subscription(peer_subscription.peer)
 
+    def extract_wrapped_subscription(self):
+        # Only extract when we're new, or we'd just import again and
+        # again for every subscription update...
+        if self.serial > 1: return
+        parts = self.document.parts
+        if 'subscription_update' in parts:
+            try:
+                self.node.receive(parts['subscription_update'])
+            except:
+                # Maybe log this some way?
+                import traceback
+                traceback.print_exc()
+
     def update_peer_nrs(self, diff):
         self.peer_nrs += diff
         self.save()
@@ -271,6 +284,7 @@ Center distance: %(center_distance)s
         self.update_child_subscriptions()
         for peer_subscription in self.peer_subscriptions.all():
             peer_subscription.update_child_subscriptions()
+        self.extract_wrapped_subscription()
 
     def send(self, include_body = False):
         msg = email.mime.multipart.MIMEMultipart()

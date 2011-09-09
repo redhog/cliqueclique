@@ -67,6 +67,12 @@ class LocalNode(Node):
     
     def receive(self, msg):
         msg = utils.smime.message_from_anything(msg)
+        if hasattr(msg, "decrypt"):
+            msg.set_cert(self.public_key)
+            msg.set_private_key(self.private_key)            
+            msg.decrypt()
+            msg = msg.get_payload()[0]
+
         cert = msg.verify()[0]
         container_msg = msg.get_payload()[0]
 

@@ -58,6 +58,31 @@ class Document(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnec
 
         instance.parent_document_id = mime['parent_document_id']
         instance.child_document_id = mime['child_document_id']
+
+    # These mirror the methods on Document objects in JavaScript...
+    @property
+    def parts(self):
+        content = this.content.content_as_mime
+        parts = {}
+        for part in content.get_payload():
+            parts[part['part_type']] = part;
+        return parts
+
+    @property
+    def subject(self):
+      content = this.content.content_as_mime
+      try:
+          return content['subject']
+      except KeyError:
+          return this.document_id[:5]
+
+    @property
+    def body(self):
+        parts = this.parts
+        try:
+            return parts['content'].get_payload();
+        except:
+            return this.content.content_as_mime.get_payload()
         
     def __unicode__(self):
         subject = unicode(self.content)
