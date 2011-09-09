@@ -62,11 +62,11 @@ def conv(self, obj):
     for key, value in obj['header'].iteritems():
         res[key] = value
     if 'signature' in obj and 'cert' in obj['signature']:
-        res.set_cert(obj['signature']['cert'])
+        res.set_cert(utils.smime.pem2der(obj['signature']['cert']))
     elif hasattr(self, 'public_key'):
         res.set_cert(self.public_key)
     if 'signature' in obj and 'private_key' in obj['signature']:
-        res.set_private_key(obj['signature']['private_key'])
+        res.set_private_key(utils.smime.pem2der(obj['signature']['private_key']))
     elif hasattr(self, 'private_key'):
         res.set_private_key(self.private_key)
     res.attach(obj['parts'][0])
@@ -78,7 +78,7 @@ def conv(self, obj):
            'header': dict(obj)}
 
     if hasattr(obj, "certs"):
-        res['encryption'] = [cert_to_json(utils.smime.pem2der(cert)) for cert in obj.certs],
+        res['encryption'] = [cert_to_json(cert) for cert in obj.certs],
 
     cert = None
     private_key = None
@@ -86,10 +86,10 @@ def conv(self, obj):
         res['decryption'] = {}
 
         if hasattr(self, "cert"):
-            res['decryption'].update(cert_to_json(utils.smime.pem2der(self.cert)))
+            res['decryption'].update(cert_to_json(self.cert))
             cert = self.cert
         if hasattr(self, "private_key"):
-            res['decryption']['private_key'] = self.private_key
+            res['decryption']['private_key'] = utils.smime.der2pem(self.private_key, "PRIVATE KEY")
             private_key = self.private_key
 
     try:
@@ -107,15 +107,15 @@ def conv(self, obj):
 
     if 'encryption' in obj:
         for cert in obj['encryption']:
-            res.add_cert(cert['cert'])
+            res.add_cert(utils.smime.pem2der(cert['cert']))
 
     if 'decryption' in obj and 'cert' in obj['decryption']:
-        res.set_cert(obj['decryption']['cert'])
+        res.set_cert(utils.smime.pem2der(obj['decryption']['cert']))
     elif hasattr(self, 'public_key'):
         res.set_cert(self.public_key)
 
     if 'decryption' in obj and 'private_key' in obj['decryption']:
-        res.set_private_key(obj['decryption']['private_key'])
+        res.set_private_key(utils.smime.pem2der(obj['decryption']['private_key']))
     elif hasattr(self, 'private_key'):
         res.set_private_key(self.private_key)
 
@@ -126,8 +126,6 @@ def conv(self, obj):
 class Test(unittest.TestCase):
     def setUp(self):
         self.signer_cert, self.signer_key =  utils.smime.make_self_signed_cert("kafoo", "localhost", 1024)
-        self.signer_cert = utils.smime.der2pem(self.signer_cert)
-        self.signer_key = utils.smime.der2pem(self.signer_key, "PRIVATE KEY")
 
     def test_sign(self):
         import django.utils.simplejson
@@ -152,7 +150,7 @@ class Test(unittest.TestCase):
 
         json_data = {"__smime_MIMEEncrypted__": True,
                      "header": {"Msg": "msg2"},
-                     "encryption": [{"cert": self.signer_cert}],
+                     "encryption": [{"cert": utils.smime.der2pem(self.signer_cert)}],
                      "parts": [{"__email_message_Message__": True,
                                 "body": "Blabla",
                                 "header": {"Msg": "msg1",

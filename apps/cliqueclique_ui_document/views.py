@@ -89,8 +89,8 @@ def post(request):
     mime = cliqueclique_mime.models.Mime(
         content = fcdjangoutils.jsonview.from_json(
             doc,
-            public_key=utils.smime.der2pem(node.public_key),
-            private_key=utils.smime.der2pem(node.private_key, "PRIVATE KEY")).as_string())
+            public_key=node.public_key,
+            private_key=node.private_key).as_string())
     mime.save()
     doc = cliqueclique_document.models.Document(content = mime)
     doc.save()
@@ -122,8 +122,8 @@ def set_document_local_data(request, document_id):
         document__document_id = document_id)
     content = fcdjangoutils.jsonview.from_json(
         content,
-        public_key=utils.smime.der2pem(node.public_key),
-        private_key=utils.smime.der2pem(node.private_key, "PRIVATE KEY")).as_string()
+        public_key=node.public_key,
+        private_key=node.private_key).as_string()
     if sub.local_data is None:
         mime = cliqueclique_mime.models.Mime(subscription = sub)
     else:
@@ -193,8 +193,8 @@ def document(request, format, document_id = None, single = False):
                 # to serialize it as json or mime or whatever...
                 node = request.user.node
                 signed = utils.smime.MIMESigned()
-                signed.set_cert(utils.smime.der2pem(node.public_key))
-                signed.set_private_key(utils.smime.der2pem(node.private_key, "PRIVATE KEY"))
+                signed.set_cert(node.public_key)
+                signed.set_private_key(node.private_key)
                 signed.attach(email.message_from_string(data))
                 mime = cliqueclique_mime.models.Mime(content = signed.as_string())
                 mime.save()

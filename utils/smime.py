@@ -190,7 +190,7 @@ class MIMESigned(MIMEM2):
             payload_data = payload[0].as_string()
 
             s = M2Crypto.SMIME.SMIME()
-            s.load_key_bio(M2Crypto.BIO.MemoryBuffer(self.private_key), M2Crypto.BIO.MemoryBuffer(self.cert))
+            s.load_key_bio(M2Crypto.BIO.MemoryBuffer(der2pem(self.private_key, "PRIVATE KEY")), M2Crypto.BIO.MemoryBuffer(der2pem(self.cert)))
             p7 = s.sign(M2Crypto.BIO.MemoryBuffer(payload_data))
             out = M2Crypto.BIO.MemoryBuffer()
             s.write(out, p7, M2Crypto.BIO.MemoryBuffer(payload_data))
@@ -273,7 +273,7 @@ class MIMEEncrypted(MIMEM2):
         s = M2Crypto.SMIME.SMIME()
         sk = M2Crypto.X509.X509_Stack()
         for cert in self.certs:
-            sk.push(M2Crypto.X509.load_cert_bio(M2Crypto.BIO.MemoryBuffer(cert)))
+            sk.push(M2Crypto.X509.load_cert_bio(M2Crypto.BIO.MemoryBuffer(der2pem(cert))))
         s.set_x509_stack(sk)
         # Set cipher: 3-key triple-DES in CBC mode.
         s.set_cipher(M2Crypto.SMIME.Cipher('des_ede3_cbc'))
@@ -296,7 +296,7 @@ class MIMEEncrypted(MIMEM2):
         if not isinstance(payload_data, (str, unicode)): return
 
         s = M2Crypto.SMIME.SMIME()
-        s.load_key_bio(M2Crypto.BIO.MemoryBuffer(private_key or self.private_key), M2Crypto.BIO.MemoryBuffer(cert or self.cert))
+        s.load_key_bio(M2Crypto.BIO.MemoryBuffer(der2pem(private_key or self.private_key, "PRIVATE KEY")), M2Crypto.BIO.MemoryBuffer(der2pem(cert or self.cert)))
         # Ok, this is ugly, but it's a workaround around a limitation
         # in M2Crypto; if there are extra (non-encrypted) headers it
         # fails...
@@ -320,8 +320,6 @@ Content-Transfer-Encoding: base64
 class Test(unittest.TestCase):
     def setUp(self):
         self.signer_cert, self.signer_key =  make_self_signed_cert("kafoo", "localhost", 1024)
-        self.signer_cert = der2pem(self.signer_cert)
-        self.signer_key = der2pem(self.signer_key, "PRIVATE KEY")
 
     def test_sign(self):
         msg1 = email.mime.multipart.MIMEMultipart()
