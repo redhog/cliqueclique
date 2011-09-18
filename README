@@ -124,3 +124,31 @@ A tree structure where each node represents one more character in the
 subject of (a set of) content document(s). The leaves are the content
 documents. Thus any path down the tree represents a prefix of the
 subject.
+
+
+
+Document formats
+=================
+Content document:
+{"__smime_MIMESigned__": true,
+ "header": {},
+ "parts": [{"__email_mime_multipart_MIMEMultipart__": true,
+	    "parts": [{"__email_message_Message__": true,
+		       "body": "",
+		       "header": {"part_type": "content",
+		   	          "Content-Type": "text/plain; charset=\"utf-8\""}}],
+	    "header": {}}]}
+
+
+Links:
+{"__smime_MIMESigned__": true,
+ "header": {},
+ "parts": [{"__email_mime_multipart_MIMEMultipart__": true,
+	    "parts": [{"__email_message_Message__": true,
+		       "body": "",
+		       "header": {"part_type": "link",
+				  "link_direction": "reversed"|"natural",
+				  "Content-Type": "text/plain; charset=\"utf-8\""}}],
+	    "header": {"parent_document_id": "",
+		       "child_document_id": "",
+		       "subject": ""}}]},
