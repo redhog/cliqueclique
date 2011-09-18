@@ -8,6 +8,7 @@ dojo.require("dijit.Tree");
 dojo.require("dijit.form.DropDownButton");
 
 dojo.declare("cliqueclique.document.DocumentSelector", [dijit._Widget, dijit._Templated], {
+  single: false,
   widgetsInTemplate: true,
   templateString: "<span class='dijitDropDownButton'><span class='dijitButtonNode dijitInline'>" +
 		  "  <span dojoType='cliqueclique.document.DocumentTreeModel' jsId='treeModel'></span>" +
@@ -24,19 +25,25 @@ dojo.declare("cliqueclique.document.DocumentSelector", [dijit._Widget, dijit._Te
   onSelect: function (item, node, evt) {
     this.addLink(item);
   },
-   _getLinksAttr: function () {
+  _getLinksAttr: function () {
     return dojo.map(this.selection.children, function (childNode) {
       return dijit.byNode(childNode).attr("document")
     });
   },
   addLink: function (document) {
-    var link = cliqueclique.document.DocumentSelector._SeclectedDocument({document: document});
+    var link;
+    if (this.single) {
+      this.removeLink();
+      link = cliqueclique.document.DocumentLink({document: document});
+    } else {
+      link = cliqueclique.document.DocumentSelector._SeclectedDocument({document: document});
+    }
     dojo.place(link.domNode, this.selection, 'last');
   },
   removeLink: function (document) {
-    dojo.each(this.selection.children, function (childNode) {
+    dojo.forEach(this.selection.children, function (childNode) {
       var child = dijit.byNode(childNode);
-      if (child.attr("document") == document)
+      if (document === undefined || child.attr("document") == document)
         child.destroyRecursive();
     });
   }

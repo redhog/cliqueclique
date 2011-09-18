@@ -15,11 +15,11 @@ dojo.declare("cliqueclique.document.DocumentLinkEditor", [dijit._Widget, dijit._
                   "    </tr>" +
                   "    <tr>" +
                   "     <th>Comment to</th>" +
-                  "     <td><div dojoType='cliqueclique.document.DocumentSelector' dojoAttachPoint='commentTo'></div></td>" +
+                  "     <td><div dojoType='cliqueclique.document.DocumentSelector' single='true' dojoAttachPoint='commentTo'></div></td>" +
                   "    </tr>" +
                   "    <tr>" +
                   "     <th>Has comment in</th>" +
-                  "     <td><div dojoType='cliqueclique.document.DocumentSelector' dojoAttachPoint='commentIn'></div></td>" +
+                  "     <td><div dojoType='cliqueclique.document.DocumentSelector' single='true' dojoAttachPoint='commentIn'></div></td>" +
                   "    </tr>" +
                   "    <tr>" +
                   "     <th>Subject</th>" +
