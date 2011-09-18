@@ -136,45 +136,10 @@ dojo.declare("cliqueclique.ui.Ui", [dijit.layout.BorderContainer], {
 		    false,
 		    "cliqueclique.ui.Ui");
 
-    ui.registerData("documentLink",
-                    {label: 'Display',
-		     load:function (document) {
-		       return ui.docView.attr("document", document);
-                    }},
-                    true,
-                    "cliqueclique.document.DocumentLink");
-    ui.registerData("documentLink",
-		    {label: 'Comment',
-		     load:function (document) {
-		       var docEdit = new cliqueclique.document.DocumentEditor({title: 'New comment'});
-		       docEdit.commentToAdd(document);
-		       ui.getDataDefault("panels").addChild(docEdit);
-		     }},
-                     false,
-                     "cliqueclique.document.DocumentLink");
-    ui.registerData("documentLink",
-		    {label: 'Graph',
-		     load:function (document) {
-		       var docGraph = new cliqueclique.document.DocumentGraphView({document: document});
-		       ui.getDataDefault("panels").addChild(docGraph);
-		     }},
-                     false,
-                     "cliqueclique.document.DocumentLink");
-    ui.registerData("documentLink",
-		    {label: 'Stat',
-		     load:function (document) {
-		       var docStat = new cliqueclique.document.DocumentStatView({document: document});
-		       ui.getDataDefault("panels").addChild(docStat);
-		     }},
-                     false,
-                     "cliqueclique.document.DocumentLink");
-    ui.registerData("documentLink",
-		    {label: 'Info',
-		     load:function (document) {
-		       var docInfo = new cliqueclique.document.DocumentInfoView({document: document});
-		       ui.getDataDefault("panels").addChild(docInfo);
-		     }},
-                     false,
-                     "cliqueclique.document.DocumentLink");
+    cliqueclique.document.DocumentView.register(ui);
+    cliqueclique.document.DocumentEditor.register(ui);
+    cliqueclique.document.DocumentGraphView.register(ui);
+    cliqueclique.document.DocumentStatView.register(ui);
+    cliqueclique.document.DocumentInfoView.register(ui);
   }
 });

@@ -11,3 +11,14 @@ dojo.declare("cliqueclique.document.DocumentGraphView", [dijit._Widget, dijit._T
     this.attr("title", "Graph: " + this.item.getSubject());
   }
 });
+
+cliqueclique.document.DocumentGraphView.register = function (widget) {
+  widget.registerData("documentLink",
+		      {label: 'Graph',
+		       load:function (document) {
+			 var docGraph = new cliqueclique.document.DocumentGraphView({document: document});
+			 widget.getDataDefault("panels").addChild(docGraph);
+		       }},
+		       false,
+		       "cliqueclique.document.DocumentLink");
+};

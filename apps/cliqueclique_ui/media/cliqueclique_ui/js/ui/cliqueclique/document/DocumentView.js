@@ -183,3 +183,13 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
    this.item.setAttribute("local_is_subscribed");
   }
 });
+
+cliqueclique.document.DocumentView.register = function (widget) {
+  widget.registerData("documentLink",
+		      {label: 'Display',
+		       load:function (document) {
+			 return widget.docView.attr("document", document);
+		      }},
+		      true,
+		      "cliqueclique.document.DocumentLink");
+};

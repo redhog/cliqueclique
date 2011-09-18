@@ -1,5 +1,6 @@
 dojo.provide("cliqueclique.document.DocumentEditor");
 
+dojo.require("cliqueclique.ui");
 dojo.require("cliqueclique.document.DocumentSelector");
 dojo.require("dijit.form.TextBox");
 dojo.require("dijit.Editor");
@@ -84,3 +85,16 @@ dojo.declare("cliqueclique.document.DocumentEditor", [dijit._Widget, dijit._Temp
      this.commentIn.addLink(document);
    }
 });
+
+cliqueclique.document.DocumentEditor.register = function (widget) {
+  widget.registerData("documentLink",
+		      {label: 'Comment',
+		       load:function (document) {
+			 var docEdit = new cliqueclique.document.DocumentEditor({title: 'New comment'});
+			 docEdit.commentToAdd(document);
+			 widget.getDataDefault("panels").addChild(docEdit);
+		       }},
+		       false,
+		       "cliqueclique.document.DocumentLink");
+
+};

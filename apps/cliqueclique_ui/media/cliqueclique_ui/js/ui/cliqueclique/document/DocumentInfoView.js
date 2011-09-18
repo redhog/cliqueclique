@@ -22,3 +22,14 @@ dojo.declare("cliqueclique.document.DocumentInfoView", [dijit._Widget, dijit._Te
     this.attr("title", "Info: " + this.item.getSubject());
   }
 });
+
+cliqueclique.document.DocumentInfoView.register = function (widget) {
+  widget.registerData("documentLink",
+		      {label: 'Info',
+		       load:function (document) {
+			 var docInfo = new cliqueclique.document.DocumentInfoView({document: document});
+			 widget.getDataDefault("panels").addChild(docInfo);
+		       }},
+		       false,
+		       "cliqueclique.document.DocumentLink");
+};

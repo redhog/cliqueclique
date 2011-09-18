@@ -11,3 +11,14 @@ dojo.declare("cliqueclique.document.DocumentStatView", [dijit._Widget, dijit._Te
     this.attr("title", "Stat: " + this.item.getSubject());
   }
 });
+
+cliqueclique.document.DocumentStatView.register = function (widget) {
+  widget.registerData("documentLink",
+		      {label: 'Stat',
+		       load:function (document) {
+			 var docStat = new cliqueclique.document.DocumentStatView({document: document});
+			 widget.getDataDefault("panels").addChild(docStat);
+		       }},
+		       false,
+		       "cliqueclique.document.DocumentLink");
+};
