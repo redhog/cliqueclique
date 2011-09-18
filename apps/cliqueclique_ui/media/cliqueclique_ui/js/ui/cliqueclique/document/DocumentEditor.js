@@ -1,25 +1,25 @@
-dojo.provide("cliqueclique.document.editor");
+dojo.provide("cliqueclique.document.DocumentEditor");
 
-dojo.require("cliqueclique.document.selector");
+dojo.require("cliqueclique.document.DocumentSelector");
 dojo.require("dijit.form.TextBox");
 dojo.require("dijit.Editor");
 
-dojo.declare("cliqueclique.document.editor.DocumentEditor", [dijit._Widget, dijit._Templated], {
+dojo.declare("cliqueclique.document.DocumentEditor", [dijit._Widget, dijit._Templated], {
   widgetsInTemplate: true,
   templateString: "<div class='cliquecliqueDocumentEditor'>" +
                   "  <div dojoType='dijit.form.Button' dojoAttachEvent='onClick: send' class='sendButton'>Send</div>" +
                   "  <table class='metadata'>" +
                   "    <tr>" +
                   "     <th>Comment to</th>" +
-                  "     <td><div dojoType='cliqueclique.document.selector.DocumentSelector' dojoAttachPoint='commentTo'></div></td>" +
+                  "     <td><div dojoType='cliqueclique.document.DocumentSelector' dojoAttachPoint='commentTo'></div></td>" +
                   "     <th>Hidden comment to</th>" +
-                  "     <td><div dojoType='cliqueclique.document.selector.DocumentSelector' dojoAttachPoint='commentToHidden'></div></td>" +
+                  "     <td><div dojoType='cliqueclique.document.DocumentSelector' dojoAttachPoint='commentToHidden'></div></td>" +
                   "    </tr>" +
                   "    <tr>" +
                   "     <th>Has comments in</th>" +
-                  "     <td><div dojoType='cliqueclique.document.selector.DocumentSelector' dojoAttachPoint='commentInHidden'></div></td>" +
+                  "     <td><div dojoType='cliqueclique.document.DocumentSelector' dojoAttachPoint='commentInHidden'></div></td>" +
                   "     <th>Has back-linking comments in</th>" +
-                  "     <td><div dojoType='cliqueclique.document.selector.DocumentSelector' dojoAttachPoint='commentIn'></div></td>" +
+                  "     <td><div dojoType='cliqueclique.document.DocumentSelector' dojoAttachPoint='commentIn'></div></td>" +
                   "    </tr>" +
                   "    <tr>" +
                   "     <th>Subject</th>" +

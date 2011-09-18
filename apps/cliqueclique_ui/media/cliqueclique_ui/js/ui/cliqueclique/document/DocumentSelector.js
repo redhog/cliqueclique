@@ -1,27 +1,16 @@
-dojo.provide("cliqueclique.document.selector");
+dojo.provide("cliqueclique.document.DocumentSelector");
 
 dojo.require("cliqueclique.popuptree");
 dojo.require("cliqueclique.document.Document");
 dojo.require("cliqueclique.document._AbstractDocumentView");
-dojo.require("cliqueclique.document.tree");
+dojo.require("cliqueclique.document.DocumentTreeModel");
 dojo.require("dijit.Tree");
 dojo.require("dijit.form.DropDownButton");
 
-dojo.declare("cliqueclique.document.selector._SeclectedDocument", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
-  widgetsInTemplate: true,
-  templateString: "<span><span dojoType='cliqueclique.document.DocumentLink' dojoAttachPoint='link'></span><button dojoAttachEvent='onclick:onClick' style='display: inline-block;'>X</button> </span>",
-
-  _getDocumentAttr: function () { return this.link.attr("document"); },
-  _setDocumentAttr: function (document) { this.link.attr("document", document); },
-  onClick: function (e) {
-    this.destroyRecursive();
-  }
-}),
-
-dojo.declare("cliqueclique.document.selector.DocumentSelector", [dijit._Widget, dijit._Templated], {
+dojo.declare("cliqueclique.document.DocumentSelector", [dijit._Widget, dijit._Templated], {
   widgetsInTemplate: true,
   templateString: "<span class='dijitDropDownButton'><span class='dijitButtonNode dijitInline'>" +
-		  "  <span dojoType='cliqueclique.document.tree.DocumentTreeModel' jsId='treeModel'></span>" +
+		  "  <span dojoType='cliqueclique.document.DocumentTreeModel' jsId='treeModel'></span>" +
 		  "  <span dojoAttachPoint='selection'></span>" +
 		  "  <div dojoType='dijit.form.DropDownButton' dojoAttachPoint='button'>" +
 		  "    <div></div>" +
@@ -41,7 +30,7 @@ dojo.declare("cliqueclique.document.selector.DocumentSelector", [dijit._Widget, 
     });
   },
   addLink: function (document) {
-    var link = cliqueclique.document.selector._SeclectedDocument({document: document});
+    var link = cliqueclique.document.DocumentSelector._SeclectedDocument({document: document});
     dojo.place(link.domNode, this.selection, 'last');
   },
   removeLink: function (document) {
@@ -50,5 +39,16 @@ dojo.declare("cliqueclique.document.selector.DocumentSelector", [dijit._Widget, 
       if (child.attr("document") == document)
         child.destroyRecursive();
     });
+  }
+});
+
+dojo.declare("cliqueclique.document.DocumentSelector._SeclectedDocument", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
+  widgetsInTemplate: true,
+  templateString: "<span><span dojoType='cliqueclique.document.DocumentLink' dojoAttachPoint='link'></span><button dojoAttachEvent='onclick:onClick' style='display: inline-block;'>X</button> </span>",
+
+  _getDocumentAttr: function () { return this.link.attr("document"); },
+  _setDocumentAttr: function (document) { this.link.attr("document", document); },
+  onClick: function (e) {
+    this.destroyRecursive();
   }
 });

@@ -1,8 +1,7 @@
 dojo.provide("cliqueclique.ui");
 
-dojo.require("cliqueclique.document.tree");
-dojo.require("cliqueclique.document.selector");
-dojo.require("cliqueclique.document.editor");
+dojo.require("cliqueclique.document.DocumentTreeModel");
+dojo.require("cliqueclique.document.DocumentEditor");
 dojo.require("cliqueclique.document.DocumentView");
 dojo.require("cliqueclique.document.DocumentGraphView");
 dojo.require("cliqueclique.document.DocumentStatView");
@@ -106,7 +105,7 @@ dojo.declare("cliqueclique.ui.Ui", [dijit.layout.BorderContainer], {
     ui.leftPane = new dijit.layout.AccordionContainer({region: 'left', splitter: true, minSize: 200});
     ui.inner.addChild(ui.leftPane);
 
-    ui.tree = new dijit.Tree({showRoot: false, model: cliqueclique.document.tree.DocumentTreeModel(), style: "width: 200px;", title: 'Bookmarks'});
+    ui.tree = new dijit.Tree({showRoot: false, model: cliqueclique.document.DocumentTreeModel(), style: "width: 200px;", title: 'Bookmarks'});
     ui.leftPane.addChild(ui.tree);
     ui.tree.connect(ui.tree, 'onClick', function (item, node, evt) { item.getDocumentLink(ui.tree)(); });
 
@@ -147,7 +146,7 @@ dojo.declare("cliqueclique.ui.Ui", [dijit.layout.BorderContainer], {
     ui.registerData("documentLink",
 		    {label: 'Comment',
 		     load:function (document) {
-		       var docEdit = new cliqueclique.document.editor.DocumentEditor({title: 'New comment'});
+		       var docEdit = new cliqueclique.document.DocumentEditor({title: 'New comment'});
 		       docEdit.commentToAdd(document);
 		       ui.getDataDefault("panels").addChild(docEdit);
 		     }},
