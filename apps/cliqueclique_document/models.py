@@ -96,19 +96,3 @@ def conv(self, obj):
             'parent_document_id': obj.parent_document_id,
             'child_document_id': obj.child_document_id,
             'content': obj.content.as_mime}
-
-# @fcdjangoutils.jsonview.JsonDecodeRegistry.register('__cliqueclique_document_models_Document__')
-# def conv(self, obj):
-#     if 'document_id' in obj:
-#         return Document.objects.get(document_id = obj['document_id'])
-#     else:
-#         content = obj['content']
-#         if hasattr(content, "as_string"):
-#             content = content.as_string()
-#         res = Document(content = content)
-#         res.save()
-#     return res
-
-# @fcdjangoutils.jsonview.JsonDecodeRegistry.register('__cliqueclique_document_models_DocumentId__')
-# def conv(self, obj):
-#     return obj['document'].document_id

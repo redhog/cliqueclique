@@ -619,3 +619,7 @@ def conv(self, obj):
             "old_center_node_id": obj.old_center_node_id,
             "old_center_distance": obj.old_center_distance
             }
+
+@fcdjangoutils.jsonview.JsonDecodeRegistry.register('__cliqueclique_document_models_DocumentSubscription_export__')
+def conv(self, obj):
+    return DocumentSubscription.objects.get(document__document_id = obj['document_id']).export()
