@@ -10,7 +10,7 @@ dojo.require("cliqueclique.document.DocumentGraphView");
 dojo.require("cliqueclique.document.DocumentStatView");
 dojo.require("cliqueclique.document.DocumentInfoView");
 dojo.require("cliqueclique.document.Document");
-dojo.require("cliqueclique.nodeinfo");
+dojo.require("cliqueclique.general.nodeinfo");
 dojo.require("dijit.layout.BorderContainer");
 dojo.require("dijit.layout.ContentPane");
 dojo.require("dijit.layout.AccordionContainer");

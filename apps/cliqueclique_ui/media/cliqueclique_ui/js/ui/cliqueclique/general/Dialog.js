@@ -1,8 +1,8 @@
-dojo.provide('cliqueclique.Dialog');
+dojo.provide('cliqueclique.general.Dialog');
 
 dojo.require('dijit.Dialog');
 
-dojo.declare("cliqueclique.Dialog", [dijit.Dialog], {
+dojo.declare("cliqueclique.general.Dialog", [dijit.Dialog], {
   postCreate: function () {
     this.inherited(arguments);
     dojo.body().appendChild(this.domNode);

@@ -1,4 +1,4 @@
-dojo.provide("cliqueclique.popuptree");
+dojo.provide("cliqueclique.general.popuptree");
 
 dojo.require("dijit.Tree");
 

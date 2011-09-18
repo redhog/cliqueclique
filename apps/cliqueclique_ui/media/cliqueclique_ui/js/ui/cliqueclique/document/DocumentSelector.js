@@ -1,6 +1,6 @@
 dojo.provide("cliqueclique.document.DocumentSelector");
 
-dojo.require("cliqueclique.popuptree");
+dojo.require("cliqueclique.general.popuptree");
 dojo.require("cliqueclique.document.Document");
 dojo.require("cliqueclique.document._AbstractDocumentView");
 dojo.require("cliqueclique.document.DocumentTreeModel");

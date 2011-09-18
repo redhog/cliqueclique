@@ -1,10 +1,10 @@
 dojo.provide("cliqueclique.ImportDialog");
 
-dojo.require("cliqueclique.Dialog");
+dojo.require("cliqueclique.general.Dialog");
 dojo.require('dijit._Widget');
 dojo.require('dijit._Templated');
 
-dojo.declare("cliqueclique.ImportDialog", [cliqueclique.Dialog], {
+dojo.declare("cliqueclique.ImportDialog", [cliqueclique.general.Dialog], {
   title: "Import document",
   postCreate: function () {
     this.inherited(arguments);

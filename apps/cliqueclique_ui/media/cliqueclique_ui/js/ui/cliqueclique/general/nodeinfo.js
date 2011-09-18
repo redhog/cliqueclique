@@ -1,4 +1,4 @@
-dojo.provide("cliqueclique.nodeinfo");
+dojo.provide("cliqueclique.general.nodeinfo");
 
 dijit._Widget.prototype.dataRegistry = null;
 
