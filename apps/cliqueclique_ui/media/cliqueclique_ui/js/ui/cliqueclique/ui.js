@@ -5,6 +5,7 @@ dojo.require("cliqueclique.ImportDialog");
 dojo.require("cliqueclique.document.ActionMenu");
 dojo.require("cliqueclique.document.DocumentTreeModel");
 dojo.require("cliqueclique.document.DocumentEditor");
+dojo.require("cliqueclique.document.DocumentLinkEditor");
 dojo.require("cliqueclique.document.DocumentView");
 dojo.require("cliqueclique.document.DocumentGraphView");
 dojo.require("cliqueclique.document.DocumentStatView");
@@ -66,6 +67,7 @@ dojo.declare("cliqueclique.ui.Ui", [dijit.layout.BorderContainer], {
     cliqueclique.ImportDialog.register(ui);
     cliqueclique.document.DocumentView.register(ui);
     cliqueclique.document.DocumentEditor.register(ui);
+    cliqueclique.document.DocumentLinkEditor.register(ui);
     cliqueclique.document.DocumentGraphView.register(ui);
     cliqueclique.document.DocumentStatView.register(ui);
     cliqueclique.document.DocumentInfoView.register(ui);
