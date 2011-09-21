@@ -33,15 +33,16 @@ dojo.declare("cliqueclique.document.DocumentLinkEditor", [dijit._Widget, dijit._
    send: function () {
      var editor = this;
 
+     console.log([this.commentTo.attr("links")[0], this.commentIn.attr("links")[0]]);
      cliqueclique.document.Document.post_link(this.commentTo.attr("links")[0], this.commentIn.attr("links")[0], function (document, error) {
-       if (document == null) {
+       if (!document) {
 	 console.error(error);
 	 return;
        }
+       //console.log(document.getDocumentId());
        document.getDocumentLink(editor)();
        editor.getHtmlParent().removeChild(editor);
      }, this.reversed);
-
    },
    commentToAdd: function (document) {
      this.commentTo.addLink(document);
