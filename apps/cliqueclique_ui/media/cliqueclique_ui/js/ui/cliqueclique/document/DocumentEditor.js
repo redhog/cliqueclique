@@ -57,7 +57,7 @@ dojo.declare("cliqueclique.document.DocumentEditor", [dijit._Widget, dijit._Temp
 	                                  "Content-Type": "text/plain; charset=\"utf-8\""}}],
 	            "header": header}]},
        function (document, error) {
-	 if (document == null) {
+	 if (!document) {
 	   console.error(error);
 	   return;
 	 }
@@ -66,7 +66,7 @@ dojo.declare("cliqueclique.document.DocumentEditor", [dijit._Widget, dijit._Temp
 	   dojo.forEach(link.items, function (item) {
 	     var params = {document: document, item: item}
 	     cliqueclique.document.Document.post_link(params[link.src], params[link.dst], function (document, error) {
-	       if (document == null) {
+	       if (!document) {
 		 console.error(error);
 		 return;
 	       }
