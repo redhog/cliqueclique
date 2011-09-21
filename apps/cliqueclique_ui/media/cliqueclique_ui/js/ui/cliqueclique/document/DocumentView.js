@@ -114,6 +114,7 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
   },
   refresh: function () {
     var view = this;
+    if (!view.attr("document")) return;
     cliqueclique.document.Document.find(function (documents) {
       var document = documents[0];
       // Check that we haven't changed document since the refresh was asked for...
