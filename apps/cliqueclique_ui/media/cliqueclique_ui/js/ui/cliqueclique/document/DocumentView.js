@@ -93,6 +93,14 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
     "      Children:" +
     "      <span dojoAttachPoint='childDocuments'></span>" +
     "    </div>" +
+    "    <div>" +
+    "      Direct parent links:" +
+    "      <span dojoAttachPoint='directParentDocuments'></span>" +
+    "    </div>" +
+    "    <div>" +
+    "      Direct child links:" +
+    "      <span dojoAttachPoint='directChildDocuments'></span>" +
+    "    </div>" +
     "    <div dojoAttachPoint='body'></div>" +
     "  </div>" +
     "</div>",
@@ -127,12 +135,26 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
     this.inherited(arguments);
     this.bodyView.attr("document", document);
 
-    dojo.query('> *', documentView.childDocuments).forEach(function(domNode, index, arr){
-      dijit.byNode(domNode).destroyRecursive();
-    });
-    dojo.query('> *', documentView.parentDocuments).forEach(function(domNode, index, arr){
-      dijit.byNode(domNode).destroyRecursive();
-    });
+
+    function populateLinks(query, field) {
+      cliqueclique.document.Document.find(function (children) {
+	dojo.forEach(children, function (child) {
+	  var link = new cliqueclique.document.DocumentLink({document: child});
+	  dojo.place(link.domNode, documentView[field]);
+	});
+      }, query, documentView.item.getDocumentId());
+    }
+
+    function clearLinks(field) {
+      dojo.query('> *', documentView[field]).forEach(function(domNode, index, arr){
+	dijit.byNode(domNode).destroyRecursive();
+      });
+    }
+
+    clearLinks("childDocuments");
+    clearLinks("parentDocuments");
+    clearLinks("directChildDocuments");
+    clearLinks("directParentDocuments");
 
     if (!this.item) {
       dojo.html.set(this.title, "No document selected");
@@ -160,19 +182,10 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
     this.readInput.attr("value", this.item.json_data.read);
     this.subscribedInput.attr("value", this.item.json_data.local_is_subscribed);
 
-    cliqueclique.document.Document.find(function (children) {
-      dojo.forEach(children, function (child) {
-        var link = new cliqueclique.document.DocumentLink({document: child});
-        dojo.place(link.domNode, documentView.childDocuments);
-      });
-    }, "->", this.item.getDocumentId());
-
-    cliqueclique.document.Document.find(function (parents) {
-      dojo.forEach(parents, function (parent) {
-        var link = new cliqueclique.document.DocumentLink({document: parent});
-        dojo.place(link.domNode, documentView.parentDocuments);
-      });
-    }, "<-", this.item.getDocumentId());
+    populateLinks("->", "childDocuments");
+    populateLinks("<-", "parentDocuments");
+    populateLinks(">", "directChildDocuments");
+    populateLinks("<", "directParentDocuments");
   },
   onBookmarkedInputClick: function () {
    this.item.setAttribute("bookmarked");
