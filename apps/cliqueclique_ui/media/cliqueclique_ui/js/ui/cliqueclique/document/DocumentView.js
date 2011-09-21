@@ -17,7 +17,7 @@ dojo.declare("cliqueclique.document.DocumentBodyView", [dijit._Widget, dijit._Te
     var body = {body: '', header: {"Content-Type": 'text/plain'}};
     if (this.item) {
       try {
-        body = this.item.getParts()[this.displayPart || this.declaredClass];
+        body = this.item.getParts()[this.displayPart || this.declaredClass] || body;
       } catch (e) {
       }
     }
