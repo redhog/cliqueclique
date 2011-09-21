@@ -51,9 +51,9 @@ dijit._Widget.prototype.getDataDefault = function (name, namespace) {
 
 dijit._Widget.prototype.getHtmlParent = function () {
   function getParent(domNode) {
-    while (domNode.parentNode != null && !dijit.byNode(domNode))
+    while (domNode != null && domNode.parentNode != null && !dijit.byNode(domNode))
       domNode = domNode.parentNode;
-    if (domNode.parentNode == null)
+    if (domNode == null || domNode.parentNode == null)
       return null;
     return dijit.byNode(domNode);
   }
