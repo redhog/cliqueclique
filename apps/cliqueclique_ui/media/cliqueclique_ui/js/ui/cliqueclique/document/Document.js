@@ -114,14 +114,21 @@ cliqueclique.document.Document.post = function (json_data__document, callback) {
     handleAs: "json",
     content: { document: dojo.toJson(json_data__document) },
     load: function(data) {
-      if (data.error != undefined) {
-        callback(null, data.error);
-      } else {
-        cliqueclique.document.Document.updated();
-        callback(cliqueclique.document.Document(data));
-      }
+      // Do this in a timeout so that the error function isn't called
+      // if callback throws an unhandled exception and so that the
+      // traceback is shown if you use a debugging tool
+      setTimeout(function () {
+	if (data.error != undefined) {
+	  console.log(["server-error", error]);
+	  callback(null, data.error);
+	} else {
+	  cliqueclique.document.Document.updated();
+	  callback(cliqueclique.document.Document(data));
+	}
+      }, 1);
     },
     error: function(error) {
+      console.log(["json-error", error]);
       callback(null, error);
     }
   });
