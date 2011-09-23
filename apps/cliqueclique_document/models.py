@@ -62,10 +62,12 @@ class Document(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnec
     # These mirror the methods on Document objects in JavaScript...
     @property
     def parts(self):
-        content = this.content.content_as_mime
+        content = self.content.content_as_mime
         parts = {}
-        for part in content.get_payload():
-            parts[part['part_type']] = part;
+        payload = content.get_payload()
+        if not isinstance(payload, (str, unicode)):
+            for part in content.get_payload():
+                parts[part['part_type']] = part;
         return parts
 
     @property

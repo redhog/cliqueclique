@@ -101,8 +101,8 @@ class LocalNode(Node):
         
     def sign(self, msg):
         signed = utils.smime.MIMESigned()
-        signed.set_private_key(utils.smime.der2pem(self.private_key, "PRIVATE KEY"))
-        signed.set_cert(utils.smime.der2pem(self.public_key))
+        signed.set_private_key(self.private_key)
+        signed.set_cert(self.public_key)
         signed.attach(msg)
         return signed
 
