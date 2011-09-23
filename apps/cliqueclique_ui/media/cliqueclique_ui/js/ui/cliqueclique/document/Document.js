@@ -5,10 +5,12 @@ dojo.require("cliqueclique.general.helpers");
 dojo.declare("cliqueclique.document.Document", [], {
   constructor: function (json_data) {
     this.json_data = json_data;
+    this.object_id = cliqueclique.document.Document.object_id_counter++;
   },
   getObjectId: function () {
+    return "cliqueclique.document.Document:" + this.object_id;
     // Some random hashable the value that changes if any attributes changes
-    return this.json_data.document.document_id + ":" + this.json_data.bookmarked + ":" + this.json_data.read + ":" + this.json_data.local_is_subscribed;
+    // return this.json_data.document.document_id + ":" + this.json_data.bookmarked + ":" + this.json_data.read + ":" + this.json_data.local_is_subscribed;
   },
   getDocumentId: function () {
     return this.json_data.document.document_id;
@@ -105,6 +107,8 @@ dojo.declare("cliqueclique.document.Document", [], {
   }
 
 });
+
+cliqueclique.document.Document.object_id_counter = 0;
 
 cliqueclique.document.Document.post = function (json_data__document, callback) {
   if (callback == undefined)
