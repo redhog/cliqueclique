@@ -42,7 +42,7 @@ dojo.declare("cliqueclique.document.DocumentLinkEditor", [dijit._Widget, dijit._
        //console.log(document.getDocumentId());
        document.getDocumentLink(editor)();
        editor.getHtmlParent().removeChild(editor);
-     }, this.reversed);
+     }, this.reversed.attr("value"));
    },
    commentToAdd: function (document) {
      this.commentTo.addLink(document);
