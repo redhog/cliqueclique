@@ -3,7 +3,7 @@ dojo.provide("cliqueclique.document.Document");
 dojo.require("cliqueclique.general.helpers");
 
 dojo.declare("cliqueclique.document.BaseDocument", [], {
- constructor: function (json_data, object_id_base) {
+  constructor: function (json_data, object_id_base) {
     this.json_data = json_data;
     this.object_id_base = object_id_base;
   },
