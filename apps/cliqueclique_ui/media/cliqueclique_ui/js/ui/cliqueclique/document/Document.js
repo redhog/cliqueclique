@@ -2,10 +2,10 @@ dojo.provide("cliqueclique.document.Document");
 
 dojo.require("cliqueclique.general.helpers");
 
-dojo.declare("cliqueclique.document.Document", [], {
+dojo.declare("cliqueclique.document.BaseDocument", [], {
   constructor: function (json_data) {
     this.json_data = json_data;
-    this.object_id = cliqueclique.document.Document.object_id_counter++;
+    this.object_id = cliqueclique.document.BaseDocument.object_id_counter++;
   },
   getObjectId: function () {
     return "cliqueclique.document.Document:" + this.object_id;
@@ -76,6 +76,12 @@ dojo.declare("cliqueclique.document.Document", [], {
       }
     }
   },
+});
+cliqueclique.document.BaseDocument.object_id_counter = 0;
+
+
+
+dojo.declare("cliqueclique.document.Document", [cliqueclique.document.BaseDocument], {
   getDocumentLink: function (widget) {
     var document = this;
     return function () {
@@ -109,66 +115,6 @@ dojo.declare("cliqueclique.document.Document", [], {
 });
 
 cliqueclique.document.Document.object_id_counter = 0;
-
-cliqueclique.document.Document.post = function (json_data__document, callback) {
-  if (callback == undefined)
-    callback = function () {};
-  dojo.xhrGet({
-    url: "/post",
-    handleAs: "json",
-    content: { document: dojo.toJson(json_data__document) },
-    load: function(data) {
-      // Do this in a timeout so that the error function isn't called
-      // if callback throws an unhandled exception and so that the
-      // traceback is shown if you use a debugging tool
-      setTimeout(function () {
-	if (data.error != undefined) {
-	  console.log(["server-error", error]);
-	  callback(null, data.error);
-	} else {
-	  cliqueclique.document.Document.updated();
-	  callback(cliqueclique.document.Document(data));
-	}
-      }, 1);
-    },
-    error: function(error) {
-      console.log(["json-error", error]);
-      callback(null, error);
-    }
-  });
-}
-
-cliqueclique.document.Document.post_link = function (src, dst, callback, reversed, subject, parts) {
-  if (subject === undefined)
-    if (reversed)
-      subject = src.getSubject();
-    else
-      subject = dst.getSubject();
-
-  var direction = reversed ? "reversed" : "natural";
-
-  var real_parts = [{"__email_message_Message__": true,
-		     "body": "",
-		     "header": {"part_type": "link",
-				"link_direction": direction,
-				"Content-Type": "text/plain; charset=\"utf-8\""}}];
-  if (parts !== undefined)
-    dojo.forEach(parts, function (part) {
-      real_parts.push(part);
-    });
-
-  cliqueclique.document.Document.post(
-    {
-      "__smime_MIMESigned__": true,
-      "header": {},
-      "parts": [{"__email_mime_multipart_MIMEMultipart__": true,
-		 "parts": real_parts,
-		 "header": {"parent_document_id": src.getDocumentId(),
-	                    "child_document_id": dst.getDocumentId(),
-	                    "subject": subject}}]},
-    callback
-  );
-}
 
 cliqueclique.document.Document.find = function (onComplete, query, context) {
   var url = "/find/json";
@@ -213,3 +159,94 @@ cliqueclique.document.Document.parseContentType = function (mimePart) {
 
 
 cliqueclique.document.Document.updated = function () {};
+
+
+
+dojo.declare("cliqueclique.document.NewDocument", [cliqueclique.document.BaseDocument], {
+  constructor: function () {
+    this.inherited(arguments, [{document: {content: {"__smime_MIMESigned__": true,
+						     "header": {},
+						     "parts": [{"__email_mime_multipart_MIMEMultipart__": true,
+								"header": {},
+								"parts": []}]}}}]);
+    this.post_hooks = [];
+  },
+  createPart: function (part_type, cls, contentType) {
+    var parts = this.getParts();
+    var part = parts[part_type]
+    if (part === undefined) {
+      part = {header:{part_type:part_type}};
+      this.getContent().parts.push(part);
+    }
+    if (cls !== undefined) part[cls] = true;
+    if (contentType !== undefined) part.header["Content-Type"] = contentType;
+    return part;
+  },
+  /* Hook is function ({document:document}, next_hook) */
+  addPostHook: function (hook) {
+    this.post_hooks.push(hook);
+  },
+  /* Post the document. Callback is function({document:document}).
+     The dictionary parameter can optionally contain other data and/or
+     documents created by post hooks. */
+  post: function (callback, error_callback) {
+    if (!error_callback) {
+      error_callback = function (error) {
+        if (typeof(error) != 'string') {
+ 	  error = error.type + ": " + error.description + "\n" + error.traceback;
+        }
+	console.error(error);
+      }
+    }
+    var new_document = this;
+    if (callback == undefined)
+      callback = function () {};
+    dojo.xhrGet({
+      url: "/post",
+      handleAs: "json",
+      content: { document: dojo.toJson(new_document.json_data.document.content) },
+      load: function(data) {
+	// Do this in a timeout so that the error function isn't called
+	// if callback throws an unhandled exception and so that the
+	// traceback is shown if you use a debugging tool
+	setTimeout(function () {
+	  if (data.error != undefined) {
+	    error_callback(data.error);
+	  } else {
+	    cliqueclique.general.helpers.chainFunctions(
+              new_document.post_hooks,
+	      {document:cliqueclique.document.Document(data)},
+	      function (data) {
+	        cliqueclique.document.Document.updated();
+		callback(data);
+	      }
+	    )();
+	  }
+	}, 1);
+      },
+      error: function(error) {
+	error_callback(error);
+      }
+    });
+  },
+});
+
+cliqueclique.document.NewDocument.prototype.makeLink = function (src, dst, reversed, subject) {
+  if (subject === undefined)
+    if (reversed)
+      subject = src.getSubject();
+    else
+      subject = dst.getSubject();
+
+  var direction = reversed ? "reversed" : "natural";
+
+  var content = this.getContent();
+  content.header.parent_document_id = src.getDocumentId();
+  content.header.child_document_id = dst.getDocumentId();
+  content.header.subject = subject;
+
+  var part = this.createPart("link", "__email_message_Message__", "text/plain; charset=\"utf-8\"");
+  part.body = '';
+  part.header.link_direction = direction;
+}
+

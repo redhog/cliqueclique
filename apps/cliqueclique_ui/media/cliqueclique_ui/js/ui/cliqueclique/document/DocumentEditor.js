@@ -41,42 +41,38 @@ dojo.declare("cliqueclique.document.DocumentEditor", [dijit._Widget, dijit._Temp
 		  {src: "item", dst:"document", reversed: true, items: this.commentIn.attr("links")}];
 
      var header = {subject: this.subject.attr("value")};
+
+     var doc = cliqueclique.document.NewDocument();
+     var content = doc.getContent();
+     content.header.subject = this.subject.attr("value");
 /*
-     header.parent_document_id = xyzzy.getDocumentId();
-     header.child_document_id = xyzzy.getDocumentId();
+     content.header.parent_document_id = xyzzy.getDocumentId();
+     content.header.child_document_id = xyzzy.getDocumentId();
 */
+     var part = doc.createPart("content", "__email_message_Message__", "text/plain; charset=\"utf-8\"");
+     part.body = this.content.attr("value");
 
-     cliqueclique.document.Document.post(
-       {
-         "__smime_MIMESigned__": true,
-	 "header": {},
-	 "parts": [{"__email_mime_multipart_MIMEMultipart__": true,
-		    "parts": [{"__email_message_Message__": true,
-	                       "body": this.content.attr("value"),
-			       "header": {"part_type": "content",
-	                                  "Content-Type": "text/plain; charset=\"utf-8\""}}],
-	            "header": header}]},
-       function (document, error) {
-	 if (!document) {
-	   console.error(error);
-	   return;
-	 }
-
-	 dojo.forEach(links, function (link) {
-	   dojo.forEach(link.items, function (item) {
-	     var params = {document: document, item: item}
-	     cliqueclique.document.Document.post_link(params[link.src], params[link.dst], function (document, error) {
-	       if (!document) {
-		 console.error(error);
-		 return;
-	       }
-	     }, link.reversed);
+     dojo.forEach(links, function (link) {
+       dojo.forEach(link.items, function (item) {
+	 doc.addPostHook(function (data, next_hook) {
+	   var params = {document: data.document, item: item}
+	   var link_doc = cliqueclique.document.NewDocument();
+	   link_doc.makeLink(params[link.src], params[link.dst], link.reversed);
+	   link_doc.post(function(link_data) {
+	     if (data.links === undefined) data.links = [];
+	     data.links.push(link_data);
+             next_hook(data);
 	   });
-	 });
-
-         document.getDocumentLink(editor)();
-	 editor.getHtmlParent().removeChild(editor);
+         });
        });
+     });
+
+     doc.post(
+       function (data) {
+	 data.document.getDocumentLink(editor)();
+	 editor.getHtmlParent().removeChild(editor);
+       },
+       function (error) { console.error(error); });
    },
    commentToAdd: function (document) {
      this.commentTo.addLink(document);

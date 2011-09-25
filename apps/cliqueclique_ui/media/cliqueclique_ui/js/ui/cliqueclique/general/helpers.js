@@ -18,3 +18,20 @@ cliqueclique.general.helpers.splitWithQuotes = function (text, sep) {
 
   return tokens;
 }
+
+/* Chains together a set of hooks that should run after one another as
+   callbacks. Each hook is function(data, next_hook) and should call
+   next_hook() as its last action. last_hook is function(data) and is
+   called by next_hook() by the last hook. */
+cliqueclique.general.helpers.chainFunctions = function (hooks, data, last_hook) {
+  var next_hook = function () { last_hook(data); };
+  var chainTwoFunctions = function (hook, data, next_hook) {
+    return function () {
+      return hook(data, next_hook)
+    }
+  }
+  for (var i = 0; i < hooks.length; i++) {
+    next_hook = chainTwoFunctions(hooks[i], data, next_hook);
+  }
+  return next_hook;
+}
