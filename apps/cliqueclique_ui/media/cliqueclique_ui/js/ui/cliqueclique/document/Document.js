@@ -3,14 +3,13 @@ dojo.provide("cliqueclique.document.Document");
 dojo.require("cliqueclique.general.helpers");
 
 dojo.declare("cliqueclique.document.BaseDocument", [], {
-  constructor: function (json_data) {
+ constructor: function (json_data, object_id_base) {
     this.json_data = json_data;
-    this.object_id = cliqueclique.document.BaseDocument.object_id_counter++;
+    this.object_id_base = object_id_base;
   },
   getObjectId: function () {
-    return "cliqueclique.document.Document:" + this.object_id;
     // Some random hashable the value that changes if any attributes changes
-    // return this.json_data.document.document_id + ":" + this.json_data.bookmarked + ":" + this.json_data.read + ":" + this.json_data.local_is_subscribed;
+    return (this.object_id_base ? this.object_id_base : "") + this.json_data.document.document_id + ":" + this.json_data.bookmarked + ":" + this.json_data.read + ":" + this.json_data.local_is_subscribed;
   },
   getDocumentId: function () {
     return this.json_data.document.document_id;
@@ -77,7 +76,6 @@ dojo.declare("cliqueclique.document.BaseDocument", [], {
     }
   },
 });
-cliqueclique.document.BaseDocument.object_id_counter = 0;
 
 
 
@@ -116,7 +114,7 @@ dojo.declare("cliqueclique.document.Document", [cliqueclique.document.BaseDocume
 
 cliqueclique.document.Document.object_id_counter = 0;
 
-cliqueclique.document.Document.find = function (onComplete, query, context) {
+cliqueclique.document.Document.find = function (onComplete, query, context, object_id_base) {
   var url = "/find/json";
   if (context) {
     url = "/find/json/" + context;
@@ -132,7 +130,7 @@ cliqueclique.document.Document.find = function (onComplete, query, context) {
       }
       var res = [];
       for (document_id in documents) {
-	res.push(new cliqueclique.document.Document(documents[document_id]));
+       res.push(new cliqueclique.document.Document(documents[document_id], object_id_base));
       }
       onComplete(res);
     }
