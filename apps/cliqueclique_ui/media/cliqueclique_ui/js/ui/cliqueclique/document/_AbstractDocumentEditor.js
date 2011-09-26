@@ -1,11 +1,11 @@
-dojo.provide("cliqueclique.document.BaseDocumentEditor");
+dojo.provide("cliqueclique.document._AbstractDocumentEditor");
 
 dojo.require("cliqueclique.ui");
 dojo.require("cliqueclique.document.DocumentSelector");
 dojo.require("dijit.form.TextBox");
 dojo.require("dijit.Editor");
 
-dojo.declare("cliqueclique.document.BaseDocumentEditor", [dijit._Widget, dijit._Templated], {
+dojo.declare("cliqueclique.document._AbstractDocumentEditor", [dijit._Widget, dijit._Templated], {
   widgetsInTemplate: true,
   templateString: "<div class='cliquecliqueDocumentEditor'>" +
                   "  <div dojoType='dijit.form.Button' dojoAttachEvent='onClick: send' class='sendButton'>Send</div>" +

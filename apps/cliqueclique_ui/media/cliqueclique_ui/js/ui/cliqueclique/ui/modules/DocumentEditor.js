@@ -1,12 +1,12 @@
 dojo.provide("cliqueclique.ui.modules.DocumentEditor");
 
 dojo.require("cliqueclique.ui");
-dojo.require("cliqueclique.document.BaseDocumentEditor");
+dojo.require("cliqueclique.document._AbstractDocumentEditor");
 dojo.require("cliqueclique.document.DocumentSelector");
 dojo.require("dijit.form.TextBox");
 dojo.require("dijit.Editor");
 
-dojo.declare("cliqueclique.ui.modules.DocumentEditor", [cliqueclique.document.BaseDocumentEditor], {
+dojo.declare("cliqueclique.ui.modules.DocumentEditor", [cliqueclique.document._AbstractDocumentEditor], {
   editWidgetLinks: dojo.declare("", [dijit._Widget, dijit._Templated], {
     placement: "formMetadata",
     widgetsInTemplate: true,

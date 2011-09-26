@@ -2,9 +2,10 @@ dojo.provide("cliqueclique.ui.modules.DocumentLinkEditor");
 
 dojo.require("cliqueclique.ui");
 dojo.require("cliqueclique.document.DocumentSelector");
+dojo.require("cliqueclique.document._AbstractDocumentEditor");
 dojo.require("dijit.form.CheckBox");
 
-dojo.declare("cliqueclique.ui.modules.DocumentLinkEditor", [cliqueclique.document.BaseDocumentEditor], {
+dojo.declare("cliqueclique.ui.modules.DocumentLinkEditor", [cliqueclique.document._AbstractDocumentEditor], {
   editWidgetLink: dojo.declare("", [dijit._Widget, dijit._Templated], {
     placement: "formMetadata",
     widgetsInTemplate: true,
