@@ -188,6 +188,7 @@ dojo.declare("cliqueclique.document.NewDocument", [cliqueclique.document.BaseDoc
      The dictionary parameter can optionally contain other data and/or
      documents created by post hooks. */
   post: function (callback, error_callback) {
+    // console.log(["post", this.json_data.document.content]);
     if (!error_callback) {
       error_callback = function (error) {
         if (typeof(error) != 'string') {
