@@ -1,15 +1,8 @@
 dojo.provide("cliqueclique.ui");
 
 dojo.require("cliqueclique.TopMenu");
-dojo.require("cliqueclique.ImportDialog");
-dojo.require("cliqueclique.document.ActionMenu");
 dojo.require("cliqueclique.document.DocumentTreeModel");
-dojo.require("cliqueclique.document.DocumentEditor");
-dojo.require("cliqueclique.document.DocumentLinkEditor");
-dojo.require("cliqueclique.document.DocumentView");
-dojo.require("cliqueclique.document.DocumentGraphView");
-dojo.require("cliqueclique.document.DocumentStatView");
-dojo.require("cliqueclique.document.DocumentInfoView");
+dojo.require("cliqueclique.ui.modules");
 dojo.require("cliqueclique.document.Document");
 dojo.require("cliqueclique.general.nodeinfo");
 dojo.require("dijit.layout.BorderContainer");
@@ -48,9 +41,6 @@ dojo.declare("cliqueclique.ui.Ui", [dijit.layout.BorderContainer], {
     ui.menu.startup();
     ui.menu.bindDomNode(ui.tree.domNode);
 
-    ui.docView = cliqueclique.document.DocumentView({region: 'center'});
-    ui.inner.addChild(ui.docView);
-
     ui.tabCon = cliqueclique.general.OptionalTabContainer({region:'bottom', splitter: true, style:'height: 30%;'});        
     ui.inner.addChild(ui.tabCon);
     ui.tabCon.updateVisibility();
@@ -64,12 +54,6 @@ dojo.declare("cliqueclique.ui.Ui", [dijit.layout.BorderContainer], {
 		     }},
                      true);
 
-    cliqueclique.ImportDialog.register(ui);
-    cliqueclique.document.DocumentView.register(ui);
-    cliqueclique.document.DocumentEditor.register(ui);
-    cliqueclique.document.DocumentLinkEditor.register(ui);
-    cliqueclique.document.DocumentGraphView.register(ui);
-    cliqueclique.document.DocumentStatView.register(ui);
-    cliqueclique.document.DocumentInfoView.register(ui);
+    cliqueclique.ui.modules.register(ui);
   }
 });

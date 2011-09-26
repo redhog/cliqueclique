@@ -1,4 +1,4 @@
-dojo.provide("cliqueclique.document.DocumentView");
+dojo.provide("cliqueclique.ui.modules.DocumentView");
 
 dojo.require("cliqueclique.document.Document");
 dojo.require("cliqueclique.document._AbstractDocumentView");
@@ -73,7 +73,7 @@ dojo.declare("cliqueclique.document.DocumentBodyView", [dijit._Widget, dijit._Te
   displayPart: "content"
 });
 
-dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
+dojo.declare("cliqueclique.ui.modules.DocumentView", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
   widgetsInTemplate: true,
   templateString: "" +
     "<div class='documentView'>" +
@@ -198,7 +198,10 @@ dojo.declare("cliqueclique.document.DocumentView", [dijit._Widget, dijit._Templa
   }
 });
 
-cliqueclique.document.DocumentView.register = function (widget) {
+cliqueclique.ui.modules.DocumentView.register = function (widget) {
+  widget.docView = cliqueclique.ui.modules.DocumentView({region: 'center'});
+  widget.inner.addChild(ui.docView);
+
   widget.registerData("documentLink",
 		      {label: 'Display',
 		       load:function (document) {

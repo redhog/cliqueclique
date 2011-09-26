@@ -1,8 +1,8 @@
-dojo.provide("cliqueclique.document.DocumentInfoView");
+dojo.provide("cliqueclique.ui.modules.DocumentInfoView");
 
 dojo.require("cliqueclique.document._AbstractDocumentView");
 
-dojo.declare("cliqueclique.document.DocumentInfoView", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
+dojo.declare("cliqueclique.ui.modules.DocumentInfoView", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
  templateString: "<div><div style='margin: 2px;' dojoAttachPoint='infoView'></div></div>",
   _setDocumentAttr: function (document) {
     var documentView = this;
@@ -23,11 +23,11 @@ dojo.declare("cliqueclique.document.DocumentInfoView", [dijit._Widget, dijit._Te
   }
 });
 
-cliqueclique.document.DocumentInfoView.register = function (widget) {
+cliqueclique.ui.modules.DocumentInfoView.register = function (widget) {
   widget.registerData("documentLink",
 		      {label: 'Info',
 		       load:function (document) {
-			 var docInfo = new cliqueclique.document.DocumentInfoView({document: document});
+			 var docInfo = new cliqueclique.ui.modules.DocumentInfoView({document: document});
 			 widget.getDataDefault("panels").addChild(docInfo);
 		       }},
 		       false,

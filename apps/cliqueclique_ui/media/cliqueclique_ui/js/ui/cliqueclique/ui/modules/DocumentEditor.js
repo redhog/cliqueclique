@@ -1,4 +1,4 @@
-dojo.provide("cliqueclique.document.DocumentEditor");
+dojo.provide("cliqueclique.ui.modules.DocumentEditor");
 
 dojo.require("cliqueclique.ui");
 dojo.require("cliqueclique.document.BaseDocumentEditor");
@@ -6,7 +6,7 @@ dojo.require("cliqueclique.document.DocumentSelector");
 dojo.require("dijit.form.TextBox");
 dojo.require("dijit.Editor");
 
-dojo.declare("cliqueclique.document.DocumentEditor", [cliqueclique.document.BaseDocumentEditor], {
+dojo.declare("cliqueclique.ui.modules.DocumentEditor", [cliqueclique.document.BaseDocumentEditor], {
   editWidgetLinks: dojo.declare("", [dijit._Widget, dijit._Templated], {
     placement: "formMetadata",
     widgetsInTemplate: true,
@@ -85,11 +85,11 @@ dojo.declare("cliqueclique.document.DocumentEditor", [cliqueclique.document.Base
   }
 });
 
-cliqueclique.document.DocumentEditor.register = function (widget) {
+cliqueclique.ui.modules.DocumentEditor.register = function (widget) {
   widget.registerData("documentLink",
 		      {label: 'Comment',
 		       load:function (document) {
-			 var docEdit = new cliqueclique.document.DocumentEditor({title: 'New comment'});
+			 var docEdit = new cliqueclique.ui.modules.DocumentEditor({title: 'New comment'});
 			 docEdit.commentToAdd(document);
 			 widget.getDataDefault("panels").addChild(docEdit);
 		       }},

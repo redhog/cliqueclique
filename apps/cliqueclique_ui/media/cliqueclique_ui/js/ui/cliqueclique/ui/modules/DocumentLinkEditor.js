@@ -1,10 +1,10 @@
-dojo.provide("cliqueclique.document.DocumentLinkEditor");
+dojo.provide("cliqueclique.ui.modules.DocumentLinkEditor");
 
 dojo.require("cliqueclique.ui");
 dojo.require("cliqueclique.document.DocumentSelector");
 dojo.require("dijit.form.CheckBox");
 
-dojo.declare("cliqueclique.document.DocumentLinkEditor", [cliqueclique.document.BaseDocumentEditor], {
+dojo.declare("cliqueclique.ui.modules.DocumentLinkEditor", [cliqueclique.document.BaseDocumentEditor], {
   editWidgetLink: dojo.declare("", [dijit._Widget, dijit._Templated], {
     placement: "formMetadata",
     widgetsInTemplate: true,
@@ -34,11 +34,11 @@ dojo.declare("cliqueclique.document.DocumentLinkEditor", [cliqueclique.document.
   }
 });
 
-cliqueclique.document.DocumentLinkEditor.register = function (widget) {
+cliqueclique.ui.modules.DocumentLinkEditor.register = function (widget) {
   widget.registerData("documentLink",
 		      {label: 'Add as comment to existing',
 		       load:function (document) {
-			 var docEdit = new cliqueclique.document.DocumentLinkEditor({title: 'New comment'});
+			 var docEdit = new cliqueclique.ui.modules.DocumentLinkEditor({title: 'New comment'});
 			 docEdit.commentInAdd(document);
 			 widget.getDataDefault("panels").addChild(docEdit);
 		       }},
@@ -47,7 +47,7 @@ cliqueclique.document.DocumentLinkEditor.register = function (widget) {
   widget.registerData("documentLink",
 		      {label: 'Add existing as comment',
 		       load:function (document) {
-			 var docEdit = new cliqueclique.document.DocumentLinkEditor({title: 'New comment'});
+			 var docEdit = new cliqueclique.ui.modules.DocumentLinkEditor({title: 'New comment'});
 			 docEdit.commentToAdd(document);
 			 widget.getDataDefault("panels").addChild(docEdit);
 		       }},
