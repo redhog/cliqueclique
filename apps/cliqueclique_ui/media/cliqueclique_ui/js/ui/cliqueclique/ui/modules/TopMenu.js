@@ -1,11 +1,11 @@
-dojo.provide("cliqueclique.TopMenu");
+dojo.provide("cliqueclique.ui.modules.TopMenu");
 
 dojo.require("cliqueclique.document.Document");
 dojo.require("cliqueclique.document.ActionMenu");
 dojo.require('dijit.MenuBar');
 dojo.require('dijit.PopupMenuBarItem');
 
-dojo.declare("cliqueclique.TopMenu", [dijit.MenuBar], {
+dojo.declare("cliqueclique.ui.modules.TopMenu", [dijit.MenuBar], {
   startup: function () {
     var menu = this;
     var item;
@@ -23,3 +23,8 @@ dojo.declare("cliqueclique.TopMenu", [dijit.MenuBar], {
     this.inherited(arguments);
   }
 });
+
+cliqueclique.ui.modules.TopMenu.register = function (widget) {
+  widget.menu = new cliqueclique.ui.modules.TopMenu({region: 'top', dataParent: widget});
+  widget.addChild(widget.menu);
+}

@@ -1,6 +1,5 @@
 dojo.provide("cliqueclique.ui.Ui");
 
-dojo.require("cliqueclique.TopMenu");
 dojo.require("cliqueclique.document.DocumentTreeModel");
 dojo.require("cliqueclique.ui.modules");
 dojo.require("cliqueclique.document.Document");
@@ -23,9 +22,6 @@ dojo.declare("cliqueclique.ui.Ui", [dijit.layout.BorderContainer], {
     this.inherited(arguments);
 
     var ui = this;
-
-    ui.menu = new cliqueclique.TopMenu({region: 'top', dataParent: ui});
-    ui.addChild(ui.menu);
 
     ui.inner = new dijit.layout.BorderContainer({region: 'center', gutters: false, design: 'sidebar'});
     ui.addChild(ui.inner);
