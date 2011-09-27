@@ -30,8 +30,14 @@ dojo.declare("cliqueclique.document._AbstractDocumentLinkEditor", [cliqueclique.
   }),
   commentToSet: function (document) {
     this.editWidgetLink.commentTo.addLink(document);
+    if (this.subjectSet) {
+      this.subjectSet(document.getSubject());
+    }
   },
   commentInSet: function (document) {
     this.editWidgetLink.commentIn.addLink(document);
+    if (this.subjectSet) {
+      this.subjectSet(document.getSubject());
+    }
   }
 });

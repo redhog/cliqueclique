@@ -230,20 +230,21 @@ dojo.declare("cliqueclique.document.NewDocument", [cliqueclique.document.BaseDoc
   },
 });
 
-cliqueclique.document.NewDocument.prototype.makeLink = function (src, dst, reversed, subject) {
-  if (subject === undefined)
-    if (reversed)
-      subject = src.getSubject();
-    else
-      subject = dst.getSubject();
+cliqueclique.document.NewDocument.prototype.makeLink = function (src, dst, reversed) {
+  var subject;
+  if (reversed)
+    subject = src.getSubject();
+  else
+    subject = dst.getSubject();
 
   var direction = reversed ? "reversed" : "natural";
 
   var content = this.getContent();
   content.header.parent_document_id = src.getDocumentId();
   content.header.child_document_id = dst.getDocumentId();
-  content.header.subject = subject;
-
+  if (content.header == undefined) {
+    content.header.subject = subject;
+  }
   var part = this.createPart("link", "__email_message_Message__", "text/plain; charset=\"utf-8\"");
   part.body = '';
   part.header.link_direction = direction;

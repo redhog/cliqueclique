@@ -4,12 +4,14 @@ dojo.require("cliqueclique.ui");
 dojo.require("cliqueclique.document.DocumentSelector");
 dojo.require("cliqueclique.document._AbstractDocumentEditor");
 dojo.require("cliqueclique.document._AbstractDocumentLinkEditor");
+dojo.require("cliqueclique.document._AbstractDocumentSubjectEditor");
 dojo.require("dijit.form.CheckBox");
 
 dojo.declare(
   "cliqueclique.ui.modules.DocumentLinkEditor",
   [cliqueclique.document._AbstractDocumentEditor,
-   cliqueclique.document._AbstractDocumentLinkEditor], {});
+   cliqueclique.document._AbstractDocumentLinkEditor,
+   cliqueclique.document._AbstractDocumentSubjectEditor], {});
 
 cliqueclique.ui.modules.DocumentLinkEditor.register = function (widget) {
   widget.registerData("documentLink",
