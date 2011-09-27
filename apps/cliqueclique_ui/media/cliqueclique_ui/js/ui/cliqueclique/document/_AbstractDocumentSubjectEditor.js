@@ -21,4 +21,7 @@ dojo.declare("cliqueclique.document._AbstractDocumentSubjectEditor", [cliquecliq
       content.header.subject = this.subject.attr("value");
     }
   }),
+  subjectSet: function (subject) {
+    this.editWidgetSubject.subject.attr("value", subject);
+  }
 });

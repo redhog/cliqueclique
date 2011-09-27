@@ -7,6 +7,7 @@ dojo.require("cliqueclique.ui.modules.ImportDialog");
 dojo.require("cliqueclique.ui.modules.DocumentView");
 dojo.require("cliqueclique.ui.modules.DocumentEditor");
 dojo.require("cliqueclique.ui.modules.DocumentLinkEditor");
+dojo.require("cliqueclique.ui.modules.DocumentForwardEditor");
 dojo.require("cliqueclique.ui.modules.DocumentGraphView");
 dojo.require("cliqueclique.ui.modules.DocumentStatView");
 dojo.require("cliqueclique.ui.modules.DocumentInfoView");
@@ -19,6 +20,7 @@ cliqueclique.ui.modules.register = function (ui) {
   cliqueclique.ui.modules.DocumentView.register(ui);
   cliqueclique.ui.modules.DocumentEditor.register(ui);
   cliqueclique.ui.modules.DocumentLinkEditor.register(ui);
+  cliqueclique.ui.modules.DocumentForwardEditor.register(ui);
   cliqueclique.ui.modules.DocumentGraphView.register(ui);
   cliqueclique.ui.modules.DocumentStatView.register(ui);
   cliqueclique.ui.modules.DocumentInfoView.register(ui);

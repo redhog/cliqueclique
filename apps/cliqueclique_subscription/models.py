@@ -218,7 +218,7 @@ Center distance: %(center_distance)s
         parts = self.document.parts
         if 'subscription_update' in parts:
             try:
-                self.node.receive(parts['subscription_update'])
+                self.node.receive(parts['subscription_update'].get_payload()[0])
             except:
                 # Maybe log this some way?
                 import traceback
