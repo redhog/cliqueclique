@@ -364,6 +364,33 @@ class Test(unittest.TestCase):
 
         self.assertTrue(ret)
 
+    def test_souble_sign(self):
+        msg1 = email.mime.text.MIMEText("Blabla")
+        msg1.add_header("Msg", "msg1")
+
+        msg2 = MIMESigned()
+        msg2.set_private_key(self.signer_key)
+        msg2.set_cert(self.signer_cert)
+        msg2.add_header("Msg", "msg2")
+        msg2.attach(msg1)
+
+
+        msg2 = email.mime.text.MIMEText(msg2.as_string())
+        
+        msg3 = MIMESigned()
+        msg3.set_private_key(self.signer_key)
+        msg3.set_cert(self.signer_cert)
+        msg3.add_header("Msg", "msg3")
+        msg3.attach(msg2)
+
+        print msg3.as_string()
+
+        msgx = email.message_from_string(msg3.as_string())
+        #print msgx.as_string()
+
+        msgx.verify()
+
+
     def test_encrypt(self):
         msg1 = email.mime.multipart.MIMEMultipart()
         msg1.add_header("Msg", "msg1")
