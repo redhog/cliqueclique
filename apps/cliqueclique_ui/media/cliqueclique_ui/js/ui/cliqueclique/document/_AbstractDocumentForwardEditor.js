@@ -9,7 +9,8 @@ dojo.require("dijit._Templated");
 
 cliqueclique.document.NewDocument.prototype.makeForward = function (src) {
   var part = this.createPart("subscription_update", "__email_mime_multipart_MIMEMultipart__");
-  part.parts.push({__cliqueclique_document_models_DocumentSubscription_export__: true});
+  part.parts = [{__cliqueclique_document_models_DocumentSubscription_export__: true,
+		 document_id: src.getDocumentId()}];
 }
 
 dojo.declare("cliqueclique.document._AbstractDocumentForwardEditor", [cliqueclique.document._AbstractDocumentEditor], {
@@ -23,7 +24,7 @@ dojo.declare("cliqueclique.document._AbstractDocumentForwardEditor", [cliquecliq
 		    "  </tr>" +
 		    "</tbody>",
     send: function (doc) {
-      doc.makeForward(this.commentTo.attr("links")[0], this.forwardDoc.attr("links")[0], this.reversed.attr("value"));
+      doc.makeForward(this.forwardDoc.attr("links")[0]);
     }
   }),
   forwardDocSet: function (document) {
