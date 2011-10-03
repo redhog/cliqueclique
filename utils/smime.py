@@ -2,6 +2,8 @@
 # SMIME verification w/o a local cert:
 # http://code.activestate.com/recipes/285211-verifying-smime-signed-email-with-m2crypto-and-no-/
 
+import StringIO
+
 import email
 import email.generator
 import email.mime.multipart
@@ -20,6 +22,63 @@ import time
 import re
 
 import unittest
+
+
+################################################################
+# Monkey-patching the email.* to allow extension
+
+_parse_headers = email.feedparser.FeedParser._parse_headers
+def parse_headers(self, lines):
+    res = _parse_headers(self, lines)
+    content_type = self._cur.get_content_type()
+    meth = getattr(self, "_get_message_class_" + content_type.replace("/", "_").replace("-", "_"), None)
+    if meth is None:
+        meth = getattr(self, "_get_message_class_" + content_type.split("/")[0], None)
+    if meth is not None:
+        cur = self._cur
+        self._cur = meth()
+        self._msgstack[-1] = self._cur
+        if len(self._msgstack) > 1:
+            payload = self._msgstack[-2].get_payload()
+            payload.remove(cur)
+            payload.append(self._cur)
+        for key in self._cur.keys():
+            del self._cur[key]
+        for key, val in cur.items():
+            self._cur.add_header(key, val)
+    return res
+email.feedparser.FeedParser._parse_headers = parse_headers
+
+# Bugfix: if epiloque is None, no new-line is added at the end of the
+# message, but the feedparser reads such a message as having an
+# epiloque of '', which then when printed again results in a message
+# that ends in a new-line... This makes the thingy idempotent...
+# Same thing with an empty payload...
+_handle_multipart = email.generator.Generator._handle_multipart
+def handle_multipart(self, msg):
+    try:
+        epilogue = msg.epilogue
+        payload = msg.get_payload()
+        if msg.epilogue == '':
+            msg.epilogue = None
+        if payload == []:
+            empty = email.mime.text.MIMEText('')
+            for key in empty.keys():
+                del empty[key]
+            msg.set_payload([empty])
+        return _handle_multipart(self, msg)
+    finally:
+        msg.set_payload(payload)
+        msg.epilogue = epilogue
+email.generator.Generator._handle_multipart = handle_multipart
+
+def get_message_class_multipart(self):
+    return email.mime.multipart.MIMEMultipart()
+email.feedparser.FeedParser._get_message_class_multipart = get_message_class_multipart
+
+
+################################################################
+# Some utility functions
 
 def message_from_anything(msg):
     if isinstance(msg, unicode):
@@ -81,38 +140,21 @@ def cert_get_data(cert):
     data['address'] = cert.get_ext('subjectAltName').get_value()[len('URI:clique://'):]
     return data
 
-_parse_headers = email.feedparser.FeedParser._parse_headers
-def parse_headers(self, lines):
-    res = _parse_headers(self, lines)
-    content_type = self._cur.get_content_type()
-    meth = getattr(self, "_get_message_class_" + content_type.replace("/", "_").replace("-", "_"), None)
-    if meth is None:
-        meth = getattr(self, "_get_message_class_" + content_type.split("/")[0], None)
-    if meth is not None:
-        cur = self._cur
-        self._cur = meth()
-        self._msgstack[-1] = self._cur
-        if len(self._msgstack) > 1:
-            payload = self._msgstack[-2].get_payload()
-            payload.remove(cur)
-            payload.append(self._cur)
-        for key in self._cur.keys():
-            del self._cur[key]
-        for key, val in cur.items():
-            self._cur.add_header(key, val)
-    return res
-email.feedparser.FeedParser._parse_headers = parse_headers
 
-def get_message_class_multipart(self):
-    return email.mime.multipart.MIMEMultipart()
-email.feedparser.FeedParser._get_message_class_multipart = get_message_class_multipart
+################################################################
+# Implementation of the signed/encrypted mime classes
+
 
 def get_message_class_multipart_signed(self):
-    return MIMESigned()
+    res = MIMESigned()
+    res.m2c_is_parsing = True
+    return res
 email.feedparser.FeedParser._get_message_class_multipart_signed = get_message_class_multipart_signed
 
 def get_message_class_application_x_pkcs7_mime(self):
-    return MIMEEncrypted()
+    res = MIMEEncrypted()
+    res.m2c_is_parsing = True
+    return res
 email.feedparser.FeedParser._get_message_class_application_x_pkcs7_mime = get_message_class_application_x_pkcs7_mime
 
 
@@ -124,30 +166,36 @@ def handle_multipart_encrypted(self, msg):
     msg._write(self)
 email.generator.Generator._handle_multipart_encrypted = handle_multipart_encrypted
 
-# Bugfix: if epiloque is None, no new-line is added at the end of the
-# message, but the feedparser reads such a message as having an
-# epiloque of '', which then when printed again results in a message
-# that ends in a new-line... This makes the thingy idempotent...
-# Same thing with an empty payload...
-_handle_multipart = email.generator.Generator._handle_multipart
-def handle_multipart(self, msg):
-    try:
-        epilogue = msg.epilogue
-        payload = msg.get_payload()
-        if msg.epilogue == '':
-            msg.epilogue = None
-        if payload == []:
-            empty = email.mime.text.MIMEText('')
-            for key in empty.keys():
-                del empty[key]
-            msg.set_payload([empty])
-        return _handle_multipart(self, msg)
-    finally:
-        msg.set_payload(payload)
-        msg.epilogue = epilogue
-email.generator.Generator._handle_multipart = handle_multipart
 
 class MIMEM2(email.mime.multipart.MIMEMultipart):
+    m2c_is_parsing = False
+
+    def get_content_maintype(self):
+        if self.m2c_is_parsing:
+            return 'm2crypto' # Something random that isn't multipart or message
+        else:
+            return email.mime.multipart.MIMEMultipart.get_content_maintype(self)
+
+    def set_payload(self, data):
+        if not self.m2c_is_parsing:
+            email.mime.multipart.MIMEMultipart.set_payload(self, data)
+        else:
+            self.m2c_is_parsing = False
+            self.parse_data(data)
+
+    def parse_data(self, data):
+        raise NotImplementedError
+
+    def headers_as_string(self, unixfrom=False):
+        """Return the all headers as a string."""
+        from email.generator import Generator
+        fp = StringIO.StringIO()
+        g = email.generator.Generator(fp)
+        g._write_headers(self)
+        return fp.getvalue()
+
+    # Workaround to not output the blank line between message and
+    # headers (since m2crypto outputs it)
     def _write_headers(self, gen):
         payload = self.get_payload()
         for h, v in self.items():
@@ -178,11 +226,15 @@ class MIMESigned(MIMEM2):
     def __init__(self, boundary=None, _subparts=None, **_params):
         MIMEM2.__init__(self, _subtype='signed', boundary=boundary, _subparts=_subparts, **_params)
 
+    def parse_data(self, data):
+        p7, data_bio = M2Crypto.SMIME.smime_load_pkcs7_bio(M2Crypto.BIO.MemoryBuffer(self.headers_as_string() + "\n" + data))
+        self.set_payload([email.message_from_string(data_bio.read()), data])
+
     def _write(self, gen):
         payload = self.get_payload()
         if len(payload) == 2:
             gen._fp.write("\n") # The blank line between header and data
-            gen._handle_multipart(self)
+            gen._fp.write(payload[1])
         else:
             assert len(payload) == 1
             # No blank line here, M2Crypto.SMIME.SMIME.write() creates one...
@@ -245,6 +297,9 @@ class MIMESigned(MIMEM2):
 class MIMEEncrypted(MIMEM2):
     def __init__(self, boundary=None, _subparts=None, **_params):
         MIMEM2.__init__(self, _subtype='encrypted', boundary=boundary, _subparts=_subparts, **_params)
+
+    def parse_data(self, data):
+        self.set_payload(data)
 
     def _write(self, gen):
         gen._fp.write(self.encrypt(False))
@@ -316,6 +371,8 @@ Content-Transfer-Encoding: base64
         return out
 
 
+################################################################
+# Unit tests
 
 class Test(unittest.TestCase):
     def setUp(self):
@@ -345,22 +402,17 @@ class Test(unittest.TestCase):
         msg3.attach(msg4)
         msg1.attach(msg3)
 
-        #print msg1.as_string()
-
-        msgx = email.message_from_string(msg1.as_string())
-        #print msgx.as_string()
-
-        msgy = msgx.get_payload()[1]
-
+        msg1str = msg1.as_string()
+        msgy = email.message_from_string(msg1str).get_payload()[1]
         msgy.verify()
 
-        msgy.get_payload()[0]['Foo'] = 'Bar'
-        ret = True
+        broken = msg1str[:642] + "XYZZY" + msg1str[642:]
+        msgy = email.message_from_string(broken).get_payload()[1]
         try:
             msgy.verify()
             ret = False
         except:
-            pass
+            ret = True
 
         self.assertTrue(ret)
 
@@ -383,7 +435,7 @@ class Test(unittest.TestCase):
         msg3.add_header("Msg", "msg3")
         msg3.attach(msg2)
 
-        print msg3.as_string()
+        #print msg3.as_string()
 
         msgx = email.message_from_string(msg3.as_string())
         #print msgx.as_string()
