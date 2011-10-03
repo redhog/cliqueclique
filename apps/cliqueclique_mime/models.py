@@ -50,6 +50,7 @@ class Mime(fcdjangoutils.signalautoconnectmodel.SharedMemorySignalAutoConnectMod
             MimeHeader(part = part, key = 'address', value = data['address']).save()
 
         def properties_from_mime(parent, idx, mime):
+            if not hasattr(mime, "get_payload"): return # This is a string or something...
             part = MimePart(parent = parent, idx = idx)
             part.save()
 
