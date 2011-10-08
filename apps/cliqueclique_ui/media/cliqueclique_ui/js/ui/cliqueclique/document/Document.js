@@ -75,6 +75,13 @@ dojo.declare("cliqueclique.document.BaseDocument", [], {
       }
     }
   },
+  chainFunctions: function (functions, next_hook) {
+    var data = {document:this};
+    return cliqueclique.general.helpers.chainFunctions(
+      functions,
+      data,
+      next_hook);
+  }
 });
 
 
@@ -184,6 +191,15 @@ dojo.declare("cliqueclique.document.NewDocument", [cliqueclique.document.BaseDoc
   addPostHook: function (hook) {
     this.post_hooks.push(hook);
   },
+  callPostHooks: function (document, callback) {
+    document.chainFunctions(
+      this.post_hooks,
+      function (data) {
+	cliqueclique.document.Document.updated();
+	callback(data);
+      }
+    )();
+  },
   /* Post the document. Callback is function({document:document}).
      The dictionary parameter can optionally contain other data and/or
      documents created by post hooks. */
@@ -212,14 +228,7 @@ dojo.declare("cliqueclique.document.NewDocument", [cliqueclique.document.BaseDoc
 	  if (data.error != undefined) {
 	    error_callback(data.error);
 	  } else {
-	    cliqueclique.general.helpers.chainFunctions(
-              new_document.post_hooks,
-	      {document:cliqueclique.document.Document(data)},
-	      function (data) {
-	        cliqueclique.document.Document.updated();
-		callback(data);
-	      }
-	    )();
+	    new_document.callPostHooks(cliqueclique.document.Document(data), callback);
 	  }
 	}, 1);
       },

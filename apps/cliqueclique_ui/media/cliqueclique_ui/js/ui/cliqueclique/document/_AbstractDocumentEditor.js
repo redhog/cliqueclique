@@ -26,21 +26,26 @@ dojo.declare("cliqueclique.document._AbstractDocumentEditor", [dijit._Widget, di
     }
     return res;
   },
-   send: function () {
-     var editor = this;
+  send: function () {
+    var editor = this;
 
-     var doc = new cliqueclique.document.NewDocument();
+    var doc = new cliqueclique.document.NewDocument();
 
-     for (var attr in this) {
-       if (attr.indexOf("editWidget") == 0) {
-	 editor[attr].send(doc);
-       }
-     }
+    for (var attr in this) {
+      if (attr.indexOf("editWidget") == 0) {
+	editor[attr].send(doc);
+      }
+    }
 
-     doc.post(
-       function (data) {
-	 data.document.getDocumentLink(editor)();
-	 editor.getHtmlParent().removeChild(editor);
-       });
-   }
+    var callback = function (data) {
+      data.document.getDocumentLink(editor)();
+      editor.getHtmlParent().removeChild(editor);
+    }
+
+    if (editor.getDocument !== undefined) {
+      doc.callPostHooks(editor.getDocument(), callback);
+    } else {
+      doc.post(callback);
+    }
+  },
 });
