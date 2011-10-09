@@ -68,37 +68,23 @@ dojo.declare("cliqueclique.document._AbstractDocumentNameEditor", [cliqueclique.
                     "    <th>Name</th>" +
                     "    <td><div dojoType='dijit.form.TextBox' dojoAttachPoint='name'></div></td>" +
                     "  </tr>" +
-		    "  <tr>" +
-		    "   <th>Document to publish</th>" +
-		    "   <td><div dojoType='cliqueclique.document.DocumentSelector' single='true' dojoAttachPoint='toPublish'></div></td>" +
-		    "  </tr>" +
 		    "</tbody>",
     send: function (doc) {
       doc.addPostHook(function (data, next_hook) {
 	cliqueclique.document.NewDocument.makeNameLink(
 	  this.publishIn.attr("links")[0],
 	  this.name.attr("value"),
-	  this.toPublish.attr("links")[0],
+	  data.document,
 	  this.reversed.attr("value"),
 	  next_hook
 	);
       });
     }
   }),
-  getDocument: function () {
-    return this.editWidgetPath.toPublish.attr("links")[0];
-  },
   publishInSet: function (document) {
     this.editWidgetPath.publishIn.addLink(document);
   },
-  nameSet: function (name) {
+  subjectSet: function (name) {
     this.editWidgetPath.name.attr("value", name);
   },
-  toPublishSet: function (document) {
-    this.editWidgetPath.toPublish.addLink(document);
-    this.nameSet(document.getSubject());
-    if (this.subjectSet) {
-      this.subjectSet(document.getSubject());
-    }
-  }
 });
