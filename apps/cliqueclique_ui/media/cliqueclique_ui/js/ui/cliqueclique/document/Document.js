@@ -45,6 +45,17 @@ dojo.declare("cliqueclique.document.BaseDocument", [], {
       }
     }
   },
+  getContentType: function (part) {
+    this.inherited(arguments);
+    var body = {body: '', header: {"Content-Type": 'text/plain'}};
+    if (this.item) {
+      try {
+        body = this.item.getParts()[part] || body;
+      } catch (e) {
+      }
+    }
+    return cliqueclique.document.Document.parseContentType(body);
+  },
   getParentDocumentId: function () {
     try {
       return this.getContent().header.parent_document_id;

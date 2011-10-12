@@ -1,9 +1,14 @@
-dojo.provide("cliqueclique.ui.modules.DocumentView");
+dojo.provide("cliqueclique.ui.modules.view");
 
 dojo.require("cliqueclique.document.Document");
 dojo.require("cliqueclique.document._AbstractDocumentView");
 
-dojo.declare("cliqueclique.ui.modules.DocumentView", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
+dojo.require("cliqueclique.ui.modules.view.body");
+dojo.require("cliqueclique.ui.modules.view.Attributes");
+dojo.require("cliqueclique.ui.modules.view.Links");
+dojo.require("cliqueclique.ui.modules.view.Empty");
+
+dojo.declare("cliqueclique.ui.modules.view.DocumentView", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
   widgetsInTemplate: true,
   templateString: "<div class='documentView'><div dojoAttachPoint='title'></div><div dojoAttachPoint='header'></div><div dojoAttachPoint='body'></div><div dojoAttachPoint='footer'></div></div>",
   postCreate: function () {
@@ -32,14 +37,24 @@ dojo.declare("cliqueclique.ui.modules.DocumentView", [dijit._Widget, dijit._Temp
       });
     });
 
-    dojo.forEach(this.getData("documentView", "cliqueclique.ui.modules.DocumentView"), function (item, i) {
+    dojo.forEach(this.getData("documentView", "cliqueclique.ui.modules.view"), function (item, i) {
       item.load(documentView, document);
     });
   },
 });
 
 
-cliqueclique.ui.modules.DocumentView.register = function (widget) {
+cliqueclique.ui.modules.view.register = function (widget) {
+  dojo.forEach(
+    [cliqueclique.ui.modules.view.body,
+     cliqueclique.ui.modules.view.Attributes,
+     cliqueclique.ui.modules.view.Links,
+     cliqueclique.ui.modules.view.Empty],
+    function (item, i) {
+      item.register(widget)
+    }
+  );
+
   widget.registerData("documentLink",
 		      {label: 'Display',
 		       load:function (document) {
@@ -48,7 +63,7 @@ cliqueclique.ui.modules.DocumentView.register = function (widget) {
 		      true,
 		      "cliqueclique.document.DocumentLink");
 
-  widget.docView = cliqueclique.ui.modules.DocumentView({region: 'center'});
+  widget.docView = cliqueclique.ui.modules.view.DocumentView({region: 'center'});
   widget.inner.addChild(widget.docView);
   widget.docView.attr("document", undefined);
 };

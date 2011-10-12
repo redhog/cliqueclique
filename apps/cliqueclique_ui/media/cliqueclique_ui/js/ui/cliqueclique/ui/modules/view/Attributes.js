@@ -1,9 +1,9 @@
-dojo.provide("cliqueclique.ui.modules.DocumentViewAttributes");
+dojo.provide("cliqueclique.ui.modules.view.Attributes");
 
 dojo.require("cliqueclique.document._AbstractDocumentView");
 dojo.require("dijit.form.CheckBox");
 
-dojo.declare("cliqueclique.ui.modules.DocumentViewAttributes", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
+dojo.declare("cliqueclique.ui.modules.view.Attributes", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
   widgetsInTemplate: true,
   templateString: "" +
     "<div class='actionBox'>" +
@@ -38,13 +38,13 @@ dojo.declare("cliqueclique.ui.modules.DocumentViewAttributes", [dijit._Widget, d
   }
 });
 
-cliqueclique.ui.modules.DocumentViewAttributes.register = function (widget) {
+cliqueclique.ui.modules.view.Attributes.register = function (widget) {
   widget.registerData("documentView",
                       {load:function (documentView, document) {
 			if (!document) return;
-		        var subView = new cliqueclique.ui.modules.DocumentViewAttributes({document: document});
+		        var subView = new cliqueclique.ui.modules.view.Attributes({document: document});
 			dojo.place(subView.domNode, documentView.header);
 		      }},
 		      false,
-		      "cliqueclique.ui.modules.DocumentView");
+		      "cliqueclique.ui.modules.view");
 };

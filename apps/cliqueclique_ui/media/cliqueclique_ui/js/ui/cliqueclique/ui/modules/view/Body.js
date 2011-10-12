@@ -1,9 +1,9 @@
-dojo.provide("cliqueclique.ui.modules.DocumentViewBody");
+dojo.provide("cliqueclique.ui.modules.view.Body");
 
 dojo.require("cliqueclique.document.Document");
 dojo.require("cliqueclique.document._AbstractDocumentView");
 
-dojo.declare("cliqueclique.ui.modules.DocumentViewBody", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
+dojo.declare("cliqueclique.ui.modules.view.Body", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
   widgetsInTemplate: true,
   templateString: "" +
     "<div class='documentBodyView'>" +
@@ -71,7 +71,7 @@ dojo.declare("cliqueclique.ui.modules.DocumentViewBody", [dijit._Widget, dijit._
 });
 
 /*
-dojo.declare("cliqueclique.ui.modules.DocumentViewBody", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
+dojo.declare("cliqueclique.ui.modules.view.Body", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
   widgetsInTemplate: true,
   templateString: "<div class='documentViewBody' dojoAttachPoint='views'></div>",
   _setDocumentAttr: function (document) {
@@ -82,20 +82,20 @@ dojo.declare("cliqueclique.ui.modules.DocumentViewBody", [dijit._Widget, dijit._
       dijit.byNode(domNode).destroyRecursive();
     });
 
-    dojo.forEach(this.getData("documentViewBody", "cliqueclique.ui.modules.DocumentView"), function (item, i) {
+    dojo.forEach(this.getData("documentViewBody", "cliqueclique.ui.modules.view"), function (item, i) {
       item.load(documentView, document);
     });
   },
 });
 */
 
-cliqueclique.ui.modules.DocumentViewBody.register = function (widget) {
+cliqueclique.ui.modules.view.Body.register = function (widget) {
   widget.registerData("documentView",
                       {load:function (documentView, document) {
 			if (!document) return;
-		        var subView = new cliqueclique.ui.modules.DocumentViewBody({document: document});
+		        var subView = new cliqueclique.ui.modules.view.Body({document: document});
 			dojo.place(subView.domNode, documentView.body);
 		      }},
 		      false,
-		      "cliqueclique.ui.modules.DocumentView");
+		      "cliqueclique.ui.modules.view");
 };

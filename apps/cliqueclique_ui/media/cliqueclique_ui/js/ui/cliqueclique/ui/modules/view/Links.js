@@ -1,11 +1,11 @@
-dojo.provide("cliqueclique.ui.modules.DocumentViewLinks");
+dojo.provide("cliqueclique.ui.modules.view.Links");
 
 dojo.require("cliqueclique.document.Document");
 dojo.require("cliqueclique.document._AbstractDocumentView");
 dojo.require("cliqueclique.document.DocumentLink");
 dojo.require("cliqueclique.document.DocumentMenu");
 
-dojo.declare("cliqueclique.ui.modules.DocumentViewLinks", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
+dojo.declare("cliqueclique.ui.modules.view.Links", [dijit._Widget, dijit._Templated, cliqueclique.document._AbstractDocumentView], {
   widgetsInTemplate: true,
   templateString: "" +
     "<div class='documentViewLinks'>" +
@@ -56,13 +56,13 @@ dojo.declare("cliqueclique.ui.modules.DocumentViewLinks", [dijit._Widget, dijit.
   }
 });
 
-cliqueclique.ui.modules.DocumentViewLinks.register = function (widget) {
+cliqueclique.ui.modules.view.Links.register = function (widget) {
   widget.registerData("documentView",
                       {load:function (documentView, document) {
 			if (!document) return;
-		        var subView = new cliqueclique.ui.modules.DocumentViewLinks({document: document});
+		        var subView = new cliqueclique.ui.modules.view.Links({document: document});
 			dojo.place(subView.domNode, documentView.header);
 		      }},
 		      false,
-		      "cliqueclique.ui.modules.DocumentView");
+		      "cliqueclique.ui.modules.view");
 };
