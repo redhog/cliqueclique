@@ -1,3 +1,5 @@
+A distributed forum / social media platform
+
     git clone git://github.com/dcramer/django-idmapper.git
 
 Every document (forum message) forms two overlaying networks of nodes
